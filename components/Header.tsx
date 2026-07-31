@@ -28,19 +28,18 @@ export function Header() {
 
   return (
     <>
-      <motion.header
-        initial={{ y: -70, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.7, ease, delay: 0.1 }}
-        className="fixed inset-x-0 top-0 z-50"
-      >
+      {/* No JS-driven entrance here on purpose: the header used to start at
+          opacity 0 and only appear once Framer Motion had hydrated, so on a
+          slow phone the logo was missing for the first moments. The slide-in
+          is now a pure CSS animation that runs from first paint. */}
+      <header className="fixed inset-x-0 top-0 z-50 [animation:header-in_0.7s_cubic-bezier(0.22,0.61,0.36,1)_both]">
         <div
           className={`transition-colors duration-300 ${
             stuck ? "bg-clay-50/92 backdrop-blur-md shadow-[0_1px_0_rgba(28,21,18,0.08)]" : "bg-transparent"
           }`}
         >
-          <div className="shell flex h-[68px] items-center justify-between gap-4 md:h-[80px] pt-[0.7rem] pb-[0.7rem]">
-            <a href="#top" className="flex h-11 shrink-0 items-center w-[76px] h-[76px]" aria-label={`${site.name} — home`}>
+          <div className="shell flex h-[72px] items-center justify-between gap-4 md:h-[84px]">
+            <a href="#top" className="flex shrink-0 items-center" aria-label={`${site.name} — home`}>
               <Logo />
             </a>
 
@@ -88,7 +87,7 @@ export function Header() {
             </div>
           </div>
         </div>
-      </motion.header>
+      </header>
 
       <AnimatePresence>
         {open && (

@@ -1,10 +1,15 @@
 export function Logo({ className = "", tone = "ink" }: { className?: string; tone?: "ink" | "cream" }) {
-  const main = tone === "cream" ? "text-clay-50" : "text-ink";
-  const sub = tone === "cream" ? "text-clay-50/60" : "text-ink-soft/70";
-
   return (
-    <span className={`flex items-center gap-2.5 ${className} w-[3.8rem] h-[3.8rem]`}>
-      <svg preserveAspectRatio="xMidYMid meet" data-bbox="-0.015 0 287.725 265.638" viewBox="-0.015 0 287.725 265.638" xmlns="http://www.w3.org/2000/svg" data-type="color" role="presentation" aria-hidden="true">
+    // Safari/iOS gives an <svg> with only a viewBox an intrinsic size of 0 when
+    // it is a flex item, so the mark vanished on iPhone. The svg below carries
+    // explicit width/height attributes AND h-full/w-full — never rely on
+    // intrinsic SVG sizing inside flex.
+    <span
+      className={`flex h-12 w-[3.25rem] shrink-0 items-center md:h-14 md:w-[3.8rem] ${
+        tone === "cream" ? "text-clay-50 [&_path]:fill-current" : ""
+      } ${className}`}
+    >
+      <svg preserveAspectRatio="xMidYMid meet" width="100%" height="100%" className="block h-full w-full" data-bbox="-0.015 0 287.725 265.638" viewBox="-0.015 0 287.725 265.638" xmlns="http://www.w3.org/2000/svg" data-type="color" role="presentation" aria-hidden="true">
     <g>
         <path d="m251.69 53.46-8.45 4.7a3.51 3.51 0 0 1-1.77.63 2.06 2.06 0 0 1-2-2.69 11 11 0 0 1 1.33-2.4c1.41-2.27 2.85-4.52 4.27-6.78.19-.31.6-.57.35-1.15l-6.95 6.6c-.32.3-.63.61-1 .88a1.56 1.56 0 0 1-2.34-.15 1.54 1.54 0 0 1 .07-2.26c1-1 2-2 3-2.92 2.43-2.31 4.85-4.63 7.29-6.94 1.18-1.11 1.9-1.09 3.08 0 2.26 2.13 2.29 2.33.64 5l-4.5 7.35c.5.25.79-.12 1.11-.3 2.52-1.36 5-2.76 7.54-4.12 1.81-1 4.81.85 4.85 2.91a1.89 1.89 0 0 1-.75 1.43l-9.8 9.35a4.72 4.72 0 0 1-.73.61 1.66 1.66 0 0 1-2.16-2.51c1.63-1.63 3.33-3.21 5-4.82.75-.72 1.48-1.45 2.22-2.17.05-.11.15-.25.08-.33s-.24.08-.38.08Z" fill="#1c1512" data-color="1"></path>
         <path d="m28.46 64.59 6.92 5.3c.34.27.7.53 1 .82.92.82 1.09 1.74.49 2.52a1.72 1.72 0 0 1-2.64.16q-5.62-4.27-11.21-8.61a2.07 2.07 0 0 1-.79-2.54 2 2 0 0 1 2.28-1.34l13.26.94c0-.46-.41-.56-.67-.76-2.36-1.83-4.75-3.65-7.11-5.48-1.13-.88-1.37-1.77-.75-2.64s1.62-1 2.74-.1q5.52 4.2 11 8.46c.78.6 1.49 1.31 1 2.43a2.35 2.35 0 0 1-2.44 1.56c-3.28 0-6.53-.45-9.79-.66a17.59 17.59 0 0 0-3.29-.06Z" fill="#1c1512" data-color="2"></path>
