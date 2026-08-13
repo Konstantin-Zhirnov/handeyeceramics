@@ -116,6 +116,43 @@ svg {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
+/* ---- Above-the-fold entrance ------------------------------------------
+   Everything visible on first paint animates in with CSS, never with JS.
+   Framer Motion renders `initial` as an inline opacity:0, which on a slow
+   phone leaves the hero blank until hydration finishes — so the hero uses
+   these classes and Framer is kept for scroll-driven work below the fold.
+   Stagger by setting `style={{ animationDelay }}`.
+----------------------------------------------------------------------- */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes media-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translate3d(0, 24px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.rise-media {
+  animation: media-in 1s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
 /* Header slide-in. CSS, not JS: it must be painted before hydration. */
 @keyframes header-in {
   from {

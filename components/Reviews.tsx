@@ -1,38 +1,29 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { RevealGroup, Reveal, riseVariants } from "./motion-primitives";
+import { Reveal } from "./motion-primitives";
 import { reviews } from "@/lib/site";
 
+/**
+ * Only real testimonials go in `reviews`. There is one, so the section is
+ * built around one — no filler quotes to make a three-column grid look full.
+ */
 export function Reviews() {
+  const review = reviews[0];
+  if (!review) return null;
+
   return (
     <section className="shell pb-16 md:pb-24">
-      <Reveal>
+      <Reveal as="figure" className="mx-auto max-w-[62ch] text-center">
         <span className="eyebrow text-clay-600">What students say</span>
+        <p className="mt-5 text-[1.1rem] tracking-[0.25em] text-terracotta">★★★★★</p>
+        <blockquote className="display mt-5 text-[1.5rem] leading-[1.28] text-ink sm:text-[1.95rem]">
+          “{review.quote}”
+        </blockquote>
+        <figcaption className="mt-7 flex flex-col items-center gap-0.5">
+          <span className="text-[0.95rem] font-bold text-ink">{review.author}</span>
+          <span className="text-[0.85rem] text-ink-soft">{review.meta}</span>
+        </figcaption>
       </Reveal>
-
-      <RevealGroup className="mt-7 grid gap-4 md:grid-cols-3">
-        {reviews.map((review) => (
-          <motion.figure
-            key={review.author}
-            variants={riseVariants}
-            whileHover={{ y: -5 }}
-            transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            className="flex flex-col justify-between rounded-[22px] border border-ink/10 bg-clay-100/70 p-6"
-          >
-            <div>
-              <span className="text-[0.9rem] tracking-[0.15em] text-terracotta">★★★★★</span>
-              <blockquote className="mt-4 text-[0.96rem] leading-relaxed text-ink">
-                “{review.quote}”
-              </blockquote>
-            </div>
-            <figcaption className="mt-6 border-t border-ink/10 pt-4">
-              <span className="block text-[0.9rem] font-bold text-ink">{review.author}</span>
-              <span className="block text-[0.82rem] text-ink-soft">{review.meta}</span>
-            </figcaption>
-          </motion.figure>
-        ))}
-      </RevealGroup>
     </section>
   );
 }

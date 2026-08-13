@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla } from "next/font/google";
+import { site } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -16,6 +17,7 @@ const karla = Karla({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: "Hand Eye Ceramics — Pottery classes in Vancouver, 7 days a week",
   description:
     "Beginner-friendly wheel throwing and hand building classes in Chinatown, Mt Pleasant and Nanaimo. Six-week courses, drop-ins, date nights and 24/7 studio memberships.",
@@ -37,7 +39,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${karla.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* Scroll reveals below the fold are Framer-driven and ship as inline
+            opacity:0. If JavaScript never runs, show everything instead of an
+            empty page. */}
+        <noscript>
+          <style>{`[style*="opacity:0"]{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
+        {children}
+      </body>
     </html>
   );
 }

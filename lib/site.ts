@@ -5,39 +5,182 @@ export const site = {
   email: "info@handeyeceramics.com",
   instagram: "https://www.instagram.com/handeyedesignceramics/",
   bookingUrl: "https://www.handeyeceramics.com/adult-beginner-pottery-classes-in-vancouver",
+  url: "https://handeyeceramics.vercel.app",
 };
 
+// "Locations" is deliberately absent — the location switcher replaces it, so
+// the studios are visible on every page instead of hidden behind one link.
 export const nav = [
-  { label: "Classes", href: "#classes" },
-  { label: "How it works", href: "#how" },
-  { label: "Gallery", href: "#gallery" },
-  { label: "Locations", href: "#locations" },
-  { label: "Membership", href: "#membership" },
+  { label: "Classes", href: "/#classes" },
+  { label: "How it works", href: "/#how" },
+  { label: "Gallery", href: "/#gallery" },
+  { label: "Membership", href: "/#membership" },
 ];
 
-export const locations = [
+export type Location = {
+  slug: string;
+  /** Short label for the switcher. */
+  short: string;
+  /** Full studio name. */
+  name: string;
+  region: string;
+  tag: string;
+  status: "open" | "planned";
+  street: string;
+  locality: string;
+  regionCode: string;
+  country: string;
+  image: string;
+  /** Homepage card copy. */
+  note: string;
+  /** Per-page SEO. Each location owns its own title and description. */
+  metaTitle: string;
+  metaDescription: string;
+  h1: string;
+  intro: string;
+  access?: string;
+  schedule: { label: string; times: string }[];
+  highlights: string[];
+};
+
+/**
+ * One record per studio. Everything downstream — the /classes/[location]
+ * routes, the switcher, the homepage cards and the LocalBusiness structured
+ * data — is generated from this array, so adding a studio means adding an
+ * object here and nothing else.
+ *
+ * Schedules are transcribed from handeyeceramics.com, where a few times are
+ * listed inconsistently between the home page and the classes page. Confirm
+ * with the studio before this goes live.
+ */
+export const locations: Location[] = [
   {
+    slug: "vancouver-chinatown",
+    short: "Chinatown",
     name: "Chinatown / Strathcona",
-    address: "739 Gore Ave, 2nd floor, Vancouver",
-    note: "Main studio. Most 6-week courses, all drop-in wheel classes and date nights are held here.",
+    region: "Vancouver, BC",
     tag: "Main studio",
+    status: "open",
+    street: "739 Gore Ave, 2nd floor",
+    locality: "Vancouver",
+    regionCode: "BC",
+    country: "CA",
     image: "/images/studio-panorama.jpg",
+    note: "Main studio. Most 6-week courses, all drop-in wheel classes and date nights are held here.",
+    metaTitle: "Pottery Classes in Chinatown, Vancouver | Hand Eye Ceramics",
+    metaDescription:
+      "Wheel throwing and hand building classes at 739 Gore Ave in Vancouver's Chinatown. Six-week courses, drop-ins and date nights, 7 days a week. No experience needed.",
+    h1: "Pottery classes in Chinatown, Vancouver",
+    intro:
+      "Our main studio, on the second floor of 739 Gore Ave in Strathcona. Brick walls, big windows and most of our schedule — if a class isn't marked otherwise, it runs here.",
+    access:
+      "Use the door code from your student info email and ring the bell to the right of the third door.",
+    schedule: [
+      { label: "Six-week courses", times: "Weekday evenings 6:30 & 7 PM · Sat 9:30 AM & 1 PM · Sun 1 & 4 PM" },
+      { label: "Daytime classes", times: "12:30, 2:30 and 3 PM" },
+      { label: "Date night", times: "Thu 7 PM · Fri 7 PM · Sat 1 & 7 PM · Sun 1 & 4 PM" },
+      { label: "Drop-in hand building", times: "Fri 7 PM" },
+      { label: "Drop-in wheel", times: "All drop-in wheel classes run here" },
+    ],
+    highlights: [
+      "Every drop-in wheel class in the city runs at this studio",
+      "Private classes and group workshops by arrangement",
+      "Two minutes from the Gore & Union bike route",
+    ],
   },
   {
+    slug: "vancouver-mount-pleasant",
+    short: "Mt Pleasant",
     name: "Mt Pleasant",
-    address: "322 E 5th Ave, Vancouver",
-    note: "Pleasant Pottery, our sister studio — 24/7 practice space for students who already have a few classes behind them.",
+    region: "Vancouver, BC",
     tag: "Sister studio",
+    status: "open",
+    street: "322 E 5th Ave",
+    locality: "Vancouver",
+    regionCode: "BC",
+    country: "CA",
     image: "/images/studio-empty.png",
+    note: "Pleasant Pottery, our sister studio — 24/7 practice space for students who already have a few classes behind them.",
+    metaTitle: "Pottery Studio Space in Mt Pleasant, Vancouver | Hand Eye Ceramics",
+    metaDescription:
+      "Pleasant Pottery at 322 E 5th Ave — 24/7 members' studio space in Mt Pleasant, Vancouver, for potters who have already taken a few classes.",
+    h1: "Studio space in Mt Pleasant, Vancouver",
+    intro:
+      "Pleasant Pottery is our sister studio on East 5th. It isn't where the beginner courses run — it's where you go once you have a few classes behind you and want somewhere to practise on your own schedule.",
+    schedule: [
+      { label: "Member access", times: "24/7, no time limits" },
+      { label: "Membership", times: "From $145 a month" },
+    ],
+    highlights: [
+      "Open around the clock to members",
+      "Shared kilns and the full glaze library",
+      "Best fit after a six-week course at one of our teaching studios",
+    ],
   },
   {
+    slug: "nanaimo",
+    short: "Nanaimo",
     name: "Nanaimo, Vancouver Island",
-    address: "3168 Uplands Drive, Nanaimo BC",
-    note: "Our newest location. All 6 pm six-week courses on the island run here. Enter through the right-hand gate.",
-    tag: "Newest",
+    region: "Nanaimo, BC",
+    tag: "Vancouver Island",
+    status: "open",
+    street: "3168 Uplands Drive",
+    locality: "Nanaimo",
+    regionCode: "BC",
+    country: "CA",
     image: "/images/studio-row.png",
+    note: "Our newest studio, and the only one on Vancouver Island. Six-week evening courses and Friday date nights run here.",
+    metaTitle: "Pottery Classes in Nanaimo, BC | Hand Eye Ceramics",
+    metaDescription:
+      "Wheel throwing classes on Vancouver Island at 3168 Uplands Drive, Nanaimo. Six-week evening courses Monday to Thursday, plus Friday date nights. Beginners welcome.",
+    h1: "Pottery classes in Nanaimo",
+    intro:
+      "Our Vancouver Island studio, and our newest. You don't need to cross the water for a class — the full six-week beginner course runs here four evenings a week.",
+    access: "Enter through the right-hand gate; the studio is at the back of the house. Park parallel in the driveway if there's room.",
+    schedule: [
+      { label: "Six-week courses", times: "Mon, Tue, Wed & Thu 6 PM" },
+      { label: "Afternoon course", times: "Wed 3 PM" },
+      { label: "Weekend course", times: "Sat 10 AM" },
+      { label: "Date night", times: "Fri 7 PM" },
+    ],
+    highlights: [
+      "The only Hand Eye studio on Vancouver Island",
+      "Same course, same instructors, no ferry",
+      "Small groups — a home-based studio, not a warehouse",
+    ],
+  },
+  {
+    slug: "calgary",
+    short: "Calgary",
+    name: "Calgary",
+    region: "Calgary, AB",
+    tag: "Coming soon",
+    status: "planned",
+    street: "Location to be announced",
+    locality: "Calgary",
+    regionCode: "AB",
+    country: "CA",
+    image: "/images/carving-window.png",
+    note: "Placeholder entry. Demonstrates how a fourth studio joins the site — one record, and its page, schema and switcher entry appear.",
+    metaTitle: "Pottery Classes in Calgary | Hand Eye Ceramics",
+    metaDescription:
+      "Hand Eye Ceramics is looking at a Calgary studio. Join the list to hear when classes open.",
+    h1: "Pottery classes in Calgary",
+    intro:
+      "We're looking at Calgary. Nothing is booked yet — leave us your email and you'll be the first to know when a date is set.",
+    schedule: [{ label: "Opening", times: "To be announced" }],
+    highlights: [
+      "Not open yet — this page exists so it can be indexed early",
+      "Same six-week beginner course as our BC studios",
+    ],
   },
 ];
+
+export const openLocations = locations.filter((l) => l.status === "open");
+
+export function findLocation(slug: string) {
+  return locations.find((l) => l.slug === slug);
+}
 
 export const classTabs = [
   {
@@ -74,7 +217,7 @@ export const classTabs = [
     image: "/images/throwing-closeup.png",
     body: "Whether it's a first date or a friend date, you both get a wheel, an instructor and two hours of very good mess.",
     points: [
-      "Thu 7 PM, Fri 7 PM, Sat 1 & 7 PM, Sun 1 & 4 PM",
+      "Thu 7 PM, Fri 7 PM, Sat 1 & 7 PM, Sun 1 & 4 PM in Vancouver",
       "Also runs in Nanaimo on Fridays at 7 PM",
       "Group workshops, birthdays and team building on request",
     ],
@@ -106,23 +249,15 @@ export const gallery = [
   { src: "/images/studio-row.png", alt: "A row of students throwing in the Chinatown studio" },
 ];
 
+/**
+ * Real review, quoted from handeyeceramics.com. Only genuine testimonials
+ * belong here — do not pad this list with invented ones.
+ */
 export const reviews = [
   {
     quote:
-      "I recently finished a 6 week beginners wheel throwing course and absolutely loved it. The class size was small, and the studio was bright, airy and open — the perfect environment for learning a new hobby.",
+      "I recently finished a 6 week beginners/introductory wheel throwing pottery course and absolutely loved it. The class size was small, and the studio was bright, airy, and open, which is the perfect environment for learning a new hobby. I'm really looking forward to receiving my finished pieces and signing up for more classes!",
     author: "Courtney P.",
     meta: "6-week beginner course",
-  },
-  {
-    quote:
-      "Came in for a date night with zero experience and left with two lopsided bowls and a new hobby. The instructors are patient and genuinely funny.",
-    author: "Marcus & Ely",
-    meta: "Pottery date night",
-  },
-  {
-    quote:
-      "The membership is what sold me. Being able to come in on a Sunday morning and just throw for three hours has completely changed my week.",
-    author: "Priya S.",
-    meta: "Studio member",
   },
 ];

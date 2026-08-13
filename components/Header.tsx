@@ -2,9 +2,11 @@
 
 import { AnimatePresence, motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
+import Link from "next/link";
 import { Logo } from "./Logo";
+import { LocationSwitcher } from "./LocationSwitcher";
 import { ease } from "./motion-primitives";
-import { nav, site } from "@/lib/site";
+import { locations, nav, site } from "@/lib/site";
 
 function PhoneIcon({ className = "" }: { className?: string }) {
   return (
@@ -19,7 +21,7 @@ function PhoneIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export function Header() {
+export function Header({ currentLocation }: { currentLocation?: string } = {}) {
   const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
   const { scrollY } = useScroll();
@@ -56,6 +58,10 @@ export function Header() {
             </nav>
 
             <div className="flex items-center gap-2">
+              <span className="hidden md:block">
+                <LocationSwitcher current={currentLocation} />
+              </span>
+
               {/* Tappable phone number — one tap to call, on every screen size. */}
               <a
                 href={site.phoneHref}
@@ -135,6 +141,34 @@ export function Header() {
                     </motion.a>
                   ))}
                 </nav>
+
+                {/* Studios listed in full, so nobody leaves thinking we only
+                    teach in the city they happen to be reading from. */}
+                <div className="mt-7">
+                  <span className="eyebrow text-clay-600">Our studios</span>
+                  <div className="mt-3 flex flex-col gap-1.5">
+                    {locations.map((loc) => (
+                      <Link
+                        key={loc.slug}
+                        href={`/classes/${loc.slug}`}
+                        onClick={() => setOpen(false)}
+                        className={`flex min-h-14 flex-col justify-center rounded-2xl px-4 ${
+                          loc.slug === currentLocation ? "bg-sky-brand/45" : "bg-clay-100"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2 text-[0.94rem] font-bold text-ink">
+                          {loc.name}
+                          {loc.status === "planned" && (
+                            <span className="rounded-full bg-clay-200 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-clay-600">
+                              Soon
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-[0.8rem] text-ink-soft">{loc.region}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="mt-7 flex flex-col gap-3">
                   <a

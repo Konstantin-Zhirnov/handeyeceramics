@@ -1,19 +1,11 @@
-"use client";
-
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { ease } from "./motion-primitives";
 import { site } from "@/lib/site";
 
-const line = {
-  hidden: { opacity: 0, y: 30 },
-  show: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.85, ease, delay: 0.25 + i * 0.09 },
-  }),
-};
-
+/**
+ * Server component on purpose. The first screen must be painted and legible
+ * before any JavaScript runs, so the entrance is a CSS stagger rather than
+ * Framer Motion (whose `initial` ships as inline opacity:0).
+ */
 export function Hero() {
   return (
     <section id="top" className="relative">
@@ -32,23 +24,17 @@ export function Hero() {
         <div className="shell relative z-10">
           <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
             <div>
-              <motion.span
-                custom={0}
-                variants={line}
-                initial="hidden"
-                animate="show"
-                className="eyebrow inline-flex items-center gap-2 rounded-full bg-white/55 px-3.5 py-2 text-sky-ink"
+              <span
+                className="rise eyebrow inline-flex items-center gap-2 rounded-full bg-white/55 px-3.5 py-2 text-sky-ink"
+                style={{ animationDelay: "0.15s" }}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-terracotta" />
                 Vancouver · Nanaimo · 7 days a week
-              </motion.span>
+              </span>
 
-              <motion.h1
-                custom={1}
-                variants={line}
-                initial="hidden"
-                animate="show"
-                className="display mt-5 text-[2.6rem] text-sky-ink sm:text-[3.4rem] lg:text-[4.3rem]"
+              <h1
+                className="rise display mt-5 text-[2.6rem] text-sky-ink sm:text-[3.4rem] lg:text-[4.3rem]"
+                style={{ animationDelay: "0.24s" }}
               >
                 Throw your first pot
                 <br />
@@ -58,25 +44,19 @@ export function Hero() {
                 >
                   this&nbsp;week.
                 </em>
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                custom={2}
-                variants={line}
-                initial="hidden"
-                animate="show"
-                className="mt-6 max-w-[38ch] text-[1.02rem] leading-relaxed text-sky-ink/85 sm:text-[1.08rem]"
+              <p
+                className="rise mt-6 max-w-[38ch] text-[1.02rem] leading-relaxed text-sky-ink/85 sm:text-[1.08rem]"
+                style={{ animationDelay: "0.33s" }}
               >
-                Hands-on pottery classes for people who have never touched clay. Six-week
-                courses, one-night drop-ins and date nights across three studios.
-              </motion.p>
+                Hands-on pottery classes for people who have never touched clay. Six-week courses,
+                one-night drop-ins and date nights across three studios.
+              </p>
 
-              <motion.div
-                custom={3}
-                variants={line}
-                initial="hidden"
-                animate="show"
-                className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
+              <div
+                className="rise mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
+                style={{ animationDelay: "0.42s" }}
               >
                 <a
                   href="#classes"
@@ -91,26 +71,21 @@ export function Hero() {
                 >
                   Call {site.phoneDisplay}
                 </a>
-              </motion.div>
+              </div>
 
-              <motion.p
-                custom={4}
-                variants={line}
-                initial="hidden"
-                animate="show"
-                className="mt-6 max-w-[46ch] text-[0.84rem] leading-relaxed text-sky-ink/65"
+              <p
+                className="rise mt-6 max-w-[46ch] text-[0.84rem] leading-relaxed text-sky-ink/65"
+                style={{ animationDelay: "0.51s" }}
               >
-                No experience needed. Every tool is provided — all you buy on your first day is
-                an apron ($17) and a trimming tool ($10).
-              </motion.p>
+                No experience needed. Every tool is provided — all you buy on your first day is an
+                apron ($17) and a trimming tool ($10).
+              </p>
             </div>
 
             {/* Cut-out photo from the studio, floating on the brand blue */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 1.1, ease, delay: 0.35 }}
-              className="relative mx-auto w-full max-w-[440px] lg:max-w-none"
+            <div
+              className="rise-media relative mx-auto w-full max-w-[440px] lg:max-w-none"
+              style={{ animationDelay: "0.3s" }}
             >
               <div className="relative aspect-[5/4]">
                 <Image
@@ -123,11 +98,9 @@ export function Hero() {
                 />
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease, delay: 0.95 }}
-                className="absolute -bottom-2 left-0 flex items-center gap-3 rounded-2xl bg-clay-50 px-4 py-3 shadow-[0_16px_30px_rgba(16,51,77,0.16)] sm:left-2"
+              <div
+                className="rise absolute -bottom-2 left-0 flex items-center gap-3 rounded-2xl bg-clay-50 px-4 py-3 shadow-[0_16px_30px_rgba(16,51,77,0.16)] sm:left-2"
+                style={{ animationDelay: "0.85s" }}
               >
                 <span className="flex -space-x-2">
                   {["/images/wheel-spin.jpg", "/images/cups-shelf.jpg", "/images/hands-clay.jpg"].map(
@@ -147,8 +120,8 @@ export function Hero() {
                     Loved by first-timers since 2016
                   </span>
                 </span>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
