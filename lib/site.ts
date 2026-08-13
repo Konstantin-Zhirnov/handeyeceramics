@@ -29,8 +29,11 @@ export type Location = {
   street: string;
   locality: string;
   regionCode: string;
+  postalCode?: string;
   country: string;
   image: string;
+  /** Verified from the studio's Google Business Profile. */
+  google?: { rating: number; count: number; url: string };
   /** Homepage card copy. */
   note: string;
   /** Per-page SEO. Each location owns its own title and description. */
@@ -64,8 +67,14 @@ export const locations: Location[] = [
     street: "739 Gore Ave, 2nd floor",
     locality: "Vancouver",
     regionCode: "BC",
+    postalCode: "V6A 2Z9",
     country: "CA",
     image: "/images/studio-panorama.jpg",
+    google: {
+      rating: 4.6,
+      count: 383,
+      url: "https://www.google.com/maps/search/Hand+Eye+Design+Ceramics+739+Gore+Ave+Vancouver",
+    },
     note: "Main studio. Most 6-week courses, all drop-in wheel classes and date nights are held here.",
     metaTitle: "Pottery Classes in Chinatown, Vancouver | Hand Eye Ceramics",
     metaDescription:
@@ -98,8 +107,14 @@ export const locations: Location[] = [
     street: "322 E 5th Ave",
     locality: "Vancouver",
     regionCode: "BC",
+    postalCode: "V5T 1J1",
     country: "CA",
     image: "/images/studio-empty.png",
+    google: {
+      rating: 4.9,
+      count: 14,
+      url: "https://www.google.com/maps/search/Pleasant+Pottery+322+E+5th+Ave+Vancouver",
+    },
     note: "Pleasant Pottery, our sister studio — 24/7 practice space for students who already have a few classes behind them.",
     metaTitle: "Pottery Studio Space in Mt Pleasant, Vancouver | Hand Eye Ceramics",
     metaDescription:
@@ -127,8 +142,14 @@ export const locations: Location[] = [
     street: "3168 Uplands Drive",
     locality: "Nanaimo",
     regionCode: "BC",
+    postalCode: "V9T 2S8",
     country: "CA",
     image: "/images/studio-row.png",
+    google: {
+      rating: 4.9,
+      count: 38,
+      url: "https://www.google.com/maps/search/Nanaimo+Hand+Eye+Ceramics+3168+Uplands+Dr",
+    },
     note: "Our newest studio, and the only one on Vancouver Island. Six-week evening courses and Friday date nights run here.",
     metaTitle: "Pottery Classes in Nanaimo, BC | Hand Eye Ceramics",
     metaDescription:
@@ -177,6 +198,12 @@ export const locations: Location[] = [
 ];
 
 export const openLocations = locations.filter((l) => l.status === "open");
+
+/** Real Google review totals across all three studio profiles. */
+export const googleTotals = locations.reduce(
+  (acc, l) => (l.google ? { count: acc.count + l.google.count, profiles: acc.profiles + 1 } : acc),
+  { count: 0, profiles: 0 },
+);
 
 export function findLocation(slug: string) {
   return locations.find((l) => l.slug === slug);

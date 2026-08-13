@@ -60,6 +60,7 @@ export default async function LocationPage({ params }: Props) {
       streetAddress: loc.street,
       addressLocality: loc.locality,
       addressRegion: loc.regionCode,
+      ...(loc.postalCode ? { postalCode: loc.postalCode } : {}),
       addressCountry: loc.country,
     },
     areaServed: loc.region,

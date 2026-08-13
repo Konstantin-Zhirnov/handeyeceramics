@@ -63,6 +63,24 @@ export function LocationHero({ location }: { location: Location }) {
                 {location.status === "open" && `, ${location.locality}`}
               </p>
 
+              {/* This studio's own Google rating, linked to its own profile —
+                  each location earns its own social proof. */}
+              {location.google && (
+                <a
+                  href={location.google.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rise mt-4 inline-flex min-h-11 items-center gap-2.5 rounded-full bg-white/55 px-4 text-[0.86rem] text-sky-ink transition-colors hover:bg-white/75"
+                  style={{ animationDelay: "0.46s" }}
+                >
+                  <span className="font-bold">{location.google.rating.toFixed(1)}</span>
+                  <span className="tracking-[0.1em] text-terracotta">★★★★★</span>
+                  <span className="text-sky-ink/75">
+                    {location.google.count} Google reviews
+                  </span>
+                </a>
+              )}
+
               <div
                 className="rise mt-7 flex flex-col gap-3 sm:flex-row sm:items-center"
                 style={{ animationDelay: "0.5s" }}

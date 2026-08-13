@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { site } from "@/lib/site";
+import { googleTotals, site } from "@/lib/site";
 
 /**
  * Server component on purpose. The first screen must be painted and legible
@@ -114,10 +114,14 @@ export function Hero() {
                     ),
                   )}
                 </span>
+                {/* Real, checkable numbers — the sum of the studios' Google
+                    Business Profiles, not a decorative star row. */}
                 <span className="leading-tight">
-                  <span className="block text-[0.82rem] font-bold text-ink">★★★★★</span>
+                  <span className="block text-[0.82rem] font-bold text-ink">
+                    {googleTotals.count} Google reviews
+                  </span>
                   <span className="block text-[0.76rem] text-ink-soft">
-                    Loved by first-timers since 2016
+                    across our {googleTotals.profiles} studios
                   </span>
                 </span>
               </div>
