@@ -2,26 +2,27 @@
 
 /* ------------------------------------------------------------------
    Hand Eye Ceramics — design tokens
-   Brand blue #abd9f5 kept from the current site, rebalanced against a
-   warm clay palette so it reads as an accent instead of wallpaper.
+   Palette lifted from the reference reel (warm cream page, espresso
+   ink, a brown filled pill) and re-cast for a pottery studio: the
+   studio's own #abd9f5 is the glaze — the one cool colour on the page.
 ------------------------------------------------------------------- */
 @theme {
   --color-sky-brand: #abd9f5;
-  --color-sky-soft: #d7ecfb;
+  --color-sky-soft: #dcedf8;
   --color-sky-deep: #3d87c0;
-  --color-sky-ink: #10334d;
+  --color-sky-ink: #123a55;
 
-  --color-clay-50: #faf6f1;
-  --color-clay-100: #f3ece3;
-  --color-clay-200: #e6d9c9;
-  --color-clay-400: #b8967a;
-  --color-clay-600: #8a5a3b;
-  --color-terracotta: #c2653d;
+  --color-clay-50: #f5efe6;
+  --color-clay-100: #ece2d4;
+  --color-clay-200: #dccdb9;
+  --color-clay-400: #b39a80;
+  --color-clay-600: #8a5f42;
+  --color-terracotta: #7a4e33;
 
-  --color-ink: #1c1512;
-  --color-ink-soft: #4c3f38;
+  --color-ink: #2a1d15;
+  --color-ink-soft: #6b5647;
 
-  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
   --font-body: var(--font-karla), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -94,8 +95,19 @@ svg {
 @utility display {
   font-family: var(--font-display);
   font-weight: 400;
-  letter-spacing: -0.025em;
-  line-height: 1.02;
+  letter-spacing: -0.012em;
+  line-height: 1.04;
+  font-optical-sizing: auto;
+}
+
+/* The reference's centred Didone wordmark: caps, wide tracking. */
+@utility wordmark {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 @utility eyebrow {
@@ -186,4 +198,88 @@ svg {
     #000 94%,
     transparent
   );
+}
+
+/* ---- Hero stage --------------------------------------------------------
+   The reference reel's signature move: a split hero card whose photo panel
+   grows into a full-bleed pinned stage. All geometry lives here as custom
+   properties, so the server-rendered card and the scroll-driven stage agree
+   to the pixel at every breakpoint. JavaScript only ever writes --p (0 → 1).
+----------------------------------------------------------------------- */
+.stage {
+  --p: 0;
+  --q: calc(1 - var(--p));
+  --g: clamp(1.25rem, 4vw, 2.75rem);
+  --edge: var(--g);
+  --top: 82px;
+  --bottom: 16px;
+  --photo-h: clamp(170px, 32svh, 330px);
+  --radius: 24px;
+}
+
+@media (min-width: 1024px) {
+  .stage {
+    --edge: max(var(--g), calc((100% - 92rem) / 2));
+    --top: 96px;
+    --bottom: 24px;
+    --radius: 30px;
+  }
+}
+
+/* Phones: photo on top of the card, text underneath. */
+.stage-media {
+  clip-path: inset(
+    calc(var(--top) * var(--q)) calc(var(--edge) * var(--q))
+      calc((100% - var(--top) - var(--photo-h)) * var(--q)) calc(var(--edge) * var(--q))
+      round calc(var(--radius) * var(--q))
+  );
+}
+
+.stage-text {
+  position: absolute;
+  left: var(--edge);
+  right: var(--edge);
+  top: calc(var(--top) + var(--photo-h) + 10px);
+  bottom: var(--bottom);
+  border-radius: var(--radius);
+  /* phones: the photo grows down over the card, so the card sinks and is
+     gone before the two overlap */
+  transform: translate3d(0, calc(var(--p) * 14vh), 0);
+  opacity: calc(1 - var(--p) * 2.8);
+}
+
+/* Desktop: 42 / 58 split side by side, exactly as in the reference. */
+@media (min-width: 1024px) {
+  .stage-media {
+    --split: calc(var(--edge) + (100% - 2 * var(--edge)) * 0.42 + 14px);
+    clip-path: inset(
+      calc(var(--top) * var(--q)) calc(var(--edge) * var(--q)) calc(var(--bottom) * var(--q))
+        calc(var(--split) * var(--q)) round calc(var(--radius) * var(--q))
+    );
+  }
+
+  .stage-text {
+    top: var(--top);
+    right: auto;
+    width: calc((100% - 2 * var(--edge)) * 0.42);
+    /* desktop: the card scrolls up and away, as in the reference */
+    transform: translate3d(0, calc(var(--p) * -28vh), 0);
+    opacity: calc(1 - var(--p) * 1.8);
+  }
+}
+
+/* Chapter copy and dots follow the visible part of the photo while it grows. */
+.stage-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: calc((var(--p) - 0.55) * 2.2);
+  pointer-events: none;
+}
+
+/* The phone card has room for the headline, lead and both buttons; the
+   review count lives in the reviews section further down. */
+@media (max-width: 1023px) {
+  .stage-proof {
+    display: none;
+  }
 }

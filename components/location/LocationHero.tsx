@@ -3,139 +3,138 @@ import Link from "next/link";
 import { LocationSwitcher } from "../LocationSwitcher";
 import { site, type Location } from "@/lib/site";
 
-/** Server component — see the note in Hero.tsx. The first screen is CSS-only. */
+/**
+ * Studio pages open with the same split card as the home page — copy panel
+ * left, rounded photo right — minus the scroll set piece, so every page reads
+ * as one site. Server component: the first screen is CSS-only.
+ */
 export function LocationHero({ location }: { location: Location }) {
+  const [first, ...rest] = location.h1.split(" in ");
+  const place = rest.join(" in ");
+
   return (
-    <section className="relative">
-      <div className="grain relative overflow-hidden rounded-b-[32px] bg-sky-brand pt-[92px] pb-12 md:rounded-b-[52px] md:pt-[132px] md:pb-16">
-        <svg
-          aria-hidden
-          viewBox="0 0 600 600"
-          className="pointer-events-none absolute -right-24 -top-28 h-[420px] w-[420px] opacity-[0.22] md:h-[620px] md:w-[620px]"
-        >
-          {[60, 120, 180, 240, 290].map((r) => (
-            <circle key={r} cx="300" cy="300" r={r} fill="none" stroke="#10334d" strokeWidth="1.2" />
-          ))}
-        </svg>
+    <section className="shell pt-[84px] pb-4 lg:max-w-[92rem] lg:pt-24">
+      <nav
+        aria-label="Breadcrumb"
+        className="rise flex flex-wrap items-center gap-2 px-1 py-3 text-[0.8rem] font-semibold text-ink-soft"
+        style={{ animationDelay: "0.05s" }}
+      >
+        <Link href="/" className="hover:text-ink">
+          Hand Eye Ceramics
+        </Link>
+        <span aria-hidden className="text-clay-400">
+          /
+        </span>
+        <span className="text-ink">{location.region}</span>
+      </nav>
 
-        <div className="shell relative z-10">
-          <nav
-            aria-label="Breadcrumb"
-            className="rise flex flex-wrap items-center gap-2 text-[0.8rem] font-semibold text-sky-ink/70"
-            style={{ animationDelay: "0.1s" }}
-          >
-            <Link href="/" className="hover:text-sky-ink">
-              Hand Eye Ceramics
-            </Link>
-            <span aria-hidden>/</span>
-            <span className="text-sky-ink">{location.region}</span>
-          </nav>
+      <div className="grid gap-3 lg:grid-cols-[42fr_58fr] lg:gap-[14px]">
+        <div className="grain relative order-2 overflow-hidden rounded-[24px] border border-clay-200 bg-clay-100 px-5 py-7 sm:px-8 lg:order-1 lg:rounded-[30px] lg:px-12 lg:py-12">
+          <div className="relative z-10">
+            <p className="rise eyebrow text-clay-600" style={{ animationDelay: "0.12s" }}>
+              {location.tag}
+            </p>
 
-          <div className="mt-6 grid items-center gap-9 lg:grid-cols-[1.05fr_0.95fr]">
-            <div>
-              <span
-                className="rise eyebrow inline-flex items-center gap-2 rounded-full bg-white/55 px-3.5 py-2 text-sky-ink"
-                style={{ animationDelay: "0.18s" }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-terracotta" />
-                {location.tag}
-              </span>
-
-              <h1
-                className="rise display mt-5 text-[2.4rem] text-sky-ink sm:text-[3.1rem] lg:text-[3.9rem]"
-                style={{ animationDelay: "0.26s" }}
-              >
-                {location.h1}
-              </h1>
-
-              <p
-                className="rise mt-5 max-w-[44ch] text-[1.02rem] leading-relaxed text-sky-ink/85"
-                style={{ animationDelay: "0.34s" }}
-              >
-                {location.intro}
-              </p>
-
-              <p
-                className="rise mt-5 text-[0.95rem] font-semibold text-sky-ink"
-                style={{ animationDelay: "0.42s" }}
-              >
-                {location.street}
-                {location.status === "open" && `, ${location.locality}`}
-              </p>
-
-              {/* This studio's own Google rating, linked to its own profile —
-                  each location earns its own social proof. */}
-              {location.google && (
-                <a
-                  href={location.google.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rise mt-4 inline-flex min-h-11 items-center gap-2.5 rounded-full bg-white/55 px-4 text-[0.86rem] text-sky-ink transition-colors hover:bg-white/75"
-                  style={{ animationDelay: "0.46s" }}
-                >
-                  <span className="font-bold">{location.google.rating.toFixed(1)}</span>
-                  <span className="tracking-[0.1em] text-terracotta">★★★★★</span>
-                  <span className="text-sky-ink/75">
-                    {location.google.count} Google reviews
-                  </span>
-                </a>
+            <h1
+              className="rise display mt-4 text-[1.95rem] leading-[1.06] text-ink sm:text-[3rem] lg:text-[clamp(2.8rem,3.8vw,3.9rem)]"
+              style={{ animationDelay: "0.2s" }}
+            >
+              {/* Keeps the exact "… in <place>" wording in the H1 text for
+                  search; the italic place name carries the reference's style. */}
+              {place ? (
+                <>
+                  {first} <span className="text-clay-400">in</span>{" "}
+                  <br />
+                  <em className="italic">{place}</em>
+                </>
+              ) : (
+                location.h1
               )}
+            </h1>
 
-              <div
-                className="rise mt-7 flex flex-col gap-3 sm:flex-row sm:items-center"
-                style={{ animationDelay: "0.5s" }}
-              >
-                {location.status === "open" ? (
-                  <a
-                    href={site.bookingUrl}
-                    className="flex h-14 items-center justify-center rounded-full bg-ink px-8 text-[0.95rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
-                  >
-                    Book at {location.short}
-                  </a>
-                ) : (
-                  <a
-                    href={`mailto:${site.email}?subject=Calgary studio`}
-                    className="flex h-14 items-center justify-center rounded-full bg-ink px-8 text-[0.95rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
-                  >
-                    Tell me when it opens
-                  </a>
-                )}
-                <a
-                  href={site.phoneHref}
-                  className="flex h-14 items-center justify-center rounded-full border border-sky-ink/25 px-8 text-[0.95rem] font-semibold text-sky-ink transition-colors hover:bg-white/55"
-                >
-                  Call {site.phoneDisplay}
-                </a>
-              </div>
-
-              {/* Switcher sits inside the hero too, not just the header — this
-                  is the page where someone is most likely to be in the wrong
-                  city. */}
-              <div
-                className="rise mt-7 flex flex-wrap items-center gap-3"
-                style={{ animationDelay: "0.58s" }}
-              >
-                <span className="text-[0.85rem] text-sky-ink/70">Looking for another studio?</span>
-                <LocationSwitcher current={location.slug} tone="sky" />
-              </div>
-            </div>
-
-            <div
-              className="rise-media relative mx-auto w-full max-w-[460px] lg:max-w-none"
+            <p
+              className="rise mt-5 max-w-[44ch] text-[0.98rem] leading-relaxed text-ink-soft"
               style={{ animationDelay: "0.28s" }}
             >
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[26px] shadow-[0_26px_50px_rgba(16,51,77,0.22)]">
-                <Image
-                  src={location.image}
-                  alt={`The ${location.name} studio`}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 92vw, 44vw"
-                  className="object-cover"
-                />
-              </div>
+              {location.intro}
+            </p>
+
+            <p
+              className="rise mt-5 text-[0.95rem] font-semibold text-clay-600"
+              style={{ animationDelay: "0.34s" }}
+            >
+              {location.street}
+              {location.status === "open" && `, ${location.locality}`}
+            </p>
+
+            {/* This studio's own Google rating, linked to its own profile —
+                each location earns its own social proof. */}
+            {location.google && (
+              <a
+                href={location.google.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rise mt-4 inline-flex min-h-11 items-center gap-2.5 rounded-full border border-ink/15 bg-clay-50 px-4 text-[0.86rem] text-ink transition-colors hover:bg-clay-50/60"
+                style={{ animationDelay: "0.4s" }}
+              >
+                <span className="font-bold">{location.google.rating.toFixed(1)}</span>
+                <span className="tracking-[0.1em] text-terracotta">★★★★★</span>
+                <span className="text-ink-soft">{location.google.count} Google reviews</span>
+              </a>
+            )}
+
+            <div
+              className="rise mt-7 flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-col lg:items-stretch xl:flex-row xl:items-center"
+              style={{ animationDelay: "0.46s" }}
+            >
+              {location.status === "open" ? (
+                <a
+                  href={site.bookingUrl}
+                  className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-terracotta px-8 text-[0.92rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
+                >
+                  Book at {location.short}
+                </a>
+              ) : (
+                <a
+                  href={`mailto:${site.email}?subject=Calgary studio`}
+                  className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-terracotta px-8 text-[0.92rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
+                >
+                  Tell me when it opens
+                </a>
+              )}
+              <a
+                href={site.phoneHref}
+                className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-ink/25 px-7 text-[0.92rem] font-semibold text-ink transition-colors hover:bg-clay-50"
+              >
+                Call {site.phoneDisplay}
+              </a>
+            </div>
+
+            {/* Switcher sits inside the hero too, not just the header — this
+                is the page where someone is most likely to be in the wrong
+                city. */}
+            <div
+              className="rise mt-7 flex flex-wrap items-center gap-3 border-t border-ink/10 pt-6"
+              style={{ animationDelay: "0.52s" }}
+            >
+              <span className="text-[0.85rem] text-ink-soft">Looking for another studio?</span>
+              <LocationSwitcher current={location.slug} />
             </div>
           </div>
+        </div>
+
+        <div
+          className="rise-media relative order-1 min-h-[260px] overflow-hidden rounded-[24px] bg-clay-200 sm:min-h-[340px] lg:order-2 lg:min-h-0 lg:rounded-[30px]"
+          style={{ animationDelay: "0.15s" }}
+        >
+          <Image
+            src={location.image}
+            alt={`The ${location.name} studio`}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 56vw"
+            className={`object-cover ${location.status === "planned" ? "grayscale opacity-70" : ""}`}
+          />
         </div>
       </div>
     </section>

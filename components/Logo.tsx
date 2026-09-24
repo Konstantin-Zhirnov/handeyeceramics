@@ -5,7 +5,7 @@ export function Logo({ className = "", tone = "ink" }: { className?: string; ton
     // explicit width/height attributes AND h-full/w-full — never rely on
     // intrinsic SVG sizing inside flex.
     <span
-      className={`flex h-12 w-[3.25rem] shrink-0 items-center md:h-14 md:w-[3.8rem] ${
+      className={`flex h-12 w-[3.25rem] shrink-0 items-center md:h-14 md:w-[3.8rem] [&_path]:transition-[fill] [&_path]:duration-500 ${
         tone === "cream" ? "text-clay-50 [&_path]:fill-current" : ""
       } ${className}`}
     >

@@ -28,7 +28,7 @@ export function LocationSwitcher({
   tone = "ink",
 }: {
   current?: string;
-  tone?: "ink" | "sky";
+  tone?: "ink" | "sky" | "glass";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +49,9 @@ export function LocationSwitcher({
   }, [open]);
 
   const trigger =
-    tone === "sky"
+    tone === "glass"
+      ? "border-clay-50/40 text-clay-50 hover:bg-clay-50/15"
+      : tone === "sky"
       ? "border-sky-ink/25 text-sky-ink hover:bg-white/55"
       : "border-ink/15 text-ink hover:bg-clay-100";
 

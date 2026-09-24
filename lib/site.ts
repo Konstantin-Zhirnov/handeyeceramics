@@ -12,10 +12,50 @@ export const site = {
 // the studios are visible on every page instead of hidden behind one link.
 export const nav = [
   { label: "Classes", href: "/#classes" },
-  { label: "How it works", href: "/#how" },
   { label: "Gallery", href: "/#gallery" },
   { label: "Membership", href: "/#membership" },
 ];
+
+/**
+ * The pinned hero stage: three chapters scrubbed by scroll, the way the
+ * reference reel pours chocolate over a bun. Here it is the studio's own
+ * story, clay → thrown pot → finished shelf, told with real photographs.
+ *
+ * When the generated glaze-pour sequence exists, set `stageSequence` and the
+ * canvas takes over from the photos; the chapters stay as they are.
+ */
+export const stageChapters = [
+  {
+    n: "01",
+    label: "Centre",
+    title: "Start with a ball of clay.",
+    body: "Night one: a wheel, a bucket of water and an instructor who has centred ten thousand of these.",
+    image: "/images/wheel-spin.jpg",
+    alt: "Clay spinning on the potter's wheel, seen from above",
+    position: "50% 55%",
+  },
+  {
+    n: "02",
+    label: "Throw",
+    title: "Open it. Pull it up.",
+    body: "Week by week the walls get thinner and the bowls stop collapsing. That part is the fun.",
+    image: "/images/hands-clay.jpg",
+    alt: "Wet hands opening a fresh ball of clay on the wheel",
+    position: "50% 42%",
+  },
+  {
+    n: "03",
+    label: "Glaze",
+    title: "Glaze it. Take it home.",
+    body: "Pick colours from our glaze library, we fire everything in-house, and it waits on the shelf for you.",
+    image: "/images/studio-panorama.jpg",
+    alt: "Shelves of finished, glazed pots in the Gore Avenue studio",
+    position: "30% 50%",
+  },
+];
+
+/** Generated scroll sequence — null until the glaze-pour frames are made. */
+export const stageSequence: { path: string; count: number } | null = null;
 
 export type Location = {
   slug: string;

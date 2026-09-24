@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { Reveal } from "./motion-primitives";
+import { STAGE_EVENT, type StageState } from "./HeroStage";
 import { site } from "@/lib/site";
 
 const columns = [
@@ -77,7 +79,7 @@ export function Footer() {
                   {col.links.map((link) => (
                     <li key={link}>
                       <a
-                        href="#classes"
+                        href="/#classes"
                         className="flex min-h-[40px] items-center text-[0.88rem] leading-snug text-ink-soft transition-colors hover:text-ink"
                       >
                         {link}
@@ -106,13 +108,28 @@ export function Footer() {
  * Sticky call bar for phones. The original site left its phone number as plain
  * text; here it is always one thumb away.
  */
-export function MobileCallBar() {
+export function MobileCallBar({ hideDuringHero = false }: { hideDuringHero?: boolean }) {
+  // On the home page the hero card already carries both buttons, and the bar
+  // would sit on top of them — it slides in once the card has scrolled away.
+  const [shown, setShown] = useState(!hideDuringHero);
+
+  useEffect(() => {
+    if (!hideDuringHero) return;
+    const on = (e: Event) => setShown(!(e as CustomEvent<StageState>).detail.cardVisible);
+    window.addEventListener(STAGE_EVENT, on);
+    return () => window.removeEventListener(STAGE_EVENT, on);
+  }, [hideDuringHero]);
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-clay-50/95 px-4 py-3 backdrop-blur-md md:hidden">
+    <div
+      className={`fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-clay-50/95 px-4 py-3 backdrop-blur-md transition-transform duration-500 md:hidden ${
+        shown ? "translate-y-0" : "translate-y-full"
+      }`}
+    >
       <div className="flex gap-2.5">
         <a
-          href="#classes"
-          className="flex h-13 flex-1 items-center justify-center rounded-full bg-ink text-[0.9rem] font-semibold text-clay-50"
+          href="/#classes"
+          className="flex h-13 flex-1 items-center justify-center rounded-full bg-terracotta text-[0.9rem] font-semibold text-clay-50"
         >
           Book a class
         </a>

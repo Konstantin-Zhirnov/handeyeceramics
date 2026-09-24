@@ -12,7 +12,7 @@ export function LocationsSection() {
       <Reveal className="max-w-[48ch]">
         <span className="eyebrow text-clay-600">Locations</span>
         <h2 className="display mt-3 text-[2.2rem] text-ink sm:text-[3rem]">
-          Four studios, one community
+          Four studios, <em className="italic">one community</em>
         </h2>
         <p className="mt-4 text-[0.96rem] leading-relaxed text-ink-soft">
           Each studio has its own page, its own schedule and its own listing in local search — so

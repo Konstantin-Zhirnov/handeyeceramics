@@ -16,7 +16,7 @@ export function ClassesSection() {
         <Reveal className="text-center">
           <span className="eyebrow text-clay-600">Classes</span>
           <h2 className="display mx-auto mt-3 max-w-[15ch] text-[2.2rem] text-ink sm:text-[3rem]">
-            Pick the one that fits your week
+            Pick the one that <em className="italic">fits your week</em>
           </h2>
         </Reveal>
 
@@ -97,7 +97,7 @@ export function ClassesSection() {
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <a
                     href={site.bookingUrl}
-                    className="flex h-13 items-center justify-center rounded-full bg-ink px-7 text-[0.9rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
+                    className="flex h-13 items-center justify-center rounded-full bg-terracotta px-7 text-[0.9rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
                   >
                     Book now
                   </a>

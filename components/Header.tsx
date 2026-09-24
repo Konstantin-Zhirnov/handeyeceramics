@@ -1,11 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { LocationSwitcher } from "./LocationSwitcher";
 import { ease } from "./motion-primitives";
+import { STAGE_EVENT, type StageState } from "./HeroStage";
 import { locations, nav, site } from "@/lib/site";
 
 function PhoneIcon({ className = "" }: { className?: string }) {
@@ -24,9 +25,21 @@ function PhoneIcon({ className = "" }: { className?: string }) {
 export function Header({ currentLocation }: { currentLocation?: string } = {}) {
   const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
+  const [overStage, setOverStage] = useState(false);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (v) => setStuck(v > 40));
+
+  // The home page's hero stage tells us when the nav sits on top of a photo.
+  useEffect(() => {
+    const on = (e: Event) => setOverStage((e as CustomEvent<StageState>).detail.overStage);
+    window.addEventListener(STAGE_EVENT, on);
+    return () => window.removeEventListener(STAGE_EVENT, on);
+  }, []);
+
+  const light = overStage && !open;
+  const ink = light ? "text-clay-50" : "text-ink";
+  const line = light ? "border-clay-50/40 hover:bg-clay-50/15" : "border-ink/20 hover:bg-clay-100";
 
   return (
     <>
@@ -36,58 +49,71 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
           is now a pure CSS animation that runs from first paint. */}
       <header className="fixed inset-x-0 top-0 z-50 [animation:header-in_0.7s_cubic-bezier(0.22,0.61,0.36,1)_both]">
         <div
-          className={`transition-colors duration-300 ${
-            stuck ? "bg-clay-50/92 backdrop-blur-md shadow-[0_1px_0_rgba(28,21,18,0.08)]" : "bg-transparent"
+          className={`transition-[background-color,box-shadow] duration-500 ${
+            stuck && !light
+              ? "bg-clay-50/90 shadow-[0_1px_0_rgba(42,29,21,0.08)] backdrop-blur-md"
+              : "bg-transparent"
           }`}
         >
-          <div className="shell flex h-[72px] items-center justify-between gap-4 md:h-[84px]">
-            <a href="#top" className="flex shrink-0 items-center" aria-label={`${site.name} — home`}>
-              <Logo />
-            </a>
+          <div className="shell relative flex h-[72px] items-center justify-between gap-3 md:h-[84px]">
+            <div className="flex items-center gap-7">
+              <a href="/#top" className="flex shrink-0 items-center" aria-label={`${site.name} — home`}>
+                <Logo tone={light ? "cream" : "ink"} />
+              </a>
+              <nav className="hidden items-center gap-6 xl:flex">
+                {nav.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={`py-2 text-[0.84rem] font-medium transition-colors ${
+                      light ? "text-clay-50/85 hover:text-clay-50" : "text-ink-soft hover:text-ink"
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+            </div>
 
-            <nav className="hidden items-center gap-7 lg:flex">
-              {nav.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="relative py-2 text-[0.86rem] font-medium text-ink-soft transition-colors hover:text-ink"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
+            {/* The reference's centred Didone wordmark. */}
+            <a
+              href="/#top"
+              aria-hidden
+              tabIndex={-1}
+              className={`wordmark absolute left-1/2 -translate-x-1/2 text-[0.8rem] transition-colors duration-500 sm:text-[1rem] lg:text-[1.05rem] xl:text-[1.4rem] ${ink}`}
+            >
+              Hand Eye <span className="opacity-60">/</span> Ceramics
+            </a>
 
             <div className="flex items-center gap-2">
               <span className="hidden md:block">
-                <LocationSwitcher current={currentLocation} />
+                <LocationSwitcher current={currentLocation} tone={light ? "glass" : "ink"} />
               </span>
 
-              {/* Tappable phone number — one tap to call, on every screen size. */}
+              {/* Tappable phone number. Small phones get it from the sticky
+                  bottom bar and the hero; from sm up it lives here too. */}
               <a
                 href={site.phoneHref}
-                className="flex h-11 items-center gap-2 rounded-full border border-ink/15 px-3.5 text-[0.84rem] font-semibold text-ink transition-colors hover:border-ink/40 hover:bg-white/60 sm:px-4"
+                className={`hidden h-11 items-center gap-2 rounded-full px-3.5 text-[0.84rem] font-semibold transition-colors sm:flex xl:px-5 ${
+                  light
+                    ? "border border-clay-50/40 text-clay-50 hover:bg-clay-50/15"
+                    : "bg-terracotta text-clay-50 hover:bg-ink"
+                }`}
               >
                 <PhoneIcon className="h-4 w-4" />
-                <span className="hidden sm:inline">{site.phoneDisplay}</span>
-                <span className="sr-only sm:hidden">Call {site.phoneDisplay}</span>
-              </a>
-
-              <a
-                href="#classes"
-                className="hidden h-11 items-center rounded-full bg-ink px-5 text-[0.84rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5 md:inline-flex"
-              >
-                Book a class
+                <span className="hidden xl:inline">{site.phoneDisplay}</span>
+                <span className="sr-only xl:hidden">Call {site.phoneDisplay}</span>
               </a>
 
               <button
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Open menu"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/15 lg:hidden"
+                className={`flex h-11 w-11 items-center justify-center rounded-full border transition-colors xl:hidden ${line}`}
               >
                 <span className="flex flex-col gap-[5px]">
-                  <span className="block h-[1.5px] w-[18px] bg-ink" />
-                  <span className="block h-[1.5px] w-[18px] bg-ink" />
+                  <span className={`block h-[1.5px] w-[18px] ${light ? "bg-clay-50" : "bg-ink"}`} />
+                  <span className={`block h-[1.5px] w-[18px] ${light ? "bg-clay-50" : "bg-ink"}`} />
                 </span>
               </button>
             </div>
@@ -102,7 +128,7 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[60] bg-ink/45 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-[60] bg-ink/45 backdrop-blur-sm xl:hidden"
             onClick={() => setOpen(false)}
           >
             <motion.div
@@ -174,7 +200,7 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
                   <a
                     href="#classes"
                     onClick={() => setOpen(false)}
-                    className="flex h-14 items-center justify-center rounded-full bg-ink text-[0.95rem] font-semibold text-clay-50"
+                    className="flex h-14 items-center justify-center rounded-full bg-terracotta text-[0.95rem] font-semibold text-clay-50"
                   >
                     Book a class
                   </a>

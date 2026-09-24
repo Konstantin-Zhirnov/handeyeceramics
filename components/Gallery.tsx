@@ -12,7 +12,7 @@ export function Gallery() {
           <div>
             <span className="eyebrow text-clay-600">Gallery</span>
             <h2 className="display mt-3 max-w-[16ch] text-[2.2rem] text-ink sm:text-[3rem]">
-              Made by people on their first try
+              Made by people <em className="italic">on their first try</em>
             </h2>
           </div>
           <a

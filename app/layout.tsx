@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Karla } from "next/font/google";
+import { Bodoni_Moda, Karla } from "next/font/google";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const bodoni = Bodoni_Moda({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["SOFT", "WONK", "opsz"],
+  variable: "--font-bodoni",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
   display: "swap",
 });
 
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#abd9f5",
+  themeColor: "#f5efe6",
 };
 
 export default function RootLayout({
@@ -38,13 +39,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${karla.variable}`}>
+    <html lang="en" className={`${bodoni.variable} ${karla.variable}`}>
       <body>
         {/* Scroll reveals below the fold are Framer-driven and ship as inline
             opacity:0. If JavaScript never runs, show everything instead of an
             empty page. */}
         <noscript>
-          <style>{`[style*="opacity:0"]{opacity:1!important;transform:none!important}`}</style>
+          <style>{`[style*="opacity:0"]:not(.stage *){opacity:1!important;transform:none!important}`}</style>
         </noscript>
         {children}
       </body>

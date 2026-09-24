@@ -1,8 +1,6 @@
 import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
+import { HeroStage } from "@/components/HeroStage";
 import { FeatureStrip } from "@/components/FeatureStrip";
-import { StatBlock, ImageBand } from "@/components/StatBlock";
-import { HowItWorks } from "@/components/HowItWorks";
 import { ClassesSection } from "@/components/ClassesSection";
 import { Gallery } from "@/components/Gallery";
 import { Reviews } from "@/components/Reviews";
@@ -15,11 +13,8 @@ export default function Home() {
     <>
       <Header />
       <main>
-        <Hero />
+        <HeroStage />
         <FeatureStrip />
-        <StatBlock />
-        <ImageBand />
-        <HowItWorks />
         <ClassesSection />
         <Gallery />
         <Reviews />
@@ -27,7 +22,7 @@ export default function Home() {
         <Membership />
       </main>
       <Footer />
-      <MobileCallBar />
+      <MobileCallBar hideDuringHero />
     </>
   );
 }
