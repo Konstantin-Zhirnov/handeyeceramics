@@ -272,7 +272,7 @@ svg {
    card, shift it so the subject is centred in the visible panel instead of
    cut by the panel edge. Back to 0 as the stage opens. */
 .stage-frame {
-  --subject-y: 62%; /* the bowl's centre in the generated frames */
+  --subject-y: 66%; /* where the clay sits in the generated frames */
   position: absolute;
   inset: 0;
   transform: translate3d(

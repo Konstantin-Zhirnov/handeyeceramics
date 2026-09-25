@@ -45,7 +45,8 @@ function emit(state: StageState) {
 /**
  * The reference reel's hero, rebuilt for a pottery studio: a split card
  * (copy left, photo right) whose photo grows into a full-bleed pinned stage,
- * then three chapters play out as you scroll — clay, throwing, glaze.
+ * then three chapters play out as you scroll: a lump of clay throws itself
+ * into a vase on the wheel, then takes its glaze.
  *
  * Everything in the first screen is server-rendered and visible before any
  * JavaScript runs; scroll only moves --p and the chapter layers.
@@ -82,7 +83,7 @@ export function HeroStage() {
       ref={ref}
       id="top"
       aria-label="Hand Eye Ceramics — from clay to a finished pot"
-      className="relative h-[300vh] lg:h-[340vh]"
+      className="relative h-[340vh] lg:h-[400vh]"
     >
       <motion.div
         className="stage sticky top-0 h-[100svh] overflow-hidden"
@@ -116,8 +117,8 @@ export function HeroStage() {
           />
 
           <div className="stage-overlay">
-            <div className="absolute bottom-[112px] left-[var(--edge)] right-[var(--edge)] md:bottom-16">
-              <div className="relative min-h-[5.5rem] max-w-[34rem] sm:min-h-[9.5rem]">
+            <div className="absolute bottom-[96px] left-[var(--edge)] right-[var(--edge)] md:bottom-16">
+              <div className="relative min-h-[5.5rem] max-w-[34rem] sm:min-h-[9.5rem] lg:max-w-[23rem]">
                 {stageChapters.map((c, i) => (
                   <Chapter key={c.n} chapter={c} window={WINDOWS[i]} progress={p} />
                 ))}
@@ -126,7 +127,7 @@ export function HeroStage() {
 
             <ol
               aria-label="Chapters"
-              className="absolute bottom-[92px] left-1/2 flex -translate-x-1/2 gap-2 md:bottom-7"
+              className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 gap-2 md:flex"
             >
               {stageChapters.map((c, i) => (
                 <li key={c.n}>
@@ -270,7 +271,7 @@ function Chapter({
       <p className="eyebrow text-sky-brand">
         {chapter.n} — {chapter.label}
       </p>
-      <p className="display mt-3 text-[2rem] leading-[1.05] sm:text-[2.6rem] lg:text-[3.2rem]">
+      <p className="display mt-2 text-[1.6rem] leading-[1.08] sm:mt-3 sm:text-[2.6rem] lg:text-[2.5rem]">
         {chapter.title}
       </p>
       {/* phones: eyebrow + title only, so the copy sits below the object */}
