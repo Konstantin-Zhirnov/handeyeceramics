@@ -12,17 +12,26 @@ import {
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { SequenceCanvas } from "./SequenceCanvas";
-import { googleTotals, site, stageChapters, stageSequence } from "@/lib/site";
+import {
+  googleTotals,
+  site,
+  stageChapters,
+  stageSequence,
+  type StageChapter,
+} from "@/lib/site";
 
 /** Share of the pinned scroll spent turning the card into the full stage. */
 const EXPAND_END = 0.16;
 
 /** Chapter windows on the stage's scroll progress, [fade-in start, fade-out end]. */
-const WINDOWS: [number, number][] = [
+const WINDOWS: [number, number][] = stageSequence?.windows ?? [
   [0.1, 0.46],
   [0.42, 0.74],
   [0.7, 1.01],
 ];
+
+/** Dot / chapter boundaries: the midpoint of each overlap between windows. */
+const BOUNDS = WINDOWS.slice(1).map(([a], i) => (a + WINDOWS[i][1]) / 2);
 
 export type StageState = { overStage: boolean; cardVisible: boolean };
 
@@ -53,7 +62,7 @@ export function HeroStage() {
   const last = useRef<StageState>({ overStage: false, cardVisible: true });
 
   const sync = (v: number) => {
-    setActive(v < 0.44 ? 0 : v < 0.72 ? 1 : 2);
+    setActive(BOUNDS.filter((b) => v >= b).length);
     const el = ref.current;
     if (!el) return;
     const bottom = el.getBoundingClientRect().bottom;
@@ -81,18 +90,20 @@ export function HeroStage() {
       >
         {/* ---- Stage: photo inside the card, then full bleed ---- */}
         <div className="stage-media absolute inset-0 bg-clay-200">
-          {stageSequence ? (
-            <SequenceCanvas
-              path={stageSequence.path}
-              count={stageSequence.count}
-              progress={seq}
-              poster={stageChapters[0].image}
-            />
-          ) : (
-            stageChapters.map((c, i) => (
-              <Slide key={c.image} index={i} progress={p} reduce={!!reduce} chapter={c} />
-            ))
-          )}
+          <div className="stage-frame">
+            {stageSequence ? (
+              <SequenceCanvas
+                path={stageSequence.path}
+                count={stageSequence.count}
+                progress={seq}
+                poster={stageSequence.poster}
+              />
+            ) : (
+              stageChapters.map((c, i) => (
+                <Slide key={c.image} index={i} progress={p} reduce={!!reduce} chapter={c} />
+              ))
+            )}
+          </div>
 
           {/* legibility: nav on top, chapter copy at the bottom */}
           <div
@@ -100,13 +111,13 @@ export function HeroStage() {
             style={{ opacity: "var(--p)" }}
           />
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-[72%] bg-gradient-to-t from-ink/85 via-ink/40 to-transparent lg:h-[55%] lg:from-ink/75 lg:via-ink/25"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-ink/80 via-ink/35 to-transparent sm:h-[55%] sm:from-ink/75 sm:via-ink/25"
             style={{ opacity: "var(--p)" }}
           />
 
           <div className="stage-overlay">
             <div className="absolute bottom-[112px] left-[var(--edge)] right-[var(--edge)] md:bottom-16">
-              <div className="relative min-h-[9.5rem] max-w-[34rem]">
+              <div className="relative min-h-[5.5rem] max-w-[34rem] sm:min-h-[9.5rem]">
                 {stageChapters.map((c, i) => (
                   <Chapter key={c.n} chapter={c} window={WINDOWS[i]} progress={p} />
                 ))}
@@ -192,7 +203,7 @@ export function HeroStage() {
   );
 }
 
-type ChapterData = (typeof stageChapters)[number];
+type ChapterData = StageChapter;
 
 function Slide({
   index,
@@ -262,7 +273,8 @@ function Chapter({
       <p className="display mt-3 text-[2rem] leading-[1.05] sm:text-[2.6rem] lg:text-[3.2rem]">
         {chapter.title}
       </p>
-      <p className="mt-3 max-w-[40ch] text-[0.95rem] leading-relaxed text-clay-50/80">
+      {/* phones: eyebrow + title only, so the copy sits below the object */}
+      <p className="mt-3 hidden max-w-[40ch] text-[0.95rem] leading-relaxed text-clay-50/80 sm:block">
         {chapter.body}
       </p>
     </motion.div>

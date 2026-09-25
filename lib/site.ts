@@ -18,13 +18,24 @@ export const nav = [
 
 /**
  * The pinned hero stage: three chapters scrubbed by scroll, the way the
- * reference reel pours chocolate over a bun. Here it is the studio's own
- * story, clay → thrown pot → finished shelf, told with real photographs.
+ * reference reel pours chocolate over a bun.
  *
- * When the generated glaze-pour sequence exists, set `stageSequence` and the
- * canvas takes over from the photos; the chapters stay as they are.
+ * Two versions. With `stageSequence` set, a canvas plays the generated
+ * glaze-pour frames (bisque bowl → glaze pours → fully glazed) and
+ * `glazeChapters` narrate it. Without it, `photoChapters` tell the same
+ * story with the studio's own photographs.
  */
-export const stageChapters = [
+export type StageChapter = {
+  n: string;
+  label: string;
+  title: string;
+  body: string;
+  image: string;
+  alt: string;
+  position: string;
+};
+
+export const photoChapters: StageChapter[] = [
   {
     n: "01",
     label: "Centre",
@@ -54,8 +65,62 @@ export const stageChapters = [
   },
 ];
 
-/** Generated scroll sequence — null until the glaze-pour frames are made. */
-export const stageSequence: { path: string; count: number } | null = null;
+export const glazeChapters: StageChapter[] = [
+  {
+    n: "01",
+    label: "Bisque",
+    title: "Six weeks on the wheel.",
+    body: "Centre, open, pull, trim. By the last class your bowls stand up on their own, then come out of the first firing pale and bare.",
+    image: "/assets/img/stage-poster-1920.webp",
+    alt: "A bare bisque-fired bowl floating above a pool of pale blue glaze",
+    position: "50% 50%",
+  },
+  {
+    n: "02",
+    label: "Glaze",
+    title: "Then comes the colour.",
+    body: "Choose from our glaze library and pour it on. Every piece is fired in-house at the studio.",
+    image: "/assets/img/stage-poster-1920.webp",
+    alt: "",
+    position: "50% 50%",
+  },
+  {
+    n: "03",
+    label: "Yours",
+    title: "Glossy, fired, yours.",
+    body: "It waits on the shelf at your studio until you come to take it home.",
+    image: "/assets/img/stage-poster-1920.webp",
+    alt: "",
+    position: "50% 50%",
+  },
+];
+
+/**
+ * Generated glaze-pour sequence (kie.ai: GPT Image 2 stills + Veo 3.1 Fast
+ * transitions, built with the reference skill's build_media.py).
+ * `windows` are the chapter windows on the stage's scroll progress, aligned
+ * to where the pour starts and ends in the frames.
+ */
+export const stageSequence: {
+  path: string;
+  count: number;
+  poster: string;
+  windows: [number, number][];
+} | null = {
+  path: "/assets/seq",
+  // 16-frame hold on the bare bowl + t1 (glaze starts pouring, 55) + t2 (fully coated, 55)
+  count: 126,
+  poster: "/assets/img/stage-poster-1920.webp",
+  // stage progress p = 0.16 + 0.84 × frame/125: the stream reaches the bowl at
+  // p ≈ 0.35, t1 ends at p ≈ 0.63, the bowl is fully coated from p ≈ 0.94
+  windows: [
+    [0.1, 0.4],
+    [0.36, 0.88],
+    [0.84, 1.01],
+  ],
+};
+
+export const stageChapters = stageSequence ? glazeChapters : photoChapters;
 
 export type Location = {
   slug: string;

@@ -268,6 +268,26 @@ svg {
   }
 }
 
+/* The media is framed for the full viewport; while it still sits inside the
+   card, shift it so the subject is centred in the visible panel instead of
+   cut by the panel edge. Back to 0 as the stage opens. */
+.stage-frame {
+  --subject-y: 62%; /* the bowl's centre in the generated frames */
+  position: absolute;
+  inset: 0;
+  transform: translate3d(
+    0,
+    calc((var(--top) + var(--photo-h) / 2 - var(--subject-y)) * var(--q)),
+    0
+  );
+}
+
+@media (min-width: 1024px) {
+  .stage-frame {
+    transform: translate3d(calc((var(--split) - var(--edge)) / 2 * var(--q)), 0, 0);
+  }
+}
+
 /* Chapter copy and dots follow the visible part of the photo while it grows. */
 .stage-overlay {
   position: absolute;
