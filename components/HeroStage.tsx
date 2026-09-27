@@ -75,6 +75,11 @@ export function HeroStage() {
   };
 
   useMotionValueEvent(p, "change", sync);
+  // Progress stops at 1 once the stage bottom meets the viewport, but the
+  // stage keeps scrolling away after that — re-check the tone on page scroll
+  // too, or the nav stays cream-on-cream over the next section.
+  const { scrollY } = useScroll();
+  useMotionValueEvent(scrollY, "change", () => sync(p.get()));
   // Browsers restore the scroll position on reload; settle the tone once on mount.
   useEffect(() => sync(p.get()), []); // eslint-disable-line react-hooks/exhaustive-deps
 

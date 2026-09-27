@@ -1,7 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { RevealGroup, riseVariants } from "./motion-primitives";
+import { Reveal, revealDelay } from "./motion-primitives";
 
 const items = [
   {
@@ -50,11 +49,11 @@ const items = [
 export function FeatureStrip() {
   return (
     <section className="shell py-14 md:py-20">
-      <RevealGroup className="grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item, i) => (
-          <motion.div
+          <Reveal
             key={item.title}
-            variants={riseVariants}
+            delay={revealDelay(i)}
             className={`relative pt-7 ${
               i > 0 ? "lg:pl-8" : ""
             } before:absolute before:left-0 before:top-0 before:h-px before:w-full before:bg-ink/12`}
@@ -73,9 +72,9 @@ export function FeatureStrip() {
             </svg>
             <h3 className="display mt-4 text-[1.32rem] text-ink">{item.title}</h3>
             <p className="mt-2 text-[0.92rem] leading-relaxed text-ink-soft">{item.body}</p>
-          </motion.div>
+          </Reveal>
         ))}
-      </RevealGroup>
+      </div>
     </section>
   );
 }

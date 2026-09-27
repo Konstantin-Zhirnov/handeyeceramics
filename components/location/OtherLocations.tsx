@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Reveal, RevealGroup, riseVariants } from "../motion-primitives";
+import { Reveal, revealDelay } from "../motion-primitives";
 import { locations } from "@/lib/site";
 
 /**
@@ -27,9 +26,9 @@ export function OtherLocations({ current }: { current: string }) {
           </p>
         </Reveal>
 
-        <RevealGroup className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {others.map((loc) => (
-            <motion.div key={loc.slug} variants={riseVariants}>
+        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {others.map((loc, i) => (
+            <Reveal key={loc.slug} delay={revealDelay(i)}>
               <Link
                 href={`/classes/${loc.slug}`}
                 className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-ink/10 bg-clay-50"
@@ -66,9 +65,9 @@ export function OtherLocations({ current }: { current: string }) {
                   </span>
                 </div>
               </Link>
-            </motion.div>
+            </Reveal>
           ))}
-        </RevealGroup>
+        </div>
       </div>
     </section>
   );

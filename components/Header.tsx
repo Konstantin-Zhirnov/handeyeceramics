@@ -47,7 +47,7 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
           opacity 0 and only appear once Framer Motion had hydrated, so on a
           slow phone the logo was missing for the first moments. The slide-in
           is now a pure CSS animation that runs from first paint. */}
-      <header className="fixed inset-x-0 top-0 z-50 [animation:header-in_0.7s_cubic-bezier(0.22,0.61,0.36,1)_both]">
+      <header className="fixed inset-x-0 top-0 z-50 [animation:header-in_0.9s_cubic-bezier(0.16,1,0.3,1)_both]">
         <div
           className={`transition-[background-color,box-shadow] duration-500 ${
             stuck && !light

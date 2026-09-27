@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Karla } from "next/font/google";
 import { site } from "@/lib/site";
+import { MotionProvider } from "@/components/motion-primitives";
 import "./globals.css";
 
 const bodoni = Bodoni_Moda({
@@ -41,13 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bodoni.variable} ${karla.variable}`}>
       <body>
-        {/* Scroll reveals below the fold are Framer-driven and ship as inline
-            opacity:0. If JavaScript never runs, show everything instead of an
-            empty page. */}
-        <noscript>
-          <style>{`[style*="opacity:0"]:not(.stage *){opacity:1!important;transform:none!important}`}</style>
-        </noscript>
-        {children}
+        <MotionProvider>{children}</MotionProvider>
       </body>
     </html>
   );

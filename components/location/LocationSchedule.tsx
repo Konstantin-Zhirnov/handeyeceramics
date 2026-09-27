@@ -1,7 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Reveal, RevealGroup, riseVariants } from "../motion-primitives";
+import { Reveal, revealDelay } from "../motion-primitives";
 import { site, type Location } from "@/lib/site";
 
 export function LocationSchedule({ location }: { location: Location }) {
@@ -18,20 +17,20 @@ export function LocationSchedule({ location }: { location: Location }) {
             </h2>
           </Reveal>
 
-          <RevealGroup className="mt-8 flex flex-col">
-            {location.schedule.map((row) => (
-              <motion.div
+          <div className="mt-8 flex flex-col">
+            {location.schedule.map((row, i) => (
+              <Reveal
                 key={row.label}
-                variants={riseVariants}
+                delay={revealDelay(i)}
                 className="flex flex-col gap-1 border-t border-ink/12 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
               >
                 <span className="display text-[1.24rem] text-ink">{row.label}</span>
                 <span className="text-[0.92rem] leading-relaxed text-ink-soft sm:max-w-[26ch] sm:text-right">
                   {row.times}
                 </span>
-              </motion.div>
+              </Reveal>
             ))}
-          </RevealGroup>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4">

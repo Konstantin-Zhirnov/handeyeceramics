@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Reveal, RevealGroup, riseVariants } from "./motion-primitives";
+import { Reveal, revealDelay } from "./motion-primitives";
 import { site } from "@/lib/site";
 
 const perks = [
@@ -50,20 +49,20 @@ export function Membership() {
             </p>
           </Reveal>
 
-          <RevealGroup className="mt-9 flex flex-col">
-            {perks.map((perk) => (
-              <motion.div
+          <div className="mt-9 flex flex-col">
+            {perks.map((perk, i) => (
+              <Reveal
                 key={perk.title}
-                variants={riseVariants}
+                delay={revealDelay(i)}
                 className="border-t border-clay-50/15 py-5"
               >
                 <h3 className="text-[1.02rem] font-bold">{perk.title}</h3>
                 <p className="mt-1.5 max-w-[52ch] text-[0.9rem] leading-relaxed text-clay-50/65">
                   {perk.body}
                 </p>
-              </motion.div>
+              </Reveal>
             ))}
-          </RevealGroup>
+          </div>
 
           <Reveal delay={0.1}>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">

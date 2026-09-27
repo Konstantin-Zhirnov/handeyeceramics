@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Reveal, RevealGroup, riseVariants } from "./motion-primitives";
+import { Reveal, revealDelay } from "./motion-primitives";
 import { locations } from "@/lib/site";
 
 export function LocationsSection() {
@@ -21,9 +20,9 @@ export function LocationsSection() {
         </p>
       </Reveal>
 
-      <RevealGroup className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {locations.map((loc) => (
-          <motion.article key={loc.slug} variants={riseVariants} className="h-full">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {locations.map((loc, i) => (
+          <Reveal as="article" key={loc.slug} delay={revealDelay(i)} className="h-full">
             <Link
               href={`/classes/${loc.slug}`}
               className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-ink/10 bg-clay-50 transition-shadow hover:shadow-[0_18px_36px_rgba(28,21,18,0.10)]"
@@ -69,9 +68,9 @@ export function LocationsSection() {
                 </span>
               </div>
             </Link>
-          </motion.article>
+          </Reveal>
         ))}
-      </RevealGroup>
+      </div>
     </section>
   );
 }

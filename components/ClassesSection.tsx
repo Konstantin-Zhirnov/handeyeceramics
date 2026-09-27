@@ -53,13 +53,13 @@ export function ClassesSection() {
         </Reveal>
 
         <div className="mt-10">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={current.id}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.42, ease }}
+              transition={{ duration: 0.55, ease }}
               className="grid overflow-hidden rounded-[26px] bg-clay-50 shadow-[0_24px_50px_rgba(28,21,18,0.09)] md:rounded-[32px] lg:grid-cols-2"
             >
               <div className="relative min-h-[260px] lg:min-h-[440px]">
