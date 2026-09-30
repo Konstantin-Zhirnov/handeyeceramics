@@ -5,3 +5,7 @@ out
 
 # TypeScript incremental build cache — regenerated on every build
 *.tsbuildinfo
+
+# Knowledge base: client correspondence and notes — never publish (public repo)
+/raw/
+/wiki/
