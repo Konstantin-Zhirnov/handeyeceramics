@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Karla } from "next/font/google";
 import { site } from "@/lib/site";
 import { MotionProvider } from "@/components/motion-primitives";
-import "./globals.css";
+import "../globals.css";
 
 const bodoni = Bodoni_Moda({
   subsets: ["latin"],
