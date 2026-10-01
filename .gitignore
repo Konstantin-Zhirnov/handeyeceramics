@@ -9,3 +9,19 @@ out
 # Knowledge base: client correspondence and notes — never publish (public repo)
 /raw/
 /wiki/
+
+# Autopilot run records: client requirements — never publish (public repo)
+/.autopilot/
+
+# Env templates are public; real .env files are not
+!.env.example
+
+# Local CMS data: SQLite database and uploaded files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+/media/
+
+# Crawled images: re-downloadable with scripts/crawl/crawl.py; too heavy for git
+/content/images/

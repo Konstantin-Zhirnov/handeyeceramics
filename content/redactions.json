@@ -1,0 +1,18 @@
+[
+  {
+    "path": "/wheel-rental",
+    "kind": "email",
+    "count": 2,
+    "fields": [
+      "blocks"
+    ]
+  },
+  {
+    "path": "/wheel-rental",
+    "kind": "password",
+    "count": 2,
+    "fields": [
+      "blocks"
+    ]
+  }
+]

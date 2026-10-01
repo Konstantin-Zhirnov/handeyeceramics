@@ -1,0 +1,668 @@
+[
+  {
+    "path": "/",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "duplicate-title",
+        "title": "Home | Hand Eye Ceramics",
+        "samePathsAs": [
+          "/home"
+        ]
+      },
+      {
+        "type": "multiple-h1",
+        "count": 4,
+        "h1": [
+          "Hands-on Pottery Classes",
+          "Friday or Saturday Drop In",
+          "Group Workshops",
+          "Pottery Date Night"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "/adult-beginner-pottery-classes-in-vancouver",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "duplicate-title",
+        "title": "6-Week Pottery Classes in Vancouver | Hand Eye Ceramics",
+        "samePathsAs": [
+          "/product-page/6-week-wheel-throwing-pottery-classes-in-vancouver"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "/apron-tools",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      },
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/art-gallery",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/booking-calendar/copy-of-tuesday-evening-wheel-throwing",
+    "kind": "booking",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/booking-calendar/tuesday-6-30-wheel-throwing",
+    "kind": "booking",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/clay",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      },
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/commissions-form",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/contact-us",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/friday-night-drop-in",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/gallery",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      },
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/gift-card",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/home",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "duplicate-title",
+        "title": "Home | Hand Eye Ceramics",
+        "samePathsAs": [
+          "/"
+        ]
+      },
+      {
+        "type": "multiple-h1",
+        "count": 4,
+        "h1": [
+          "Hands-on Pottery Classes",
+          "Friday or Saturday Drop In",
+          "Group Workshops",
+          "Pottery Date Night"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "/memberships-rentals-shop",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/nanaimo-pottery-classes",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "multiple-h1",
+        "count": 2,
+        "h1": [
+          "3168 uplands DR Nanaimo",
+          "Click Which class fits you"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "/open-studio",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "broken-link",
+        "target": "/product-page/private-lessons",
+        "status": 404
+      }
+    ]
+  },
+  {
+    "path": "/open-studio-private-lessons",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/our-workshops",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      },
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/paywall",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/pieces-for-sale",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/pottery-date-night",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "multiple-h1",
+        "count": 2,
+        "h1": [
+          "Pottery Date Night",
+          "After The Date"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "/pricing-plans/plans-pricing",
+    "kind": "pricing",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/6-week-wheel-throwing-pottery-classes-in-vancouver",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "duplicate-title",
+        "title": "6-Week Pottery Classes in Vancouver | Hand Eye Ceramics",
+        "samePathsAs": [
+          "/adult-beginner-pottery-classes-in-vancouver"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "/product-page/apron",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/apron-trimming-tool-bundle",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/black-clay-4-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/calico-clay-3-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/canvas-apron-with-pockets",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/coffee-clay",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/coleman-s-porcelain-4-5-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/coming-back-to-under-glaze-1-off-pottery-workshop-pots",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/date-night-drop-in-class-if-paying-via-gift-card",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/date-night-for-two",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/demo-pot",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/demystifying-slip-casting-and-marbling-clay",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/extra-workshop-pots",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/fri-sat-sun-date-night-wheel-seats-sold-separately-bigger-groups-welcome-also",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/frost-translucent",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/gift-card-payment-for-1-in-group-of-six",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/glaze-chemistry-class-1",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/glaze-session-sat-sundays-4pm-6pm",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/h550",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/hand-building-beginner-to-intermediate",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/hanging-plant-pot",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/long-denim-apron",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/m332-clay-2-50-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/m350",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/m370-porcelain-like-clay-3-00-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/m390-red-clay-2-50-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/non-speckled-clay-340-2-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/open-studio-drop-in",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/polar-ice",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/private-instruction-date-night-for-two",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/private-pottery-class-for-2",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/raku-clay-cone-10",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/re-booking-fee",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/recycled-clay",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/single-person-drop-in-class",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/speckled-clay-340gs-2-lb",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/split-leg-apron-with-pocket",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/studio-membership-subscription",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/trimming-tools-small-medium",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/wheel-rental-subscription",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/product-page/wheel-throwing-intermediate-only-spring",
+    "kind": "product",
+    "issues": [
+      {
+        "type": "empty-description"
+      }
+    ]
+  },
+  {
+    "path": "/saturday-night-drop-in",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "empty-description"
+      },
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/shop",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  },
+  {
+    "path": "/youth-pottery-classes-shop",
+    "kind": "page",
+    "issues": [
+      {
+        "type": "no-h1"
+      }
+    ]
+  }
+]
