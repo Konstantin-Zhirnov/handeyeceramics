@@ -1,0 +1,214 @@
+{
+  "note": "The enquiry forms of the old site as a browser showed them (the choices are loaded by script, so the crawl inventory does not have them). Read-only capture; nothing was submitted. tests/unit/forms-live.test.ts compares components/forms/definitions.ts with this file. Not carried over: the reCAPTCHA widget (the required unlabeled checkbox of the crawl inventory), and the empty first option of Preferred Time, which the old site pre-filled with the current time.",
+  "forms": {
+    "contact": {
+      "url": "https://www.handeyeceramics.com/contact-us",
+      "capturedAt": "2026-09-30",
+      "submit": "Send",
+      "confirmation": "Thanks for submitting!",
+      "selectPlaceholder": "Choose an option",
+      "fields": [
+        {
+          "label": "Email",
+          "kind": "email",
+          "required": true,
+          "placeholder": "e.g., ilove@pottery.com"
+        },
+        {
+          "label": "What would you like to book?",
+          "kind": "select",
+          "required": true,
+          "options": [
+            "Group Workshop",
+            "Date Night",
+            "Studio Membership",
+            "Wheel Rental",
+            "General Question"
+          ]
+        },
+        {
+          "label": "What level of studio access?",
+          "kind": "select",
+          "required": false,
+          "options": [
+            "24/7 Access",
+            "Midnight to Noon Access"
+          ]
+        },
+        {
+          "label": "Which type of wheel?",
+          "kind": "select",
+          "required": false,
+          "options": [
+            "Floor model",
+            "Table top model"
+          ]
+        },
+        {
+          "label": "How many in your group?",
+          "kind": "number",
+          "required": false,
+          "placeholder": "Enter a number"
+        },
+        {
+          "label": "Select a date",
+          "kind": "date",
+          "required": true,
+          "placeholder": "Select a date"
+        },
+        {
+          "label": "Preferred Time",
+          "kind": "select",
+          "required": true,
+          "options": [
+            "12:00 AM",
+            "12:30 AM",
+            "01:00 AM",
+            "01:30 AM",
+            "02:00 AM",
+            "02:30 AM",
+            "03:00 AM",
+            "03:30 AM",
+            "04:00 AM",
+            "04:30 AM",
+            "05:00 AM",
+            "05:30 AM",
+            "06:00 AM",
+            "06:30 AM",
+            "07:00 AM",
+            "07:30 AM",
+            "08:00 AM",
+            "08:30 AM",
+            "09:00 AM",
+            "09:30 AM",
+            "10:00 AM",
+            "10:30 AM",
+            "11:00 AM",
+            "11:30 AM",
+            "12:00 PM",
+            "12:30 PM",
+            "01:00 PM",
+            "01:30 PM",
+            "02:00 PM",
+            "02:30 PM",
+            "03:00 PM",
+            "03:30 PM",
+            "04:00 PM",
+            "04:30 PM",
+            "05:00 PM",
+            "05:30 PM",
+            "06:00 PM",
+            "06:30 PM",
+            "07:00 PM",
+            "07:30 PM",
+            "08:00 PM",
+            "08:30 PM",
+            "09:00 PM",
+            "09:30 PM",
+            "10:00 PM",
+            "10:30 PM",
+            "11:00 PM",
+            "11:30 PM"
+          ]
+        },
+        {
+          "label": "Comments",
+          "kind": "textarea",
+          "required": false,
+          "placeholder": "Anything else to add?"
+        }
+      ],
+      "visibility": {
+        "dependsOn": "What would you like to book?",
+        "visibleFields": {
+          "": [
+            "Email",
+            "What would you like to book?",
+            "Select a date",
+            "Preferred Time",
+            "Comments"
+          ],
+          "Group Workshop": [
+            "Email",
+            "What would you like to book?",
+            "How many in your group?",
+            "Select a date",
+            "Preferred Time",
+            "Comments"
+          ],
+          "Date Night": [
+            "Email",
+            "What would you like to book?",
+            "Select a date",
+            "Preferred Time",
+            "Comments"
+          ],
+          "Studio Membership": [
+            "Email",
+            "What would you like to book?",
+            "What level of studio access?",
+            "Comments"
+          ],
+          "Wheel Rental": [
+            "Email",
+            "What would you like to book?",
+            "Which type of wheel?",
+            "Comments"
+          ],
+          "General Question": [
+            "Email",
+            "What would you like to book?",
+            "Comments"
+          ]
+        }
+      }
+    },
+    "commission": {
+      "url": "https://www.handeyeceramics.com/commissions-form",
+      "capturedAt": "2026-09-30",
+      "submit": "Send",
+      "confirmation": "Thanks for submitting! We'll be in touch soon.",
+      "selectPlaceholder": "Choose an option",
+      "fields": [
+        {
+          "label": "Email",
+          "kind": "email",
+          "required": true,
+          "placeholder": "e.g., ilove@pottery.com"
+        },
+        {
+          "label": "What are you interested in?",
+          "kind": "select",
+          "required": true,
+          "options": [
+            "Coffee mug",
+            "Cremation urn",
+            "Hanging plant pot",
+            "Film prop work",
+            "Hand-painted vase",
+            "Other"
+          ]
+        },
+        {
+          "label": "Object Dimensions",
+          "kind": "text",
+          "required": true,
+          "placeholder": "Height, width and volume (inches)"
+        },
+        {
+          "label": "When do you need it by?",
+          "kind": "date",
+          "required": true,
+          "placeholder": "Select a date"
+        },
+        {
+          "label": "Comments",
+          "kind": "textarea",
+          "required": false,
+          "placeholder": "Anything else to add?"
+        }
+      ],
+      "visibility": null
+    }
+  }
+}
