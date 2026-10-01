@@ -418,6 +418,10 @@ export interface Product {
   images?: (number | Media)[] | null;
   description?: string | null;
   category?: string | null;
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+  };
   visible?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -834,6 +838,12 @@ export interface ProductsSelect<T extends boolean = true> {
   images?: T;
   description?: T;
   category?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   visible?: T;
   updatedAt?: T;
   createdAt?: T;

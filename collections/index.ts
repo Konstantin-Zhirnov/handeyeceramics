@@ -171,6 +171,7 @@ export const Products: CollectionConfig = {
     { name: "images", type: "upload", relationTo: "media", hasMany: true },
     { name: "description", type: "textarea" },
     { name: "category", type: "text" },
+    seoField,
     { name: "visible", type: "checkbox", defaultValue: true, admin: { position: "sidebar" } },
   ],
 };

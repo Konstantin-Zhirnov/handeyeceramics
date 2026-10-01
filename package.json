@@ -10,7 +10,7 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation MUX_TOKEN_ID=importmap MUX_TOKEN_SECRET=importmap payload generate:importmap",
-    "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run scripts/seed/index.ts",
+    "seed": "cross-env NODE_OPTIONS=--no-deprecation node --env-file-if-exists=.env --import tsx scripts/seed/index.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -41,7 +41,8 @@
     "cheerio": "^1.2.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "tsx": "^4.22.4"
   },
   "type": "module"
 }
