@@ -3,8 +3,10 @@ import Link from "next/link";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import MuxPlayer from "@mux/mux-player-react";
 import type { Media, Page, Video } from "@/payload-types";
+import { mediaSrc } from "@/lib/cms/media";
 import { FormBlock } from "./FormBlock";
 import { ClassListBlock } from "./ClassListBlock";
+import { PlanListBlock } from "./PlanListBlock";
 import { ProductListBlock } from "./ProductListBlock";
 
 export type PageBlock = NonNullable<Page["blocks"]>[number];
@@ -15,7 +17,7 @@ function Picture({ media, sizes = "(max-width: 768px) 100vw, 62rem" }: { media: 
   if (!media?.url) return null;
   return (
     <Image
-      src={media.url}
+      src={mediaSrc(media.url)}
       alt={media.alt}
       width={media.width || 1600}
       height={media.height || 1200}
@@ -93,7 +95,9 @@ export function Blocks({ blocks }: { blocks: PageBlock[] | null | undefined }) {
           case "classList":
             return <ClassListBlock key={b.id || i} heading={b.heading} studio={b.studio} />;
           case "productList":
-            return <ProductListBlock key={b.id || i} heading={b.heading} category={b.category} />;
+            return <ProductListBlock key={b.id || i} heading={b.heading} category={b.category} all={b.all} />;
+          case "planList":
+            return <PlanListBlock key={b.id || i} heading={b.heading} group={b.group} />;
           default:
             return null;
         }
