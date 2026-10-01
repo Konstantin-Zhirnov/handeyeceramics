@@ -71,7 +71,16 @@ export const pageBlocks: Block[] = [
     labels: { singular: "Список товаров", plural: "Списки товаров" },
     fields: [
       { name: "heading", type: "text" },
-      { name: "category", type: "text", admin: { description: "Пусто — все категории" } },
+      { name: "category", type: "text", admin: { description: "Товары этой категории. Пусто — список пуст" } },
+      { name: "all", type: "checkbox", label: "Все товары магазина, по категориям" },
+    ],
+  },
+  {
+    slug: "planList",
+    labels: { singular: "Список тарифов", plural: "Списки тарифов" },
+    fields: [
+      { name: "heading", type: "text" },
+      { name: "group", type: "text", admin: { description: "Тарифы этой группы. Пусто — все тарифы, по группам" } },
     ],
   },
 ];

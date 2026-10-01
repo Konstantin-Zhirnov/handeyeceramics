@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Karla } from "next/font/google";
-import { site } from "@/lib/site";
+import { getHome } from "@/lib/cms/site";
+import { SITE_URL } from "@/lib/cms/text";
 import { MotionProvider } from "@/components/motion-primitives";
 import "../globals.css";
 
@@ -18,12 +19,15 @@ const karla = Karla({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: "Hand Eye Ceramics — Pottery classes in Vancouver, 7 days a week",
-  description:
-    "Beginner-friendly wheel throwing and hand building classes in Chinatown, Mt Pleasant and Nanaimo. Six-week courses, drop-ins, date nights and 24/7 studio memberships.",
-};
+/** The fallback title and description are the home page's, from the CMS; each template sets its own. */
+export async function generateMetadata(): Promise<Metadata> {
+  const { seo } = await getHome();
+  return {
+    metadataBase: new URL(SITE_URL),
+    ...(seo.title ? { title: seo.title } : {}),
+    ...(seo.description ? { description: seo.description } : {}),
+  };
+}
 
 // width=device-width + no user-scaling lock: the page fits the phone,
 // and people who still want to zoom are allowed to.

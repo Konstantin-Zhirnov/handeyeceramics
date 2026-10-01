@@ -1,6 +1,12 @@
 /** Plain-text helpers shared by the seed and the SEO metadata. */
 
-export const SITE_SUFFIX = " | Hand Eye Ceramics";
+export const SITE_NAME = "Hand Eye Ceramics";
+export const SITE_SUFFIX = ` | ${SITE_NAME}`;
+/**
+ * The address the site is served from; the constant is only the fallback for a
+ * local run without NEXT_PUBLIC_SERVER_URL.
+ */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SERVER_URL || "https://handeyeceramics.vercel.app").replace(/\/+$/, "");
 
 export const squash = (s: string) => s.replace(/\s+/g, " ").trim();
 

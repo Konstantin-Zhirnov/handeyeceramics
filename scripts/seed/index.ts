@@ -14,6 +14,7 @@ import config from "../../payload.config";
 import { classTabs, gallery, locations, reviews, site, stageChapters, steps } from "../../lib/site";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
 import * as L from "./lexical";
+import * as homeText from "./home";
 
 const root = process.cwd();
 const withImages = process.env.SEED_IMAGES !== "0";
@@ -77,6 +78,20 @@ function isChrome(b: Block): boolean {
   return false;
 }
 const isProductTile = (b: Block) => b.type === "list-item" && (b.text || "").startsWith("Quick View");
+/** What a Wix storefront prints when its category has no products. */
+const isEmptyStore = (b: Block) => b.type === "heading" && /^We don.t have any products to show here right now\.?$/.test((b.text || "").trim());
+/** The price and option widget of a Wix product page — not part of the description. */
+const WIX_PRICE = /^CA\$[\d,]+(\.\d+)?$/;
+type ProductOption = { title: string; choices: string[] };
+const optionsOf = (r: Rec) =>
+  ((r as { options?: ProductOption[] }).options || []).filter((o) => o.title && o.choices?.length);
+/** Labels and "Select" placeholders of the drop-downs that became the product's options. */
+function isOptionWidget(b: Block, options: ProductOption[]): boolean {
+  const t = (b.text || "").trim();
+  if (!options.length) return false;
+  if (b.type === "button") return t === "Select";
+  return b.type === "label" && options.some((o) => t === `${o.title} *`);
+}
 
 // ---- Report of SEO fixes ----------------------------------------------------
 const fixes: string[] = [];
@@ -122,13 +137,19 @@ function pickH1(r: Rec): { index: number; text: string } {
   return index >= 0 ? { index, text: r.blocks[index].text! } : { index: -1, text: pageName(r) };
 }
 
+/**
+ * The category a storefront page lists: the one whose products are exactly
+ * the products the Wix page links to. No exact match — the last category
+ * those products share.
+ */
 function categoryOf(pagePath: string): string {
-  const prods: Rec[] = inv.products.filter((p: Rec) => p.categoryPath === pagePath);
-  if (pagePath === "/shop" || !prods.length) return "";
-  const common = prods
-    .map((p) => p.categories || [])
-    .reduce((acc, cats) => acc.filter((c) => cats.includes(c)));
-  return common[common.length - 1] || "";
+  const page = inv.pages.find((p: Rec) => p.path === pagePath) as { links?: string[] } | undefined;
+  const linked = new Set((page?.links || []).filter((l) => l.startsWith("/product-page/")));
+  const prods: Rec[] = inv.products.filter((p: Rec) => linked.has(p.path));
+  if (!prods.length) return "";
+  const shared = prods.map((p) => p.categories || []).reduce((acc, cats) => acc.filter((c) => cats.includes(c)));
+  const size = (c: string) => inv.products.filter((p: Rec) => (p.categories || []).includes(c)).length;
+  return shared.find((c) => size(c) === prods.length) || shared[shared.length - 1] || "";
 }
 
 /** Inventory blocks → page blocks, in page order. */
@@ -138,6 +159,10 @@ async function toBlocks(r: Rec, h1Index: number) {
   let list: string[] = [];
   let images: number[] = [];
   let tilesDone = false;
+  let tile = "";
+  let emptyStore = false;
+  const planSpot = textPlans().spots.get(r.path);
+  let plansDone = false;
 
   const flushList = () => {
     if (list.length) nodes.push(L.list(list));
@@ -155,7 +180,22 @@ async function toBlocks(r: Rec, h1Index: number) {
   };
 
   for (const [i, b] of r.blocks.entries()) {
+    if (planSpot?.indices.has(i)) {
+      // These paragraphs are plans now: one plan list stands where the first of them stood.
+      if (!plansDone) {
+        flushImages();
+        flushText();
+        out.push({ blockType: "planList", group: planSpot.group || undefined });
+        plansDone = true;
+      }
+      continue;
+    }
+    if (isEmptyStore(b)) emptyStore = true;
     if (i === h1Index || isChrome(b)) continue;
+    // A tile's picture and the name printed under it belong to the product list.
+    if (isProductTile(b)) images = [];
+    if (b.type === "paragraph" && tile.includes((b.text || "").trim())) continue;
+    tile = isProductTile(b) ? b.text || "" : b.type === "image" ? tile : "";
     if (b.type !== "image") flushImages();
     if (isProductTile(b)) {
       if (!tilesDone) {
@@ -197,6 +237,9 @@ async function toBlocks(r: Rec, h1Index: number) {
   }
   flushImages();
   flushText();
+  // A Wix storefront with an empty grid stays a storefront: the category of the
+  // products it links to, or none — then the list is empty until the owner names one.
+  if (emptyStore && !tilesDone) out.push({ blockType: "productList", category: categoryOf(r.path) || undefined });
   return out;
 }
 
@@ -281,6 +324,18 @@ async function seedStudios() {
       address: [loc.street, `${loc.locality}, ${loc.regionCode}${loc.postalCode ? " " + loc.postalCode : ""}`].join("\n"),
       phone: phoneOf(loc.slug),
       description: [loc.intro, ...notes].join("\n"),
+      short: loc.short,
+      status: loc.status,
+      tag: loc.tag,
+      region: loc.region,
+      h1: loc.h1,
+      // lib/site.ts names one booking page, the Vancouver classes page; a studio elsewhere books on its own page.
+      bookingPath: loc.locality === "Vancouver" && loc.status === "open" ? new URL(site.bookingUrl).pathname : null,
+      // The prototype's card text of a planned studio is a developer's remark; its intro is the copy.
+      note: loc.status === "planned" ? loc.intro : loc.note,
+      access: loc.access || null,
+      highlights: loc.highlights.map((text) => ({ text })),
+      google: { rating: loc.google?.rating ?? null, count: loc.google?.count ?? null, url: loc.google?.url ?? null },
       photos: photo ? [photo] : [],
       seo: wix ? seoFor(wix) : { title: loc.metaTitle, description: loc.metaDescription },
       published: true,
@@ -293,12 +348,24 @@ async function seedStudios() {
 const duplicateTitle = (p: string) =>
   issues.some((e) => e.path === p && e.issues.some((i) => i.type === "duplicate-title"));
 
+/** The amount Wix prints just above its "Sale Price" label, when it differs from the price. */
+function salePriceOf(r: Rec): number | null {
+  const i = r.blocks.findIndex((b) => b.type === "text" && (b.text || "").trim() === "Sale Price");
+  const text = i > 0 ? (r.blocks[i - 1].text || "").trim() : "";
+  if (!WIX_PRICE.test(text)) return null;
+  const n = Number(text.replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) && n !== r.price ? n : null;
+}
+
 async function seedProducts() {
   for (const r of inv.products as Rec[]) {
     const h1 = pickH1(r);
     const price = formatPrice(r.price);
+    const salePrice = salePriceOf(r);
+    const options = optionsOf(r);
     const description = r.blocks
-      .filter((b, i) => i !== h1.index && b.text && !isChrome(b) && b.type !== "image" && b.text.trim() !== price)
+      .filter((b, i) => i !== h1.index && b.text && !isChrome(b) && !isOptionWidget(b, options) && b.type !== "image")
+      .filter((b) => ![price, salePrice === null ? price : formatPrice(salePrice)].includes(b.text!.trim()))
       .map((b) => b.text!.trim())
       .join("\n\n");
     const images: number[] = [];
@@ -321,8 +388,10 @@ async function seedProducts() {
       name: r.name || h1.text,
       path: r.path,
       price: r.price ?? null,
+      salePrice,
       images,
       description,
+      options: options.map((o) => ({ title: o.title, choices: o.choices.join("\n") })),
       category: (r.categories?.length ? r.categories.join(", ") : r.category) || undefined,
       seo,
       visible: true,
@@ -330,19 +399,114 @@ async function seedProducts() {
   }
 }
 
+type PlanData = { name: string; price: number | null; period: string; description: string; group: string };
+/** The inventory blocks of a page that became plans: one plan list stands in their place. */
+type PlanSpot = { group: string; indices: Set<number> };
+const MEMBERSHIPS_PATH = "/membership-rentals";
+const RENTAL_PATH = "/wheel-rental";
+/** "$175+gst per month", "$150 monthly", "$125/month": a period stated with the amount. */
+const MONTHLY = /\$\s?\d+(?:\.\d+)?(?:\s*\+\s*gst)?\s*(?:per month|monthly|\/\s*month)/i;
+const amounts = (text: string) => [...new Set([...text.matchAll(/\$\s?(\d+(?:\.\d+)?)/g)].map((m) => Number(m[1])))];
+
+let planCache: { plans: PlanData[]; spots: Map<string, PlanSpot> } | undefined;
+
+/**
+ * Membership options and the wheel rental are plain paragraphs on the old
+ * site. Each becomes a plan with its paragraphs, word for word, as the
+ * description. Nothing is guessed: the price is the option's one amount (two
+ * different amounts — no price), the period is set only where the text states
+ * it next to the amount, the group is a heading of the old page.
+ */
+function textPlans() {
+  if (planCache) return planCache;
+  const plans: PlanData[] = [];
+  const spots = new Map<string, PlanSpot>();
+  const blocksOf = (p: string) => (inv.pages as Rec[]).find((r) => r.path === p)?.blocks || [];
+  const textOf = (b: Block) => (b.text || "").trim();
+
+  const members = blocksOf(MEMBERSHIPS_PATH);
+  const memberGroup = textOf(members.find((b) => b.type === "heading" && /^Studio Memberships$/i.test(textOf(b))) || { type: "" });
+  const memberSpot: PlanSpot = { group: memberGroup, indices: new Set() };
+  let cur: { name: string; lines: string[]; at: number[] } | null = null;
+  const close = () => {
+    const c = cur as { name: string; lines: string[]; at: number[] } | null;
+    if (c) {
+      const text = [c.name, ...c.lines].join(" ");
+      const found = amounts(text);
+      plans.push({
+        name: c.name,
+        price: found.length === 1 ? found[0] : null,
+        period: MONTHLY.test(text) ? "per month" : "",
+        description: c.lines.join("\n"),
+        group: memberGroup,
+      });
+      c.at.forEach((i) => memberSpot.indices.add(i));
+    }
+    cur = null;
+  };
+  for (const [i, b] of members.entries()) {
+    const t = textOf(b);
+    // "Option 5 @ 739 Gore…" names a location; "Option 5" opens an option.
+    if (b.type === "paragraph" && /^Option \d+\b/.test(t) && !t.includes("@")) {
+      close();
+      cur = { name: t, lines: [], at: [i] };
+    } else if (b.type !== "paragraph" || /^All memberships are/i.test(t)) close();
+    else if (cur) {
+      (cur as { lines: string[] }).lines.push(t);
+      (cur as { at: number[] }).at.push(i);
+    }
+  }
+  close();
+  if (memberSpot.indices.size) spots.set(MEMBERSHIPS_PATH, memberSpot);
+
+  // The wheel rental: the paragraphs from "…costs $125/month…" to "A three month rental includes…".
+  const rental = blocksOf(RENTAL_PATH);
+  const costAt = rental.findIndex((b) => b.type === "paragraph" && /^Our pottery wheel rental program costs \$\d/.test(textOf(b)));
+  const name = textOf(rental.find((b) => /^Pottery Wheel Rental Program$/.test(textOf(b))) || { type: "" });
+  if (costAt >= 0 && name) {
+    let end = costAt;
+    for (let i = costAt + 1; i < rental.length && rental[i].type === "paragraph" && i <= costAt + 3; i++) {
+      if (/^A three month rental includes/.test(textOf(rental[i]))) end = i;
+    }
+    const at = Array.from({ length: end - costAt + 1 }, (_, k) => costAt + k);
+    // The price is the one the sentence calls the cost; the other amounts are its tax and its three-month totals.
+    const stated = textOf(rental[costAt]).match(/costs \$(\d+(?:\.\d+)?)\s*\/\s*month/);
+    const group = textOf(rental.find((b) => b.type === "heading" && b.level === 1) || { type: "" });
+    plans.push({
+      name,
+      price: stated ? Number(stated[1]) : null,
+      period: stated ? "per month" : "",
+      description: at.map((i) => textOf(rental[i])).join("\n"),
+      group,
+    });
+    spots.set(RENTAL_PATH, { group, indices: new Set(at) });
+  }
+  planCache = { plans, spots };
+  return planCache;
+}
+
 async function seedPlans() {
-  let order = 0;
+  const plans: PlanData[] = [];
   for (const page of inv.pricing as Rec[]) {
     for (const plan of page.plans || []) {
-      await upsert("plans", { name: { equals: plan.name } }, {
+      plans.push({
         name: plan.name,
         price: Number(plan.price),
         period: plan.period,
         description: [plan.description, ...plan.benefits].filter(Boolean).join("\n"),
-        order: order++,
+        // Listed first, straight under the page heading.
+        group: "",
       });
     }
     await seedPage(page);
+    // What the crawl found on the old plans page is its pricing widget: the plan
+    // cards, each glued into one line. The plans are documents now and the
+    // template prints them, so the page itself carries no blocks.
+    await payload.update({ collection: "pages", where: { path: { equals: page.path } }, data: { blocks: [] } });
+  }
+  plans.push(...textPlans().plans);
+  for (const [order, plan] of plans.entries()) {
+    await upsert("plans", { name: { equals: plan.name } }, { ...plan, order });
   }
 }
 
@@ -354,6 +518,7 @@ async function seedClasses(studio: Record<string, number>) {
     const photo = await media(path.join("public", tab.image), tab.title);
     await upsert("classes", { title: { equals: tab.title } }, {
       title: tab.title,
+      tab: tab.label,
       studio: TAB_ROW[tab.id] ? studiosWith(TAB_ROW[tab.id]) : [],
       description: [tab.body, ...tab.points.map((p) => `• ${p}`)].join("\n"),
       duration: tab.price,
@@ -415,14 +580,22 @@ async function seedGlobals() {
       email: site.email,
       instagram: site.instagram,
       nav: inv.site.nav.map(link),
-      footer: { links: inv.site.footer.map(link) },
+      footer: { text: homeText.footerText, links: inv.site.footer.map(link) },
     },
   });
   const homeRec: Rec = inv.pages.find((r: Rec) => r.path === "/");
+  const galleryIds: number[] = [];
+  for (const g of gallery) {
+    const id = await media(path.join("public", g.src), g.alt);
+    if (id) galleryIds.push(id);
+  }
   await payload.updateGlobal({
     slug: "home",
     data: {
+      hero: homeText.hero,
+      gallery: galleryIds,
       sections: [
+        ...homeText.sections,
         ...stageChapters.map((c, i) => ({ key: `stage-${i + 1}`, eyebrow: c.label, heading: c.title, body: c.body })),
         ...steps.map((s, i) => ({ key: `step-${i + 1}`, heading: s.title, body: s.body })),
         ...reviews.map((r, i) => ({ key: `review-${i + 1}`, eyebrow: r.meta, heading: r.author, body: r.quote })),
@@ -430,7 +603,6 @@ async function seedGlobals() {
       seo: seoFor(homeRec),
     },
   });
-  for (const g of gallery) await media(path.join("public", g.src), g.alt);
 }
 
 function writeFixes() {

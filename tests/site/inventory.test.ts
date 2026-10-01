@@ -39,8 +39,8 @@ const expectedRedirects: Record<string, string> = {
   "/booking-calendar/tuesday-6-30-wheel-throwing": CHINATOWN,
 };
 const expected404 = new Set(["/product-page/private-lessons"]);
-// The home page is still the prototype; task 04 moves it onto the CMS.
-const prototypeTemplates = new Set(["/"]);
+// No exemptions: the home page carries the H1 and the text of the old one, like every other page.
+const prototypeTemplates = new Set<string>();
 // Story 8: this title repeats the title of a content page, so the product's
 // category is added to it (content/seo-fixes.md).
 const retitled: Record<string, string> = {
@@ -55,6 +55,9 @@ const chrome = (b: Block) => {
   if (b.type === "text" && ["*", "Excluding Sales Tax", "Quantity *", "Price", "Regular Price", "Sale Price"].includes(t)) return true;
   if (b.type === "button" && t === "Add to Cart") return true;
   if (b.type === "list-item" && (["Top of Page", "Home", "Service list"].includes(t) || t.startsWith("Quick View"))) return true;
+  // A card of the Wix pricing widget, glued by the crawl into one line ("Tuesday Evening CA$ 267.75 … Buy Now …").
+  // The plan is a document of the plans collection and is printed from there, part by part.
+  if (b.type === "list-item" && /CA\$ ?[\d.]+ .* Buy Now /.test(t)) return true;
   return false;
 };
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();

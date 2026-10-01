@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { ease } from "./motion-primitives";
-import { locations } from "@/lib/site";
+import { useSiteData } from "./site/SiteData";
 
 function PinIcon({ className = "" }: { className?: string }) {
   return (
@@ -22,6 +22,7 @@ function PinIcon({ className = "" }: { className?: string }) {
 /**
  * The answer to "people in Vancouver think we're only in Nanaimo": every page
  * carries the full list of studios, and the current one is always named.
+ * `current` is the path of the studio whose page this is.
  */
 export function LocationSwitcher({
   current,
@@ -30,9 +31,10 @@ export function LocationSwitcher({
   current?: string;
   tone?: "ink" | "sky" | "glass";
 }) {
+  const { studios } = useSiteData();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const active = locations.find((l) => l.slug === current);
+  const active = studios.find((l) => l.path === current);
 
   useEffect(() => {
     if (!open) return;
@@ -47,6 +49,8 @@ export function LocationSwitcher({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  if (!studios.length) return null;
 
   const trigger =
     tone === "glass"
@@ -81,14 +85,14 @@ export function LocationSwitcher({
             transition={{ duration: 0.22, ease }}
             className="absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-ink/10 bg-clay-50 p-1.5 shadow-[0_20px_44px_rgba(28,21,18,0.16)]"
           >
-            {locations.map((loc) => (
+            {studios.map((loc) => (
               <Link
-                key={loc.slug}
-                href={`/classes/${loc.slug}`}
+                key={loc.path}
+                href={loc.path}
                 onClick={() => setOpen(false)}
                 role="menuitem"
                 className={`flex flex-col rounded-xl px-3.5 py-3 transition-colors ${
-                  loc.slug === current ? "bg-sky-brand/45" : "hover:bg-clay-100"
+                  loc.path === current ? "bg-sky-brand/45" : "hover:bg-clay-100"
                 }`}
               >
                 <span className="flex items-center gap-2 text-[0.9rem] font-bold text-ink">

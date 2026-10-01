@@ -1,24 +1,20 @@
 "use client";
 
-import Image from "next/image";
 import {
   motion,
   useMotionValueEvent,
-  useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { SequenceCanvas } from "./SequenceCanvas";
-import {
-  googleTotals,
-  site,
-  stageChapters,
-  stageSequence,
-  type StageChapter,
-} from "@/lib/site";
+import { stageSequence } from "@/lib/site";
+import { Emph, useSiteData, type SectionText } from "./site/SiteData";
+
+/** The hero card's copy, from the home global. In the title ` / ` breaks the line and `*…*` is italic. */
+export type HeroText = { eyebrow: string; title: string; subtitle: string; cta: { label: string; href: string } };
 
 /** Share of the pinned scroll spent turning the card into the full stage. */
 const EXPAND_END = 0.16;
@@ -51,9 +47,16 @@ function emit(state: StageState) {
  * Everything in the first screen is server-rendered and visible before any
  * JavaScript runs; scroll only moves --p and the chapter layers.
  */
-export function HeroStage() {
+export function HeroStage({ hero, chapters }: { hero: HeroText; chapters: SectionText[] }) {
+  const { phone, phoneHref, googleReviews } = useSiteData();
+  // Chapter copy: the home global's stage-1…stage-3 (eyebrow — label, heading, body).
+  const stageChapters: ChapterData[] = chapters.slice(0, WINDOWS.length).map((c, i) => ({
+    n: String(i + 1).padStart(2, "0"),
+    label: c.eyebrow,
+    title: c.heading,
+    body: c.body,
+  }));
   const ref = useRef<HTMLElement>(null);
-  const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const p = useSpring(scrollYProgress, { stiffness: 140, damping: 32, mass: 0.35 });
   const expand = useTransform(p, [0, EXPAND_END], [0, 1], { clamp: true });
@@ -97,17 +100,13 @@ export function HeroStage() {
         {/* ---- Stage: photo inside the card, then full bleed ---- */}
         <div className="stage-media absolute inset-0 bg-clay-200">
           <div className="stage-frame">
-            {stageSequence ? (
+            {stageSequence && (
               <SequenceCanvas
                 path={stageSequence.path}
                 count={stageSequence.count}
                 progress={seq}
                 poster={stageSequence.poster}
               />
-            ) : (
-              stageChapters.map((c, i) => (
-                <Slide key={c.image} index={i} progress={p} reduce={!!reduce} chapter={c} />
-              ))
             )}
           </div>
 
@@ -152,27 +151,34 @@ export function HeroStage() {
         <div className="stage-text grain z-10 flex flex-col justify-center overflow-hidden border border-clay-200 bg-clay-100 px-5 py-5 sm:px-8 lg:px-12 lg:py-10">
           <div className="relative z-10">
             <p className="rise eyebrow text-clay-600" style={{ animationDelay: "0.1s" }}>
-              Pottery classes · Vancouver &amp; Nanaimo
+              {hero.eyebrow}
             </p>
 
-            <h1
+            {/* The prototype's line, kept as decoration; the page's H1 heads its text section. */}
+            <p
               className="rise display mt-3 text-[2.15rem] leading-[1.02] text-ink sm:text-[2.9rem] lg:mt-5 lg:text-[clamp(3rem,4.6vw,4.6rem)]"
               style={{ animationDelay: "0.18s" }}
             >
-              Throw
-              <span aria-hidden className="text-clay-400">
-                {" "}/
-              </span>{" "}
-              <br />
-              <em className="italic">your first pot</em>
-            </h1>
+              {hero.title.split(" / ").map((line, i) => (
+                <Fragment key={i}>
+                  {i > 0 && (
+                    <>
+                      <span aria-hidden className="text-clay-400">
+                        {" "}/
+                      </span>{" "}
+                      <br />
+                    </>
+                  )}
+                  <Emph text={line} />
+                </Fragment>
+              ))}
+            </p>
 
             <p
               className="rise mt-3 max-w-[40ch] text-[0.95rem] leading-relaxed text-ink-soft lg:mt-6 lg:text-[1.02rem]"
               style={{ animationDelay: "0.26s" }}
             >
-              Six-week wheel courses, one-night drop-ins and date nights across three studios. No
-              experience needed, every tool provided.
+              {hero.subtitle}
             </p>
 
             <div
@@ -180,18 +186,18 @@ export function HeroStage() {
               style={{ animationDelay: "0.34s" }}
             >
               <a
-                href="#classes"
+                href={hero.cta.href || "#classes"}
                 className="flex h-12 flex-1 items-center justify-center rounded-full bg-terracotta px-6 text-[0.9rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5 sm:flex-none lg:h-13 lg:px-8"
               >
-                See classes
+                {hero.cta.label}
               </a>
               {/* one tap to call — full number from sm up, short label on small phones */}
               <a
-                href={site.phoneHref}
+                href={phoneHref}
                 className="flex h-12 flex-1 items-center justify-center rounded-full border border-ink/25 px-5 text-[0.9rem] font-semibold text-ink transition-colors hover:bg-clay-50 sm:flex-none lg:h-13 lg:px-7"
               >
                 <span className="sm:hidden">Call us</span>
-                <span className="hidden sm:inline">Call {site.phoneDisplay}</span>
+                <span className="hidden sm:inline">Call {phone}</span>
               </a>
             </div>
 
@@ -200,7 +206,7 @@ export function HeroStage() {
               style={{ animationDelay: "0.42s" }}
             >
               <span className="tracking-[0.12em] text-terracotta">★★★★★</span>
-              {googleTotals.count} Google reviews across {googleTotals.profiles} studios
+              {googleReviews.count} Google reviews across {googleReviews.profiles} studios
             </p>
           </div>
         </div>
@@ -209,50 +215,7 @@ export function HeroStage() {
   );
 }
 
-type ChapterData = StageChapter;
-
-function Slide({
-  index,
-  progress,
-  reduce,
-  chapter,
-}: {
-  index: number;
-  progress: MotionValue<number>;
-  reduce: boolean;
-  chapter: ChapterData;
-}) {
-  const [a, b] = WINDOWS[index];
-  const first = index === 0;
-  const lastSlide = index === WINDOWS.length - 1;
-
-  // The first photo is already on screen inside the card; the others fade in.
-  const opacity = useTransform(
-    progress,
-    first ? [0, b - 0.06, b] : lastSlide ? [a, a + 0.06] : [a, a + 0.06, b - 0.06, b],
-    first ? [1, 1, 0] : lastSlide ? [0, 1] : [0, 1, 1, 0],
-  );
-  // Slow push-in on the first photo, a settle-from-zoom on the others.
-  const scale = useTransform(
-    progress,
-    first ? [0, b] : [a, b],
-    reduce ? [1, 1] : first ? [1, 1.16] : [1.14, 1],
-  );
-
-  return (
-    <motion.div className="absolute inset-0 will-change-transform" style={{ opacity, scale }}>
-      <Image
-        src={chapter.image}
-        alt={first ? chapter.alt : ""}
-        fill
-        priority={first}
-        sizes="100vw"
-        className="object-cover"
-        style={{ objectPosition: chapter.position }}
-      />
-    </motion.div>
-  );
-}
+type ChapterData = { n: string; label: string; title: string; body: string };
 
 function Chapter({
   chapter,

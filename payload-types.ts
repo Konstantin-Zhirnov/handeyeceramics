@@ -243,6 +243,30 @@ export interface Studio {
    * Адрес страницы как на старом сайте, например /pottery-classes-nanaimo
    */
   path: string;
+  /**
+   * Для переключателя студий и кнопок, например Chinatown
+   */
+  short?: string | null;
+  /**
+   * «Скоро откроется» — страница-заглушка: без телефона, расписания и адреса для Google
+   */
+  status: 'open' | 'planned';
+  /**
+   * например Main studio
+   */
+  tag?: string | null;
+  /**
+   * например Vancouver, BC
+   */
+  region?: string | null;
+  h1?: string | null;
+  /**
+   * Куда ведут кнопки Book этой студии, например /adult-beginner-pottery-classes-in-vancouver. Пусто — страница самой студии
+   */
+  bookingPath?: string | null;
+  /**
+   * Первая строка — улица и дом, вторая — «Город, BC V6A 2Z9»
+   */
   address?: string | null;
   phone?: string | null;
   hours?:
@@ -256,7 +280,23 @@ export interface Studio {
     lat?: number | null;
     lng?: number | null;
   };
+  /**
+   * Вступление. Строки вида «Название: текст» показываются рядом с расписанием
+   */
   description?: string | null;
+  note?: string | null;
+  access?: string | null;
+  highlights?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  google?: {
+    rating?: number | null;
+    count?: number | null;
+    url?: string | null;
+  };
   photos?: (number | Media)[] | null;
   seo?: {
     title?: string | null;
@@ -273,6 +313,10 @@ export interface Studio {
 export interface Class {
   id: number;
   title: string;
+  /**
+   * Короткое название, например Wheel throwing. С ним занятие показывается на главной и на странице студии
+   */
+  tab?: string | null;
   studio?: (number | Studio)[] | null;
   description?: string | null;
   /**
@@ -390,12 +434,23 @@ export interface Page {
         | {
             heading?: string | null;
             /**
-             * Пусто — все категории
+             * Товары этой категории. Пусто — список пуст
              */
             category?: string | null;
+            all?: boolean | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'productList';
+          }
+        | {
+            heading?: string | null;
+            /**
+             * Тарифы этой группы. Пусто — все тарифы, по группам
+             */
+            group?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'planList';
           }
       )[]
     | null;
@@ -415,8 +470,25 @@ export interface Product {
    */
   path: string;
   price?: number | null;
+  /**
+   * Цена со скидкой. Пусто — скидки нет
+   */
+  salePrice?: number | null;
   images?: (number | Media)[] | null;
   description?: string | null;
+  /**
+   * Варианты товара (дата, цвет, размер): название и значения — по одному в строке
+   */
+  options?:
+    | {
+        title: string;
+        choices: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Категории через запятую. Товар виден на витринах, где указана одна из них
+   */
   category?: string | null;
   seo?: {
     title?: string | null;
@@ -435,10 +507,14 @@ export interface Plan {
   name: string;
   price?: number | null;
   /**
-   * например month
+   * например per month. Пусто — показана только цена
    */
   period?: string | null;
   description?: string | null;
+  /**
+   * Группа: заголовок на странице тарифов; по ней блок «Список тарифов» выбирает тарифы
+   */
+  group?: string | null;
   order?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -450,10 +526,17 @@ export interface Plan {
 export interface Enquiry {
   id: number;
   type: 'contact' | 'commission' | 'event' | 'other';
-  name: string;
   email: string;
+  name?: string | null;
   phone?: string | null;
-  message: string;
+  answers?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  message?: string | null;
   studio?: (number | null) | Studio;
   page?: string | null;
   status?: ('new' | 'in-progress' | 'done') | null;
@@ -687,6 +770,12 @@ export interface VideosSelect<T extends boolean = true> {
 export interface StudiosSelect<T extends boolean = true> {
   name?: T;
   path?: T;
+  short?: T;
+  status?: T;
+  tag?: T;
+  region?: T;
+  h1?: T;
+  bookingPath?: T;
   address?: T;
   phone?: T;
   hours?:
@@ -703,6 +792,21 @@ export interface StudiosSelect<T extends boolean = true> {
         lng?: T;
       };
   description?: T;
+  note?: T;
+  access?: T;
+  highlights?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  google?:
+    | T
+    | {
+        rating?: T;
+        count?: T;
+        url?: T;
+      };
   photos?: T;
   seo?:
     | T
@@ -720,6 +824,7 @@ export interface StudiosSelect<T extends boolean = true> {
  */
 export interface ClassesSelect<T extends boolean = true> {
   title?: T;
+  tab?: T;
   studio?: T;
   description?: T;
   price?: T;
@@ -819,6 +924,15 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               heading?: T;
               category?: T;
+              all?: T;
+              id?: T;
+              blockName?: T;
+            };
+        planList?:
+          | T
+          | {
+              heading?: T;
+              group?: T;
               id?: T;
               blockName?: T;
             };
@@ -835,8 +949,16 @@ export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   path?: T;
   price?: T;
+  salePrice?: T;
   images?: T;
   description?: T;
+  options?:
+    | T
+    | {
+        title?: T;
+        choices?: T;
+        id?: T;
+      };
   category?: T;
   seo?:
     | T
@@ -857,6 +979,7 @@ export interface PlansSelect<T extends boolean = true> {
   price?: T;
   period?: T;
   description?: T;
+  group?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -867,9 +990,16 @@ export interface PlansSelect<T extends boolean = true> {
  */
 export interface EnquiriesSelect<T extends boolean = true> {
   type?: T;
-  name?: T;
   email?: T;
+  name?: T;
   phone?: T;
+  answers?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
   message?: T;
   studio?: T;
   page?: T;
@@ -988,7 +1118,7 @@ export interface Home {
   sections?:
     | {
         /**
-         * например classes, gallery, membership
+         * classes, gallery, reviews, locations, other-studios, membership; серии feature-1…, perk-1…, stage-1…, review-1…. В заголовке *курсив* и « / » — перенос строки
          */
         key: string;
         eyebrow?: string | null;
@@ -997,6 +1127,7 @@ export interface Home {
         id?: string | null;
       }[]
     | null;
+  gallery?: (number | Media)[] | null;
   seo?: {
     title?: string | null;
     description?: string | null;
@@ -1068,6 +1199,7 @@ export interface HomeSelect<T extends boolean = true> {
         body?: T;
         id?: T;
       };
+  gallery?: T;
   seo?:
     | T
     | {

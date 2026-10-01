@@ -8,6 +8,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { TestProject } from "vitest/node";
+import { forgetEditor } from "./editor";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const port = Number(process.env.TEST_PORT || 3311);
@@ -17,6 +18,8 @@ let dir: string | undefined;
 declare module "vitest" {
   export interface ProvidedContext {
     baseURL: string;
+    /** The database of the site under test, for tests that edit the CMS; "" if unknown. */
+    databaseURI: string;
   }
 }
 
@@ -37,7 +40,9 @@ async function waitFor(url: string, ms: number) {
 export default async function setup(project: TestProject) {
   if (process.env.TEST_BASE_URL) {
     project.provide("baseURL", process.env.TEST_BASE_URL.replace(/\/$/, ""));
-    return;
+    project.provide("databaseURI", process.env.DATABASE_URI || "");
+    const target = process.env.TEST_BASE_URL.replace(/\/$/, "");
+    return () => forgetEditor(target);
   }
   dir = mkdtempSync(path.join(tmpdir(), "handeye-test-"));
   const env = {
@@ -61,10 +66,12 @@ export default async function setup(project: TestProject) {
   const baseURL = `http://localhost:${port}`;
   await waitFor(`${baseURL}/robots.txt`, 300_000);
   project.provide("baseURL", baseURL);
+  project.provide("databaseURI", env.DATABASE_URI!);
   return stop;
 }
 
 async function stop() {
+  forgetEditor(`http://localhost:${port}`);
   if (server?.pid) {
     if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(server.pid), "/T", "/F"]);
     else server.kill("SIGTERM");

@@ -1,11 +1,20 @@
+/**
+ * The prototype's data. The running site does not read content from here:
+ * studios, classes, contacts and the home page texts live in the CMS, and this
+ * file is only what `npm run seed` carries into it. The site itself uses just
+ * the constants that are not content: `site.url`, `site.name` (kept in
+ * lib/cms/text.ts) and `stageSequence`.
+ */
+import { SITE_NAME, SITE_URL } from "./cms/text";
+
 export const site = {
-  name: "Hand Eye Ceramics",
+  name: SITE_NAME,
   phoneDisplay: "(778) 898-3414",
   phoneHref: "tel:+17788983414",
   email: "info@handeyeceramics.com",
   instagram: "https://www.instagram.com/handeyedesignceramics/",
   bookingUrl: "https://www.handeyeceramics.com/adult-beginner-pottery-classes-in-vancouver",
-  url: "https://handeyeceramics.vercel.app",
+  url: SITE_URL,
 };
 
 // "Locations" is deliberately absent — the location switcher replaces it, so

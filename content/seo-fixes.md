@@ -46,7 +46,7 @@
 | `/product-page/coffee-clay` | пустой description | первые 11 символов текста товара |
 | `/product-page/coleman-s-porcelain-4-5-lb` | пустой description | первые 88 символов текста товара |
 | `/product-page/coming-back-to-under-glaze-1-off-pottery-workshop-pots` | пустой description | первые 150 символов текста товара |
-| `/product-page/date-night-drop-in-class-if-paying-via-gift-card` | пустой description | первые 8 символов текста товара |
+| `/product-page/date-night-drop-in-class-if-paying-via-gift-card` | пустой description | первые 48 символов текста товара |
 | `/product-page/date-night-for-two` | пустой description | первые 41 символов текста товара |
 | `/product-page/demo-pot` | пустой description | первые 8 символов текста товара |
 | `/product-page/demystifying-slip-casting-and-marbling-clay` | пустой description | первые 151 символов текста товара |
@@ -58,7 +58,7 @@
 | `/product-page/glaze-session-sat-sundays-4pm-6pm` | пустой description | первые 151 символов текста товара |
 | `/product-page/h550` | пустой description | первые 152 символов текста товара |
 | `/product-page/hand-building-beginner-to-intermediate` | пустой description | первые 152 символов текста товара |
-| `/product-page/hanging-plant-pot` | пустой description | первые 72 символов текста товара |
+| `/product-page/hanging-plant-pot` | пустой description | первые 50 символов текста товара |
 | `/product-page/long-denim-apron` | пустой description | первые 26 символов текста товара |
 | `/product-page/m332-clay-2-50-lb` | пустой description | первые 147 символов текста товара |
 | `/product-page/m350` | пустой description | первые 154 символов текста товара |
@@ -76,7 +76,7 @@
 | `/product-page/speckled-clay-340gs-2-lb` | пустой description | первые 48 символов текста товара |
 | `/product-page/split-leg-apron-with-pocket` | пустой description | первые 26 символов текста товара |
 | `/product-page/studio-membership-subscription` | пустой description | первые 155 символов текста товара |
-| `/product-page/trimming-tools-small-medium` | пустой description | первые 127 символов текста товара |
+| `/product-page/trimming-tools-small-medium` | пустой description | первые 113 символов текста товара |
 | `/product-page/wheel-rental-subscription` | пустой description | первые 152 символов текста товара |
 | `/product-page/wheel-throwing-intermediate-only-spring` | пустой description | первые 153 символов текста товара |
 | `/saturday-night-drop-in` | нет H1 | первый заголовок «We don’t have any products to show here right now.» стал H1 |
