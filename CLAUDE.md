@@ -143,3 +143,28 @@
 ```bash
 grep "^## \[" wiki/log.md | tail -5
 ```
+
+<!-- autopilot:start -->
+## Autopilot
+
+| Команда | Что делает |
+|---------|------------|
+| `npm install` | Установить зависимости |
+| `npm run dev` | Запустить локально, порт 3210 |
+| `npm run build` | Продакшен-сборка |
+
+Сборки ведутся навыком `/autopilot`. Требования, спецификация и таски — в `.autopilot/`
+(вне git, как `raw/` и `wiki/`). Прогресс — `.autopilot/dashboard.html`. Правило: требование
+из `manifest.md` может снять только пользователь. Если работа прервалась — «продолжи
+автопилот»: состояние поднимется из `.autopilot/state.js`.
+<!-- autopilot:end -->
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
