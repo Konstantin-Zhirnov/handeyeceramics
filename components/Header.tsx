@@ -1,11 +1,10 @@
 "use client";
 
-import { useScroll, useMotionValueEvent } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { LocationSwitcher } from "./LocationSwitcher";
-import { STAGE_EVENT, type StageState } from "./HeroStage";
+import { STAGE_EVENT, type StageState } from "./stage-event";
 import { useSiteData } from "./site/SiteData";
 
 /** The menu's anchor: `#site-menu` opens it where scripts do not run. */
@@ -36,9 +35,13 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
   };
   const [stuck, setStuck] = useState(false);
   const [overStage, setOverStage] = useState(false);
-  const { scrollY } = useScroll();
 
-  useMotionValueEvent(scrollY, "change", (v) => setStuck(v > 40));
+  useEffect(() => {
+    const on = () => setStuck(window.scrollY > 40);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
 
   // The home page's hero stage tells us when the nav sits on top of a photo.
   useEffect(() => {

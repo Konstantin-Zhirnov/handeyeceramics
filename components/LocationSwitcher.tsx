@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { ease } from "./motion-primitives";
 import { useSiteData } from "./site/SiteData";
 
 function PinIcon({ className = "" }: { className?: string }) {
@@ -75,16 +73,14 @@ export function LocationSwitcher({
         </svg>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            role="menu"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease }}
-            className="absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-ink/10 bg-clay-50 p-1.5 shadow-[0_20px_44px_rgba(28,21,18,0.16)]"
-          >
+      {/* Always in the page and only hidden: the fade and the 8px drop are a CSS transition, both ways. */}
+      <div
+        role="menu"
+        aria-hidden={!open}
+        className={`absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-ink/10 bg-clay-50 p-1.5 shadow-[0_20px_44px_rgba(28,21,18,0.16)] transition-[opacity,transform,visibility] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0"
+        }`}
+      >
             {studios.map((loc) => (
               <Link
                 key={loc.path}
@@ -106,9 +102,7 @@ export function LocationSwitcher({
                 <span className="mt-0.5 text-[0.78rem] text-ink-soft">{loc.region}</span>
               </Link>
             ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

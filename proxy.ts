@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { serverURL } from "./lib/server-url";
 
 /**
  * Answers the redirect rules from the admin (collection `redirects`) with a
@@ -14,7 +15,7 @@ let table: { at: number; map: Map<string, string> } | undefined;
  * Where this server reaches its own API: from config, never from the request's
  * Host header (which the visitor controls).
  */
-const origin = (process.env.NEXT_PUBLIC_SERVER_URL || `http://localhost:${process.env.PORT || 3210}`).replace(/\/+$/, "");
+const origin = serverURL();
 
 async function rules() {
   if (table && Date.now() - table.at < TTL) return table.map;

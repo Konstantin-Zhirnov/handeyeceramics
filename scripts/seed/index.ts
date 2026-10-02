@@ -3,7 +3,8 @@
  * and the prototype data (lib/site.ts). Idempotent: every document is found by
  * its key (path, title, name, filename, from) and updated, never duplicated.
  *
- * SEED_IMAGES=0 skips uploading pictures (the tests use it for speed).
+ * SEED_IMAGES=0 skips uploading pictures; SEED_IMAGES="/about-us,/gift-card"
+ * uploads only the pictures of these pages (the tests use it for speed).
  * Writes content/seo-fixes.md: every finding of content/crawl-issues.json and
  * what was done about it.
  */
@@ -109,9 +110,22 @@ async function upsert(collection: string, where: Record<string, unknown>, data: 
   return (await payload.create({ collection: collection as never, data: data as never, depth: 0 })) as { id: number };
 }
 
+/** SEED_IMAGES as a list of paths: only the pictures the crawl found on these pages. */
+const imagePages = (process.env.SEED_IMAGES || "").startsWith("/")
+  ? new Set(process.env.SEED_IMAGES!.split(",").map((p) => p.trim()))
+  : null;
+const onlyImages =
+  imagePages &&
+  new Set(
+    (inv.images as { local: string; usedOn?: string[] }[])
+      .filter((img) => img.usedOn?.some((p) => imagePages.has(p)))
+      .map((img) => img.local),
+  );
+
 const mediaByLocal = new Map<string, number>();
 async function media(local: string | undefined, alt: string): Promise<number | undefined> {
   if (!withImages || !local) return undefined;
+  if (onlyImages && !onlyImages.has(local)) return undefined;
   if (mediaByLocal.has(local)) return mediaByLocal.get(local);
   const file = path.join(root, local);
   if (!existsSync(file)) return undefined;
@@ -329,8 +343,12 @@ async function seedStudios() {
       tag: loc.tag,
       region: loc.region,
       h1: loc.h1,
-      // lib/site.ts names one booking page, the Vancouver classes page; a studio elsewhere books on its own page.
-      bookingPath: loc.locality === "Vancouver" && loc.status === "open" ? new URL(site.bookingUrl).pathname : null,
+      // lib/site.ts names one booking page, the Vancouver classes page, for the six-week course. A Vancouver
+      // studio whose schedule has that course books there; any other studio books on its own page.
+      bookingPath:
+        loc.locality === "Vancouver" && loc.status === "open" && loc.schedule.some((row) => row.label === TAB_ROW.wheel)
+          ? new URL(site.bookingUrl).pathname
+          : null,
       // The prototype's card text of a planned studio is a developer's remark; its intro is the copy.
       note: loc.status === "planned" ? loc.intro : loc.note,
       access: loc.access || null,
@@ -408,6 +426,9 @@ const RENTAL_PATH = "/wheel-rental";
 const MONTHLY = /\$\s?\d+(?:\.\d+)?(?:\s*\+\s*gst)?\s*(?:per month|monthly|\/\s*month)/i;
 const amounts = (text: string) => [...new Set([...text.matchAll(/\$\s?(\d+(?:\.\d+)?)/g)].map((m) => Number(m[1])))];
 
+/** A paragraph the crawl cut a secret out of stays text of its page; it is not copied into a plan. */
+const cutOut = (text: string) => text.includes("[REDACTED]");
+
 let planCache: { plans: PlanData[]; spots: Map<string, PlanSpot> } | undefined;
 
 /**
@@ -451,7 +472,7 @@ function textPlans() {
       close();
       cur = { name: t, lines: [], at: [i] };
     } else if (b.type !== "paragraph" || /^All memberships are/i.test(t)) close();
-    else if (cur) {
+    else if (cur && !cutOut(t)) {
       (cur as { lines: string[] }).lines.push(t);
       (cur as { at: number[] }).at.push(i);
     }
@@ -468,7 +489,7 @@ function textPlans() {
     for (let i = costAt + 1; i < rental.length && rental[i].type === "paragraph" && i <= costAt + 3; i++) {
       if (/^A three month rental includes/.test(textOf(rental[i]))) end = i;
     }
-    const at = Array.from({ length: end - costAt + 1 }, (_, k) => costAt + k);
+    const at = Array.from({ length: end - costAt + 1 }, (_, k) => costAt + k).filter((i) => !cutOut(textOf(rental[i])));
     // The price is the one the sentence calls the cost; the other amounts are its tax and its three-month totals.
     const stated = textOf(rental[costAt]).match(/costs \$(\d+(?:\.\d+)?)\s*\/\s*month/);
     const group = textOf(rental.find((b) => b.type === "heading" && b.level === 1) || { type: "" });

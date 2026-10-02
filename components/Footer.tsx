@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { Reveal } from "./motion-primitives";
-import { STAGE_EVENT, type StageState } from "./HeroStage";
+import { STAGE_EVENT, type StageState } from "./stage-event";
 import { useSiteData } from "./site/SiteData";
 
 const linkClass =

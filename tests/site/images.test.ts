@@ -1,9 +1,9 @@
 /**
  * Pages with photos. With a server URL set the CMS prints absolute links to
- * its own files, and a page must still render them. Needs a database seeded
- * WITH images: `SEED_IMAGES=1 npx vitest run tests/site/images.test.ts`, or
- * TEST_BASE_URL pointing at a server started with NEXT_PUBLIC_SERVER_URL on
- * such a database. The default test database has no images — then it skips.
+ * its own files, and a page must still render them. The test database is
+ * seeded with the pictures of these pages (tests/site/global-setup.ts); with
+ * TEST_BASE_URL the server must run with NEXT_PUBLIC_SERVER_URL on a database
+ * seeded with images.
  */
 import { load } from "cheerio";
 import { describe, expect, inject, it } from "vitest";
@@ -11,9 +11,9 @@ import { describe, expect, inject, it } from "vitest";
 const base = () => inject("baseURL");
 
 describe("pages with photos", () => {
-  it("render their images when the CMS prints absolute media links", async (ctx) => {
+  it("render their images when the CMS prints absolute media links", async () => {
     const media = await (await fetch(`${base()}/api/media?limit=1&depth=0`)).json();
-    if (!media.totalDocs) return ctx.skip();
+    expect(media.totalDocs, "the test database has pictures").toBeGreaterThan(0);
     expect(media.docs[0].url).toMatch(/^http/); // the case under test: absolute links
     // Pages of the old site that carry photos in their content.
     for (const path of ["/about-us", "/gift-card", "/commissions-and-film-props"]) {

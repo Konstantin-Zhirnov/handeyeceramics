@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import MuxPlayer from "@mux/mux-player-react";
 import type { Media, Page, Video } from "@/payload-types";
 import { mediaSrc } from "@/lib/cms/media";
 import { FormBlock } from "./FormBlock";
+import { MuxVideo } from "./MuxVideo";
 import { ClassListBlock } from "./ClassListBlock";
 import { PlanListBlock } from "./PlanListBlock";
 import { ProductListBlock } from "./ProductListBlock";
@@ -35,7 +35,7 @@ function VideoBlock({ video, caption }: { video: Video | number | null | undefin
     <figure>
       {playbackId ? (
         // Mux Player is loaded only when a Mux asset exists (story 11).
-        <MuxPlayer playbackId={playbackId} streamType="on-demand" style={{ width: "100%", borderRadius: 20 }} />
+        <MuxVideo playbackId={playbackId} />
       ) : poster ? (
         <Picture media={poster} />
       ) : (

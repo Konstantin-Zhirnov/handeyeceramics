@@ -1,12 +1,13 @@
 import type { Class, Studio } from "@/payload-types";
 import { getCMS } from "@/lib/cms/resolve";
 
-/** `classList` block: classes of one studio, or of all studios. */
+/** `classList` block: classes of one studio, or of all studios — read as the visitor, so a hidden studio's classes stay hidden. */
 export async function ClassListBlock({ heading, studio }: { heading?: string | null; studio?: number | Studio | null }) {
   const payload = await getCMS();
   const studioId = studio && typeof studio === "object" ? studio.id : studio;
   const { docs } = await payload.find({
     collection: "classes",
+    overrideAccess: false,
     where: studioId ? { studio: { in: [studioId] } } : {},
     limit: 100,
     depth: 0,

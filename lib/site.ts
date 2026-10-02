@@ -114,6 +114,8 @@ export const stageSequence: {
   path: string;
   count: number;
   poster: string;
+  /** The same picture for phones, the width of the mobile frames. */
+  posterSmall: string;
   windows: [number, number][];
 } | null = {
   path: "/assets/seq",
@@ -121,6 +123,7 @@ export const stageSequence: {
   // + t3 wet clay → glazed (44)
   count: 156,
   poster: "/assets/img/stage-poster-1920.webp",
+  posterSmall: "/assets/img/stage-poster-960.webp",
   // stage progress p = 0.16 + 0.84 × frame/155: the clay is centred and opened
   // by p ≈ 0.4, the vase is shaped by p ≈ 0.77, glazed from there to the end
   windows: [

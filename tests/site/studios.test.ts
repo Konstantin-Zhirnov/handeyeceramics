@@ -6,7 +6,7 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { load, type CheerioAPI } from "cheerio";
-import { describe, expect, inject, it } from "vitest";
+import { beforeAll, describe, expect, inject, it } from "vitest";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const base = () => inject("baseURL");
@@ -29,6 +29,11 @@ const hrefs = ($: CheerioAPI, selector: string) =>
 
 /** An edit in the admin: Payload's Local API on the database of the running site. */
 async function cmsUpdate(collection: string, where: Record<string, string>, data: Record<string, unknown>) {
+  return cms({ collection, where, data });
+}
+
+/** Any edit of tests/site/cms-update.ts: an update, `create` or `remove`. */
+async function cms(input: Record<string, unknown>) {
   const uri = inject("databaseURI");
   if (!uri) throw new Error("with TEST_BASE_URL also set DATABASE_URI to the database of that server");
   // Not spawnSync: a blocked event loop leaves stale keep-alive sockets behind, and the next fetch resets.
@@ -39,7 +44,7 @@ async function cmsUpdate(collection: string, where: Record<string, string>, data
       {
         cwd: root,
         encoding: "utf8",
-        env: { ...process.env, DATABASE_URI: uri, NODE_OPTIONS: "--no-deprecation", CMS_UPDATE: JSON.stringify({ collection, where, data }) },
+        env: { ...process.env, DATABASE_URI: uri, NODE_OPTIONS: "--no-deprecation", CMS_UPDATE: JSON.stringify(input) },
       },
       (error, stdout, stderr) => (error ? reject(new Error(`cms-update failed:\n${(stdout + stderr).slice(-2000)}`)) : resolve()),
     );
@@ -65,6 +70,11 @@ const OPEN = [
 ];
 
 describe("studio pages", () => {
+  // A cold dev server compiles the studio template for minutes: let it, before the clock of a test runs.
+  beforeAll(async () => {
+    await fetch(`${inject("baseURL")}${CALGARY}`).then((r) => r.arrayBuffer());
+  }, 900_000);
+
   it("gives every studio its own page, H1 and title", async () => {
     const titles: string[] = [];
     for (const url of [...OPEN.map((s) => s.path), CALGARY]) {
@@ -158,6 +168,41 @@ describe("home page", () => {
     expect($("h1").toArray().map((el) => $(el).text().trim())).toEqual(["Hands-on Pottery Classes"]);
     expect($("main").text()).toContain("your first pot");
   });
+
+  it("puts the H1 on the first screen, in the hero, and the old site's text in a section below", async () => {
+    const { $ } = await page("/");
+    const hero = $("main").children().first();
+    expect(hero.find("h1").text().trim()).toBe("Hands-on Pottery Classes");
+    // The prototype's large line is still there, next to the H1 and not inside it.
+    expect(hero.text()).toContain("your first pot");
+    expect(hero.find("h1").text()).not.toContain("your first pot");
+    // The text of the old home page stays a block of its own: "Group Workshops" is one of its headings.
+    expect($("#about h1")).toHaveLength(0);
+    expect($("#about h2").toArray().map((el) => $(el).text().trim())).toContain("Group Workshops");
+  });
+});
+
+describe("class list block", () => {
+  it("leaves out the classes of a studio that is not published", { timeout: 600_000 }, async () => {
+    const probe = "/zz-class-list-probe";
+    const block = { blockType: "classList", heading: "All classes" };
+    await cms({ collection: "pages", create: { title: "Class list probe", path: probe, h1: "Class list probe", published: true, blocks: [block] } });
+    try {
+      const shown = (await page(probe)).$("main").text();
+      expect(shown).toContain("Drop-in hand building — Chinatown");
+      expect(shown).toContain("Six-week courses — Nanaimo");
+      await cmsUpdate("studios", { path: CHINATOWN }, { published: false });
+      try {
+        const hidden = (await page(probe)).$("main").text();
+        expect(hidden).not.toContain("Drop-in hand building — Chinatown");
+        expect(hidden).toContain("Six-week courses — Nanaimo");
+      } finally {
+        await cmsUpdate("studios", { path: CHINATOWN }, { published: true });
+      }
+    } finally {
+      await cms({ collection: "pages", where: { path: probe }, remove: true });
+    }
+  });
 });
 
 describe("book links", () => {
@@ -171,6 +216,15 @@ describe("book links", () => {
     // The Vancouver classes page is the booking page of the Vancouver studios; Nanaimo books on its own page.
     expect(bookLink((await page(CHINATOWN)).$, CHINATOWN)).toBe("/adult-beginner-pottery-classes-in-vancouver");
     expect(bookLink((await page(NANAIMO)).$, NANAIMO)).toBe(NANAIMO);
+  });
+
+  it("keep Mt Pleasant on its own page: the beginner courses do not run there", async () => {
+    const res = await fetch(`${base()}/api/studios?limit=0&pagination=false&depth=0`);
+    const studios = (await res.json()).docs as { path: string; bookingPath?: string | null }[];
+    expect(studios.find((s) => s.path === MT_PLEASANT)?.bookingPath || "").toBe("");
+    expect(studios.find((s) => s.path === CHINATOWN)?.bookingPath).toBe("/adult-beginner-pottery-classes-in-vancouver");
+    const { $ } = await page(MT_PLEASANT);
+    expect(hrefs($, "main a")).not.toContain("/adult-beginner-pottery-classes-in-vancouver");
   });
 });
 

@@ -1,10 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, MotionConfig } from "framer-motion";
+import * as m from "framer-motion/m";
 import { useState } from "react";
 import { Reveal, ease } from "./motion-primitives";
 import { Emph, useSiteData, type ClassTab, type SectionText } from "./site/SiteData";
+
+/** The animation engine arrives after the section is on screen and usable: the tabs work without it. */
+const loadFeatures = () => import("./motion-features").then((r) => r.default);
 
 /** The classes with a tab name, one tab each. Nothing to show — no section. */
 export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassTab[] }) {
@@ -14,6 +18,8 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
   if (!current) return null;
 
   return (
+    <LazyMotion features={loadFeatures}>
+    <MotionConfig reducedMotion="user">
     <section id="classes" className="grain relative overflow-hidden bg-clay-100 py-16 md:py-24">
       <div className="shell relative z-10">
         <Reveal className="text-center">
@@ -39,7 +45,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                     className="relative h-11 whitespace-nowrap rounded-full px-5 text-[0.86rem] font-semibold transition-colors"
                   >
                     {current.id === tab.id && (
-                      <motion.span
+                      <m.span
                         layoutId="tab-pill"
                         transition={{ duration: 0.4, ease }}
                         className="absolute inset-0 rounded-full bg-sky-brand"
@@ -57,7 +63,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
 
         <div className="mt-10">
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
+            <m.div
               key={current.id}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
@@ -87,7 +93,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                 {current.body && <p className="mt-4 text-[0.97rem] leading-relaxed text-ink-soft">{current.body}</p>}
                 <ul className="mt-6 flex flex-col gap-3">
                   {current.points.map((point, i) => (
-                    <motion.li
+                    <m.li
                       key={point}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -96,7 +102,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                     >
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta" />
                       {point}
-                    </motion.li>
+                    </m.li>
                   ))}
                 </ul>
 
@@ -117,10 +123,12 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         </div>
       </div>
     </section>
+    </MotionConfig>
+    </LazyMotion>
   );
 }

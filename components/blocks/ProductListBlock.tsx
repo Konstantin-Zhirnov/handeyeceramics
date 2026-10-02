@@ -18,7 +18,7 @@ export async function ProductListBlock({
   return (
     <section data-product-list>
       {heading && <h2 className="display mb-4 text-2xl text-ink">{heading}</h2>}
-      {all ? <ProductShelves products={products} /> : <ProductGrid products={products} />}
+      {all ? <ProductShelves products={products} lead /> : <ProductGrid products={products} lead />}
     </section>
   );
 }

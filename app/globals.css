@@ -303,3 +303,16 @@ svg {
     display: none;
   }
 }
+
+/* Scroll reveal (components/motion-primitives.tsx): armed off-screen, then a
+   26px rise over 0.9s on the site's ease-out. Unlayered on purpose, so the
+   utilities on the same element do not override it. */
+[data-reveal="hidden"] {
+  opacity: 0;
+  transform: translateY(26px);
+}
+[data-reveal="shown"] {
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s);
+}

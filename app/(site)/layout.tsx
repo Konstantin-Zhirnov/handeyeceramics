@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Karla } from "next/font/google";
 import { getHome } from "@/lib/cms/site";
 import { SITE_URL } from "@/lib/cms/text";
-import { MotionProvider } from "@/components/motion-primitives";
 import "../globals.css";
 
 const bodoni = Bodoni_Moda({
@@ -46,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bodoni.variable} ${karla.variable}`}>
       <body>
-        <MotionProvider>{children}</MotionProvider>
+        {children}
       </body>
     </html>
   );

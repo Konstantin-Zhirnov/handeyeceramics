@@ -68,15 +68,17 @@ export const EmptyShelf = () => (
   </p>
 );
 
-export function ProductGrid({ products }: { products: Product[] }) {
+/** `lead` — the first grid of a page: its first row is on the first screen of a phone and loads at once. */
+export function ProductGrid({ products, lead = false }: { products: Product[]; lead?: boolean }) {
   if (!products.length) return <EmptyShelf />;
   return (
     <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3">
-      {products.map((p) => {
+      {products.map((p, i) => {
         const img = productImages(p)[0];
         return (
           <li key={p.id} data-product className="min-w-0">
-            <Link href={p.path} className="group block">
+            {/* No prefetch: a shelf is dozens of links, and fetching every product page in advance stalls a phone. */}
+            <Link href={p.path} prefetch={false} className="group block">
               {img ? (
                 <Image
                   src={img.url!}
@@ -84,6 +86,8 @@ export function ProductGrid({ products }: { products: Product[] }) {
                   width={480}
                   height={480}
                   sizes="(max-width: 640px) 50vw, 20rem"
+                  loading={lead && i < 2 ? "eager" : undefined}
+                  fetchPriority={lead && i === 0 ? "high" : undefined}
                   className="aspect-square w-full rounded-[16px] bg-clay-100 object-cover transition-transform group-hover:-translate-y-0.5"
                 />
               ) : (
@@ -102,7 +106,7 @@ export function ProductGrid({ products }: { products: Product[] }) {
 }
 
 /** A list with no category shows the whole shop, one shelf per category. */
-export function ProductShelves({ products }: { products: Product[] }) {
+export function ProductShelves({ products, lead = false }: { products: Product[]; lead?: boolean }) {
   if (!products.length) return <EmptyShelf />;
   const shelves = new Map<string, Product[]>();
   for (const p of products) {
@@ -111,10 +115,10 @@ export function ProductShelves({ products }: { products: Product[] }) {
   }
   return (
     <div className="flex flex-col gap-10">
-      {[...shelves].map(([name, items]) => (
+      {[...shelves].map(([name, items], i) => (
         <div key={name} data-shelf>
           <h3 className="eyebrow mb-4 text-clay-600">{name}</h3>
-          <ProductGrid products={items} />
+          <ProductGrid products={items} lead={lead && i === 0} />
         </div>
       ))}
     </div>

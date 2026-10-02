@@ -50,7 +50,8 @@ export default async function setup(project: TestProject) {
     DATABASE_URI: `file:${path.join(dir, "test.db").replace(/\\/g, "/")}`,
     SITE_ENV: "",
     NEXT_PUBLIC_SERVER_URL: `http://localhost:${port}`,
-    SEED_IMAGES: process.env.SEED_IMAGES ?? "0",
+    // The pictures of three pages: enough for the tests of pages with photos, and quick to upload.
+    SEED_IMAGES: process.env.SEED_IMAGES ?? "/about-us,/gift-card,/commissions-and-film-props",
     MUX_TOKEN_ID: "",
     MUX_TOKEN_SECRET: "",
     BLOB_READ_WRITE_TOKEN: "",

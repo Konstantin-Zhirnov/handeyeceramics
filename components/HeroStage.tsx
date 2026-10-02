@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { SequenceCanvas } from "./SequenceCanvas";
+import { STAGE_EVENT, type StageState } from "./stage-event";
 import { stageSequence } from "@/lib/site";
 import { Emph, useSiteData, type SectionText } from "./site/SiteData";
 
@@ -29,11 +30,6 @@ const WINDOWS: [number, number][] = stageSequence?.windows ?? [
 /** Dot / chapter boundaries: the midpoint of each overlap between windows. */
 const BOUNDS = WINDOWS.slice(1).map(([a], i) => (a + WINDOWS[i][1]) / 2);
 
-export type StageState = { overStage: boolean; cardVisible: boolean };
-
-/** Header and the mobile call bar listen for this to change tone / hide. */
-export const STAGE_EVENT = "hec:stage";
-
 function emit(state: StageState) {
   window.dispatchEvent(new CustomEvent<StageState>(STAGE_EVENT, { detail: state }));
 }
@@ -47,7 +43,7 @@ function emit(state: StageState) {
  * Everything in the first screen is server-rendered and visible before any
  * JavaScript runs; scroll only moves --p and the chapter layers.
  */
-export function HeroStage({ hero, chapters }: { hero: HeroText; chapters: SectionText[] }) {
+export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: SectionText[]; h1?: string }) {
   const { phone, phoneHref, googleReviews } = useSiteData();
   // Chapter copy: the home global's stage-1…stage-3 (eyebrow — label, heading, body).
   const stageChapters: ChapterData[] = chapters.slice(0, WINDOWS.length).map((c, i) => ({
@@ -106,6 +102,7 @@ export function HeroStage({ hero, chapters }: { hero: HeroText; chapters: Sectio
                 count={stageSequence.count}
                 progress={seq}
                 poster={stageSequence.poster}
+                posterSmall={stageSequence.posterSmall}
               />
             )}
           </div>
@@ -154,7 +151,14 @@ export function HeroStage({ hero, chapters }: { hero: HeroText; chapters: Sectio
               {hero.eyebrow}
             </p>
 
-            {/* The prototype's line, kept as decoration; the page's H1 heads its text section. */}
+            {/* The page's H1, word for word from the old site: a line above the prototype's large one. */}
+            {h1 && (
+              <h1 className="rise eyebrow mt-1.5 text-ink" style={{ animationDelay: "0.14s" }}>
+                {h1}
+              </h1>
+            )}
+
+            {/* The prototype's line, kept as decoration. */}
             <p
               className="rise display mt-3 text-[2.15rem] leading-[1.02] text-ink sm:text-[2.9rem] lg:mt-5 lg:text-[clamp(3rem,4.6vw,4.6rem)]"
               style={{ animationDelay: "0.18s" }}

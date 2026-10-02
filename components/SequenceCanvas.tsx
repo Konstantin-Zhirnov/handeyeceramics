@@ -8,7 +8,9 @@ import { useEffect, useRef } from "react";
  * skill's template, ported to React. Frames come from `build_media.py seq`:
  *   <path>/desktop/f000.webp … (1600 px) and <path>/mobile/f000.webp … (900 px)
  *
- * Loading: the first 24 frames eagerly, then every 4th, 2nd and 1st frame in
+ * Loading: on a phone nothing until the first scroll or touch — the poster is
+ * the picture, and the frames do not compete with the first screen. Then (and
+ * on wider screens at once) the first 24 frames eagerly, then every 4th, 2nd and 1st frame in
  * idle time. While a frame is still missing the nearest loaded one is drawn,
  * so scrubbing never shows a blank. The poster <img> covers the canvas until
  * the first frame lands, which keeps the server-rendered page complete.
@@ -18,11 +20,14 @@ export function SequenceCanvas({
   count,
   progress,
   poster,
+  posterSmall,
 }: {
   path: string;
   count: number;
   progress: MotionValue<number>;
   poster: string;
+  /** The poster for phones; the frames there are 900px wide. */
+  posterSmall?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const posterRef = useRef<HTMLImageElement>(null);
@@ -86,7 +91,6 @@ export function SequenceCanvas({
       render(true);
     };
 
-    for (let i = 0; i < Math.min(24, count); i++) load(i);
     const queue: number[] = [];
     for (const step of [4, 2, 1]) for (let i = 0; i < count; i += step) if (!queue.includes(i)) queue.push(i);
     let queued = 0;
@@ -98,8 +102,18 @@ export function SequenceCanvas({
       for (; queued < queue.length && queued < until; queued++) load(queue[queued]);
       if (queued < queue.length) later(pump);
     };
-    if (document.readyState === "complete") pump();
-    else window.addEventListener("load", pump, { once: true });
+    const start = () => {
+      for (let i = 0; i < Math.min(24, count); i++) load(i);
+      if (document.readyState === "complete") pump();
+      else window.addEventListener("load", pump, { once: true });
+    };
+    const WAKE = ["scroll", "touchstart", "pointerdown", "keydown"] as const;
+    const wake = () => {
+      WAKE.forEach((e) => window.removeEventListener(e, wake));
+      start();
+    };
+    if (set === "mobile" && window.scrollY === 0) WAKE.forEach((e) => window.addEventListener(e, wake, { passive: true }));
+    else start();
 
     size();
     window.addEventListener("resize", size);
@@ -107,6 +121,7 @@ export function SequenceCanvas({
       cancelled = true;
       window.removeEventListener("resize", size);
       window.removeEventListener("load", pump);
+      WAKE.forEach((e) => window.removeEventListener(e, wake));
     };
   }, [path, count]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -115,13 +130,17 @@ export function SequenceCanvas({
   return (
     <>
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={posterRef}
-        src={poster}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-      />
+      <picture>
+        {posterSmall && <source media="(max-width: 767px)" srcSet={posterSmall} />}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={posterRef}
+          src={poster}
+          alt=""
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+        />
+      </picture>
     </>
   );
 }
