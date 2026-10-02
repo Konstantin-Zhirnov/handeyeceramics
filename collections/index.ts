@@ -21,7 +21,7 @@ export const Users: CollectionConfig = {
 
 export const Media: CollectionConfig = {
   slug: "media",
-  labels: { singular: "Фото", plural: "Фото" },
+  labels: { singular: "Photo", plural: "Photos" },
   access: contentAccess,
   upload: {
     staticDir: "media",
@@ -36,8 +36,8 @@ export const Media: CollectionConfig = {
       name: "alt",
       type: "text",
       required: true,
-      label: "Описание картинки (alt)",
-      admin: { description: "Что изображено — для незрячих посетителей и Google" },
+      label: "Picture description (alt text)",
+      admin: { description: "What the picture shows — for visitors who use a screen reader, and for Google" },
     },
   ],
 };
@@ -50,16 +50,16 @@ export const Media: CollectionConfig = {
 export function videosCollection(muxEnabled: boolean): CollectionConfig {
   const base: CollectionConfig = {
     slug: "videos",
-    labels: { singular: "Видео", plural: "Видео" },
+    labels: { singular: "Video", plural: "Videos" },
     access: contentAccess,
     admin: {
       useAsTitle: "title",
       description: muxEnabled
-        ? "Видео загружаются в Mux."
-        : "Видеохостинг не подключён: файл сохраняется как заглушка. Добавьте MUX_TOKEN_ID и MUX_TOKEN_SECRET, чтобы включить Mux.",
+        ? "Videos are uploaded to Mux."
+        : "Video hosting is not connected: the file is kept as a placeholder. Add MUX_TOKEN_ID and MUX_TOKEN_SECRET to switch Mux on.",
     },
     // Mux brings its own `title` and generated poster URL; ours is an optional custom poster.
-    fields: [{ name: "poster", type: "upload", relationTo: "media", label: "Постер" }],
+    fields: [{ name: "poster", type: "upload", relationTo: "media", label: "Poster" }],
   };
   if (muxEnabled) return base;
   return {
@@ -72,12 +72,12 @@ export function videosCollection(muxEnabled: boolean): CollectionConfig {
         name: "placeholderNote",
         type: "text",
         virtual: true,
-        label: "Видеохостинг не подключён",
+        label: "Video hosting is not connected",
         admin: {
           readOnly: true,
-          description: "Видеохостинг не подключён — файл хранится локально как заглушка.",
+          description: "Video hosting is not connected — the file is stored locally as a placeholder.",
         },
-        hooks: { afterRead: [() => "Видеохостинг не подключён"] },
+        hooks: { afterRead: [() => "Video hosting is not connected"] },
       },
     ],
   };
@@ -85,7 +85,7 @@ export function videosCollection(muxEnabled: boolean): CollectionConfig {
 
 export const Studios: CollectionConfig = {
   slug: "studios",
-  labels: { singular: "Студия", plural: "Студии" },
+  labels: { singular: "Studio", plural: "Studios" },
   access: flaggedContentAccess("published"),
   admin: { useAsTitle: "name", defaultColumns: ["name", "path", "published"] },
   fields: [
@@ -94,46 +94,46 @@ export const Studios: CollectionConfig = {
     {
       name: "short",
       type: "text",
-      label: "Короткое название",
-      admin: { description: "Для переключателя студий и кнопок, например Chinatown" },
+      label: "Short name",
+      admin: { description: "For the studio switcher and buttons, e.g. Chinatown" },
     },
     {
       name: "status",
       type: "select",
       required: true,
       defaultValue: "open",
-      label: "Статус",
+      label: "Status",
       options: [
-        { label: "Открыта", value: "open" },
-        { label: "Скоро откроется", value: "planned" },
+        { label: "Open", value: "open" },
+        { label: "Opening soon", value: "planned" },
       ],
       admin: {
         position: "sidebar",
-        description: "«Скоро откроется» — страница-заглушка: без телефона, расписания и адреса для Google",
+        description: "“Opening soon” is a placeholder page: no phone, no schedule and no address for Google",
       },
     },
-    { name: "tag", type: "text", label: "Метка на карточке", admin: { description: "например Main studio" } },
-    { name: "region", type: "text", label: "Город и провинция", admin: { description: "например Vancouver, BC" } },
-    { name: "h1", type: "text", label: "Заголовок H1" },
+    { name: "tag", type: "text", label: "Tag on the card", admin: { description: "e.g. Main studio" } },
+    { name: "region", type: "text", label: "City and province", admin: { description: "e.g. Vancouver, BC" } },
+    { name: "h1", type: "text", label: "Heading (H1)" },
     {
       name: "bookingPath",
       type: "text",
-      label: "Страница записи",
+      label: "Booking page",
       admin: {
         description:
-          "Куда ведут кнопки Book этой студии, например /adult-beginner-pottery-classes-in-vancouver. Пусто — страница самой студии",
+          "Where this studio's Book buttons lead, e.g. /adult-beginner-pottery-classes-in-vancouver. Empty — the studio's own page",
       },
     },
     {
       name: "address",
       type: "textarea",
-      admin: { description: "Первая строка — улица и дом, вторая — «Город, BC V6A 2Z9»" },
+      admin: { description: "First line — street address; second line — “City, BC V6A 2Z9”" },
     },
     { name: "phone", type: "text" },
     {
       name: "hours",
       type: "array",
-      label: "Часы работы",
+      label: "Opening hours",
       fields: [
         { name: "days", type: "text", required: true },
         { name: "time", type: "text", required: true },
@@ -150,24 +150,24 @@ export const Studios: CollectionConfig = {
     {
       name: "description",
       type: "textarea",
-      admin: { description: "Вступление. Строки вида «Название: текст» показываются рядом с расписанием" },
+      admin: { description: "Introduction. Lines written as “Label: text” are shown next to the schedule" },
     },
-    { name: "note", type: "textarea", label: "Текст карточки студии" },
-    { name: "access", type: "textarea", label: "Как войти" },
+    { name: "note", type: "textarea", label: "Text on the studio card" },
+    { name: "access", type: "textarea", label: "How to get in" },
     {
       name: "highlights",
       type: "array",
-      label: "Особенности студии",
+      label: "Studio highlights",
       fields: [{ name: "text", type: "text", required: true }],
     },
     {
       name: "google",
       type: "group",
-      label: "Рейтинг Google",
+      label: "Google rating",
       fields: [
         { name: "rating", type: "number", min: 0, max: 5 },
-        { name: "count", type: "number", min: 0, label: "Число отзывов" },
-        { name: "url", type: "text", label: "Ссылка на профиль" },
+        { name: "count", type: "number", min: 0, label: "Number of reviews" },
+        { name: "url", type: "text", label: "Link to the profile" },
       ],
     },
     photosField(),
@@ -180,7 +180,7 @@ const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "satur
 
 export const Classes: CollectionConfig = {
   slug: "classes",
-  labels: { singular: "Занятие", plural: "Занятия" },
+  labels: { singular: "Class", plural: "Classes" },
   access: { ...contentAccess, read: readClassOfPublishedStudio },
   admin: { useAsTitle: "title", defaultColumns: ["title", "studio", "price", "unconfirmed"] },
   fields: [
@@ -188,31 +188,31 @@ export const Classes: CollectionConfig = {
     {
       name: "tab",
       type: "text",
-      label: "Вкладка на главной",
-      admin: { description: "Короткое название, например Wheel throwing. С ним занятие показывается на главной и на странице студии" },
+      label: "Tab on the home page",
+      admin: { description: "A short name, e.g. Wheel throwing. With it, the class is shown on the home page and on the studio page" },
     },
-    { name: "studio", type: "relationship", relationTo: "studios", hasMany: true, label: "Студии" },
+    { name: "studio", type: "relationship", relationTo: "studios", hasMany: true, label: "Studios" },
     { name: "description", type: "textarea" },
-    { name: "price", type: "text", admin: { description: "Как на сайте, например $395" } },
+    { name: "price", type: "text", admin: { description: "As shown on the site, e.g. $395" } },
     { name: "level", type: "text" },
     { name: "duration", type: "text" },
     {
       name: "sessions",
       type: "array",
-      label: "Расписание",
+      label: "Schedule",
       fields: [
-        { name: "date", type: "date", admin: { description: "Для разовых занятий" } },
-        { name: "weekday", type: "select", options: weekdays, admin: { description: "Для еженедельных" } },
+        { name: "date", type: "date", admin: { description: "For one-off classes" } },
+        { name: "weekday", type: "select", options: weekdays, admin: { description: "For weekly classes" } },
         { name: "time", type: "text", required: true },
       ],
     },
     photosField(),
-    { name: "bookingNote", type: "textarea", label: "Как записаться" },
+    { name: "bookingNote", type: "textarea", label: "How to book" },
     {
       name: "unconfirmed",
       type: "checkbox",
       defaultValue: true,
-      label: "Расписание не подтверждено владельцем",
+      label: "Schedule not confirmed by the owner",
       admin: { position: "sidebar" },
     },
   ],
@@ -220,13 +220,13 @@ export const Classes: CollectionConfig = {
 
 export const Pages: CollectionConfig = {
   slug: "pages",
-  labels: { singular: "Страница", plural: "Страницы" },
+  labels: { singular: "Page", plural: "Pages" },
   access: flaggedContentAccess("published"),
   admin: { useAsTitle: "title", defaultColumns: ["title", "path", "published"] },
   fields: [
     { name: "title", type: "text", required: true },
     pathField(),
-    { name: "h1", type: "text", label: "Заголовок H1" },
+    { name: "h1", type: "text", label: "Heading (H1)" },
     seoField,
     { name: "blocks", type: "blocks", blocks: pageBlocks },
     publishedField,
@@ -235,21 +235,21 @@ export const Pages: CollectionConfig = {
 
 export const Products: CollectionConfig = {
   slug: "products",
-  labels: { singular: "Товар", plural: "Товары" },
+  labels: { singular: "Product", plural: "Products" },
   access: flaggedContentAccess("visible"),
   admin: { useAsTitle: "name", defaultColumns: ["name", "price", "category", "visible"] },
   fields: [
     { name: "name", type: "text", required: true },
     pathField(),
     { name: "price", type: "number", min: 0 },
-    { name: "salePrice", type: "number", min: 0, admin: { description: "Цена со скидкой. Пусто — скидки нет" } },
+    { name: "salePrice", type: "number", min: 0, admin: { description: "Sale price. Empty — no discount" } },
     { name: "images", type: "upload", relationTo: "media", hasMany: true },
     { name: "description", type: "textarea" },
     {
       name: "options",
       type: "array",
-      labels: { singular: "Вариант", plural: "Варианты" },
-      admin: { description: "Варианты товара (дата, цвет, размер): название и значения — по одному в строке" },
+      labels: { singular: "Option", plural: "Options" },
+      admin: { description: "Product options (date, colour, size): a title and its values, one per line" },
       fields: [
         { name: "title", type: "text", required: true },
         { name: "choices", type: "textarea", required: true },
@@ -258,7 +258,7 @@ export const Products: CollectionConfig = {
     {
       name: "category",
       type: "text",
-      admin: { description: "Категории через запятую. Товар виден на витринах, где указана одна из них" },
+      admin: { description: "Categories, separated by commas. The product is shown on the shop pages that list one of them" },
     },
     seoField,
     { name: "visible", type: "checkbox", defaultValue: true, admin: { position: "sidebar" } },
@@ -267,19 +267,19 @@ export const Products: CollectionConfig = {
 
 export const Plans: CollectionConfig = {
   slug: "plans",
-  labels: { singular: "Тариф", plural: "Тарифы" },
+  labels: { singular: "Plan", plural: "Plans" },
   access: contentAccess,
   admin: { useAsTitle: "name", defaultColumns: ["name", "price", "period", "order"] },
   defaultSort: "order",
   fields: [
     { name: "name", type: "text", required: true },
     { name: "price", type: "number", min: 0 },
-    { name: "period", type: "text", admin: { description: "например per month. Пусто — показана только цена" } },
+    { name: "period", type: "text", admin: { description: "e.g. per month. Empty — only the price is shown" } },
     { name: "description", type: "textarea" },
     {
       name: "group",
       type: "text",
-      admin: { description: "Группа: заголовок на странице тарифов; по ней блок «Список тарифов» выбирает тарифы" },
+      admin: { description: "Group: the heading on the plans page; the “Plan list” block picks plans by it" },
     },
     { name: "order", type: "number", defaultValue: 0 },
   ],
@@ -298,7 +298,7 @@ const readOnlyAfterCreate = { update: () => false };
  */
 export const Enquiries: CollectionConfig = {
   slug: "enquiries",
-  labels: { singular: "Заявка", plural: "Заявки" },
+  labels: { singular: "Enquiry", plural: "Enquiries" },
   access: {
     create: signedIn,
     read: signedIn,
@@ -314,44 +314,44 @@ export const Enquiries: CollectionConfig = {
       type: "select",
       required: true,
       defaultValue: "contact",
-      label: "Форма",
+      label: "Form",
       options: [
-        { label: "Связь и запись (contact)", value: "contact" },
-        { label: "Заказ изделия (commission)", value: "commission" },
-        { label: "Мероприятие (event)", value: "event" },
-        { label: "Другое (other)", value: "other" },
+        { label: "Contact and booking", value: "contact" },
+        { label: "Commission", value: "commission" },
+        { label: "Event", value: "event" },
+        { label: "Other", value: "other" },
       ],
       access: readOnlyAfterCreate,
     },
-    { name: "email", type: "email", required: true, label: "Почта", access: readOnlyAfterCreate },
+    { name: "email", type: "email", required: true, label: "Email", access: readOnlyAfterCreate },
     // The forms carried over from the old site ask for neither a name nor a phone.
-    { name: "name", type: "text", label: "Имя", access: readOnlyAfterCreate },
-    { name: "phone", type: "text", label: "Телефон", access: readOnlyAfterCreate },
+    { name: "name", type: "text", label: "Name", access: readOnlyAfterCreate },
+    { name: "phone", type: "text", label: "Phone", access: readOnlyAfterCreate },
     {
       name: "answers",
       type: "array",
-      label: "Ответы на вопросы формы",
-      labels: { singular: "Ответ", plural: "Ответы" },
+      label: "Answers to the form's questions",
+      labels: { singular: "Answer", plural: "Answers" },
       access: readOnlyAfterCreate,
       maxRows: 30,
       admin: { initCollapsed: false },
       fields: [
-        { name: "question", type: "text", required: true, label: "Вопрос", maxLength: 300 },
-        { name: "answer", type: "textarea", required: true, label: "Ответ", maxLength: 5000 },
+        { name: "question", type: "text", required: true, label: "Question", maxLength: 300 },
+        { name: "answer", type: "textarea", required: true, label: "Answer", maxLength: 5000 },
       ],
     },
-    { name: "message", type: "textarea", label: "Сообщение", maxLength: 5000, access: readOnlyAfterCreate },
-    { name: "studio", type: "relationship", relationTo: "studios", label: "Студия", access: readOnlyAfterCreate },
-    { name: "page", type: "text", label: "Страница, с которой отправлено", access: readOnlyAfterCreate },
+    { name: "message", type: "textarea", label: "Message", maxLength: 5000, access: readOnlyAfterCreate },
+    { name: "studio", type: "relationship", relationTo: "studios", label: "Studio", access: readOnlyAfterCreate },
+    { name: "page", type: "text", label: "Page it was sent from", access: readOnlyAfterCreate },
     {
       name: "status",
       type: "select",
       defaultValue: "new",
-      label: "Статус",
+      label: "Status",
       options: [
-        { label: "Новая", value: "new" },
-        { label: "В работе", value: "in-progress" },
-        { label: "Отвечено", value: "done" },
+        { label: "New", value: "new" },
+        { label: "In progress", value: "in-progress" },
+        { label: "Answered", value: "done" },
       ],
       admin: { position: "sidebar" },
       // Only signed-in editors may set it through the API; the form route writes "new".

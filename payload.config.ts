@@ -86,7 +86,7 @@ const plugins: Plugin[] = [
     collections: ["pages", "studios", "products"],
     redirectTypes: ["301"],
     overrides: {
-      admin: { group: "Адреса" },
+      admin: { group: "Addresses" },
       fields: ({ defaultFields }) =>
         defaultFields.map((f) =>
           "name" in f && f.name === "type" ? ({ ...f, defaultValue: "301" } as Field) : f,

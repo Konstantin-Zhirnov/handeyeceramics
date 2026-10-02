@@ -173,7 +173,7 @@ export interface User {
 export interface Media {
   id: number;
   /**
-   * Что изображено — для незрячих посетителей и Google
+   * What the picture shows — for visitors who use a screen reader, and for Google
    */
   alt: string;
   updatedAt: string;
@@ -207,7 +207,7 @@ export interface Media {
   };
 }
 /**
- * Видеохостинг не подключён: файл сохраняется как заглушка. Добавьте MUX_TOKEN_ID и MUX_TOKEN_SECRET, чтобы включить Mux.
+ * Video hosting is not connected: the file is kept as a placeholder. Add MUX_TOKEN_ID and MUX_TOKEN_SECRET to switch Mux on.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "videos".
@@ -217,7 +217,7 @@ export interface Video {
   title: string;
   poster?: (number | null) | Media;
   /**
-   * Видеохостинг не подключён — файл хранится локально как заглушка.
+   * Video hosting is not connected — the file is stored locally as a placeholder.
    */
   placeholderNote?: string | null;
   updatedAt: string;
@@ -240,32 +240,32 @@ export interface Studio {
   id: number;
   name: string;
   /**
-   * Адрес страницы как на старом сайте, например /pottery-classes-nanaimo
+   * The page address as on the old site, e.g. /pottery-classes-nanaimo
    */
   path: string;
   /**
-   * Для переключателя студий и кнопок, например Chinatown
+   * For the studio switcher and buttons, e.g. Chinatown
    */
   short?: string | null;
   /**
-   * «Скоро откроется» — страница-заглушка: без телефона, расписания и адреса для Google
+   * “Opening soon” is a placeholder page: no phone, no schedule and no address for Google
    */
   status: 'open' | 'planned';
   /**
-   * например Main studio
+   * e.g. Main studio
    */
   tag?: string | null;
   /**
-   * например Vancouver, BC
+   * e.g. Vancouver, BC
    */
   region?: string | null;
   h1?: string | null;
   /**
-   * Куда ведут кнопки Book этой студии, например /adult-beginner-pottery-classes-in-vancouver. Пусто — страница самой студии
+   * Where this studio's Book buttons lead, e.g. /adult-beginner-pottery-classes-in-vancouver. Empty — the studio's own page
    */
   bookingPath?: string | null;
   /**
-   * Первая строка — улица и дом, вторая — «Город, BC V6A 2Z9»
+   * First line — street address; second line — “City, BC V6A 2Z9”
    */
   address?: string | null;
   phone?: string | null;
@@ -281,7 +281,7 @@ export interface Studio {
     lng?: number | null;
   };
   /**
-   * Вступление. Строки вида «Название: текст» показываются рядом с расписанием
+   * Introduction. Lines written as “Label: text” are shown next to the schedule
    */
   description?: string | null;
   note?: string | null;
@@ -314,13 +314,13 @@ export interface Class {
   id: number;
   title: string;
   /**
-   * Короткое название, например Wheel throwing. С ним занятие показывается на главной и на странице студии
+   * A short name, e.g. Wheel throwing. With it, the class is shown on the home page and on the studio page
    */
   tab?: string | null;
   studio?: (number | Studio)[] | null;
   description?: string | null;
   /**
-   * Как на сайте, например $395
+   * As shown on the site, e.g. $395
    */
   price?: string | null;
   level?: string | null;
@@ -328,11 +328,11 @@ export interface Class {
   sessions?:
     | {
         /**
-         * Для разовых занятий
+         * For one-off classes
          */
         date?: string | null;
         /**
-         * Для еженедельных
+         * For weekly classes
          */
         weekday?: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday') | null;
         time: string;
@@ -353,7 +353,7 @@ export interface Page {
   id: number;
   title: string;
   /**
-   * Адрес страницы как на старом сайте, например /pottery-classes-nanaimo
+   * The page address as on the old site, e.g. /pottery-classes-nanaimo
    */
   path: string;
   h1?: string | null;
@@ -424,7 +424,7 @@ export interface Page {
         | {
             heading?: string | null;
             /**
-             * Пусто — все студии
+             * Empty — all studios
              */
             studio?: (number | null) | Studio;
             id?: string | null;
@@ -434,7 +434,7 @@ export interface Page {
         | {
             heading?: string | null;
             /**
-             * Товары этой категории. Пусто — список пуст
+             * Products of this category. Empty — the list is empty
              */
             category?: string | null;
             all?: boolean | null;
@@ -445,7 +445,7 @@ export interface Page {
         | {
             heading?: string | null;
             /**
-             * Тарифы этой группы. Пусто — все тарифы, по группам
+             * Plans of this group. Empty — all plans, by group
              */
             group?: string | null;
             id?: string | null;
@@ -466,18 +466,18 @@ export interface Product {
   id: number;
   name: string;
   /**
-   * Адрес страницы как на старом сайте, например /pottery-classes-nanaimo
+   * The page address as on the old site, e.g. /pottery-classes-nanaimo
    */
   path: string;
   price?: number | null;
   /**
-   * Цена со скидкой. Пусто — скидки нет
+   * Sale price. Empty — no discount
    */
   salePrice?: number | null;
   images?: (number | Media)[] | null;
   description?: string | null;
   /**
-   * Варианты товара (дата, цвет, размер): название и значения — по одному в строке
+   * Product options (date, colour, size): a title and its values, one per line
    */
   options?:
     | {
@@ -487,7 +487,7 @@ export interface Product {
       }[]
     | null;
   /**
-   * Категории через запятую. Товар виден на витринах, где указана одна из них
+   * Categories, separated by commas. The product is shown on the shop pages that list one of them
    */
   category?: string | null;
   seo?: {
@@ -507,12 +507,12 @@ export interface Plan {
   name: string;
   price?: number | null;
   /**
-   * например per month. Пусто — показана только цена
+   * e.g. per month. Empty — only the price is shown
    */
   period?: string | null;
   description?: string | null;
   /**
-   * Группа: заголовок на странице тарифов; по ней блок «Список тарифов» выбирает тарифы
+   * Group: the heading on the plans page; the “Plan list” block picks plans by it
    */
   group?: string | null;
   order?: number | null;
@@ -1073,7 +1073,7 @@ export interface Setting {
   phone?: string | null;
   email?: string | null;
   /**
-   * Ссылка на профиль
+   * Link to the profile
    */
   instagram?: string | null;
   nav?:
@@ -1118,7 +1118,7 @@ export interface Home {
   sections?:
     | {
         /**
-         * classes, gallery, reviews, locations, other-studios, membership; серии feature-1…, perk-1…, stage-1…, review-1…. В заголовке *курсив* и « / » — перенос строки
+         * classes, gallery, reviews, locations, other-studios, membership; series feature-1…, perk-1…, stage-1…, review-1…. In a heading, *italics* and “ / ” for a line break
          */
         key: string;
         eyebrow?: string | null;

@@ -25,3 +25,6 @@ out
 
 # Crawled images: re-downloadable with scripts/crawl/crawl.py; too heavy for git
 /content/images/
+
+# Handover material for the owner (screen recordings): not for the public repo
+/handover/

@@ -27,6 +27,6 @@ it("and no line is left without a fix", () => {
   for (const r of rows) {
     expect(r.finding, r.path).not.toBe("");
     expect(r.done, r.path).not.toBe("");
-    expect(r.done, r.path).not.toMatch(/TBD|TODO|не исправлен/i);
+    expect(r.done, r.path).not.toMatch(/TBD|TODO|not fixed/i);
   }
 });

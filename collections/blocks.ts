@@ -4,7 +4,7 @@ import type { Block } from "payload";
 export const pageBlocks: Block[] = [
   {
     slug: "text",
-    labels: { singular: "Текст", plural: "Текст" },
+    labels: { singular: "Text", plural: "Text" },
     fields: [
       { name: "heading", type: "text" },
       { name: "body", type: "richText" },
@@ -12,7 +12,7 @@ export const pageBlocks: Block[] = [
   },
   {
     slug: "image",
-    labels: { singular: "Картинка", plural: "Картинки" },
+    labels: { singular: "Picture", plural: "Pictures" },
     fields: [
       { name: "image", type: "upload", relationTo: "media", required: true },
       { name: "caption", type: "text" },
@@ -20,7 +20,7 @@ export const pageBlocks: Block[] = [
   },
   {
     slug: "gallery",
-    labels: { singular: "Галерея", plural: "Галереи" },
+    labels: { singular: "Gallery", plural: "Galleries" },
     fields: [
       { name: "heading", type: "text" },
       { name: "images", type: "upload", relationTo: "media", hasMany: true, required: true },
@@ -28,7 +28,7 @@ export const pageBlocks: Block[] = [
   },
   {
     slug: "video",
-    labels: { singular: "Видео", plural: "Видео" },
+    labels: { singular: "Video", plural: "Videos" },
     fields: [
       { name: "video", type: "relationship", relationTo: "videos", required: true },
       { name: "caption", type: "text" },
@@ -36,7 +36,7 @@ export const pageBlocks: Block[] = [
   },
   {
     slug: "cta",
-    labels: { singular: "Призыв с кнопкой", plural: "Призывы с кнопкой" },
+    labels: { singular: "Call to action", plural: "Calls to action" },
     fields: [
       { name: "heading", type: "text", required: true },
       { name: "body", type: "textarea" },
@@ -46,7 +46,7 @@ export const pageBlocks: Block[] = [
   },
   {
     slug: "form",
-    labels: { singular: "Форма", plural: "Формы" },
+    labels: { singular: "Form", plural: "Forms" },
     fields: [
       { name: "heading", type: "text" },
       {
@@ -60,27 +60,27 @@ export const pageBlocks: Block[] = [
   },
   {
     slug: "classList",
-    labels: { singular: "Список занятий", plural: "Списки занятий" },
+    labels: { singular: "Class list", plural: "Class lists" },
     fields: [
       { name: "heading", type: "text" },
-      { name: "studio", type: "relationship", relationTo: "studios", admin: { description: "Пусто — все студии" } },
+      { name: "studio", type: "relationship", relationTo: "studios", admin: { description: "Empty — all studios" } },
     ],
   },
   {
     slug: "productList",
-    labels: { singular: "Список товаров", plural: "Списки товаров" },
+    labels: { singular: "Product list", plural: "Product lists" },
     fields: [
       { name: "heading", type: "text" },
-      { name: "category", type: "text", admin: { description: "Товары этой категории. Пусто — список пуст" } },
-      { name: "all", type: "checkbox", label: "Все товары магазина, по категориям" },
+      { name: "category", type: "text", admin: { description: "Products of this category. Empty — the list is empty" } },
+      { name: "all", type: "checkbox", label: "All products of the shop, by category" },
     ],
   },
   {
     slug: "planList",
-    labels: { singular: "Список тарифов", plural: "Списки тарифов" },
+    labels: { singular: "Plan list", plural: "Plan lists" },
     fields: [
       { name: "heading", type: "text" },
-      { name: "group", type: "text", admin: { description: "Тарифы этой группы. Пусто — все тарифы, по группам" } },
+      { name: "group", type: "text", admin: { description: "Plans of this group. Empty — all plans, by group" } },
     ],
   },
 ];

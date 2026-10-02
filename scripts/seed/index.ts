@@ -240,7 +240,7 @@ async function toBlocks(r: Rec, h1Index: number) {
       case "button": {
         flushList();
         const href = b.href ? LINK_FIXES[b.href] || b.href : "";
-        if (b.href && LINK_FIXES[b.href]) fixed(r.path, `битая ссылка ${b.href}`, `кнопка «${b.text}» ведёт на ${href}`);
+        if (b.href && LINK_FIXES[b.href]) fixed(r.path, `broken link ${b.href}`, `the button “${b.text}” leads to ${href}`);
         nodes.push(href ? L.linkParagraph(b.text!, href) : L.paragraph(b.text!));
         break;
       }
@@ -264,15 +264,15 @@ function seoFor(r: Rec) {
   let description = r.description;
   if (!description) {
     description = excerpt(contentText(r)) || pageName(r);
-    fixed(r.path, "пустой description", `первые ${description.length} символов текста страницы`);
+    fixed(r.path, "empty description", `the first ${description.length} characters of the page text`);
   }
   return { title: r.title, description };
 }
 
 function noteH1(r: Rec, h1: { index: number; text: string }) {
-  if (r.h1.length > 1) fixed(r.path, `${r.h1.length} H1`, `H1 — «${h1.text}», остальные стали H2`);
+  if (r.h1.length > 1) fixed(r.path, `${r.h1.length} H1`, `H1 is “${h1.text}”, the others became H2`);
   if (r.h1.length === 0)
-    fixed(r.path, "нет H1", h1.index >= 0 ? `первый заголовок «${h1.text}» стал H1` : `заголовков нет: H1 — «${h1.text}» из title`);
+    fixed(r.path, "no H1", h1.index >= 0 ? `the first heading “${h1.text}” became H1` : `no headings: H1 is “${h1.text}”, from the title`);
 }
 
 // ---- Seed steps ---------------------------------------------------------------
@@ -395,12 +395,12 @@ async function seedProducts() {
     const seo = { title: r.title, description: r.description };
     if (!seo.description) {
       seo.description = excerpt(description) || r.name || pageName(r);
-      fixed(r.path, "пустой description", `первые ${seo.description.length} символов текста товара`);
+      fixed(r.path, "empty description", `the first ${seo.description.length} characters of the product text`);
     }
     // Story 8: a title that repeats a page's title gets the category added.
     if (duplicateTitle(r.path)) {
       seo.title = `${pageName(r)} | ${category || "Shop"}${SITE_SUFFIX}`;
-      fixed(r.path, "повтор title", `title дополнен категорией: «${seo.title}»`);
+      fixed(r.path, "duplicate title", `the category was added to the title: “${seo.title}”`);
     }
     await upsert("products", { path: { equals: r.path } }, {
       name: r.name || h1.text,
@@ -629,41 +629,41 @@ async function seedGlobals() {
 function writeFixes() {
   // Every finding of the crawl gets a row; those handled above already have one.
   const label: Record<string, string> = {
-    "empty-description": "пустой description",
-    "no-h1": "нет H1",
+    "empty-description": "empty description",
+    "no-h1": "no H1",
     "multiple-h1": " H1 |",
-    "duplicate-title": "повтор title",
-    "broken-link": "битая ссылка",
+    "duplicate-title": "duplicate title",
+    "broken-link": "broken link",
   };
   for (const entry of issues) {
     for (const i of entry.issues) {
       const has = fixes.some((f) => f.startsWith(`| \`${entry.path}\` |`) && f.includes(label[i.type] || i.type));
       if (has) continue;
-      const name = (label[i.type] || i.type).replace(" H1 |", "несколько H1");
+      const name = (label[i.type] || i.type).replace(" H1 |", "several H1");
       if (SYSTEM_PAGES[entry.path]) {
-        fixed(entry.path, name, `страница не переносится: адрес переведён 301 на ${SYSTEM_PAGES[entry.path]}`);
+        fixed(entry.path, name, `the page is not carried over: its address redirects (301) to ${SYSTEM_PAGES[entry.path]}`);
       } else if (/^\/(service-page|booking-calendar)\//.test(entry.path)) {
-        fixed(entry.path, name, "страница не переносится: адрес переведён 301 на страницу своей студии");
+        fixed(entry.path, name, "the page is not carried over: its address redirects (301) to the page of its studio");
       } else if (i.type === "duplicate-title") {
-        fixed(entry.path, name, "title оставлен как на Wix; отличие получил title товара с тем же названием");
+        fixed(entry.path, name, "the title is kept as on Wix; the title of the product with the same name was made different");
       } else if (i.type === "broken-link") {
-        fixed(entry.path, `${name} ${String(i.target || "")}`, "ссылки нет среди блоков страницы — на новый сайт она не перенесена");
+        fixed(entry.path, `${name} ${String(i.target || "")}`, "the link is not among the blocks of the page — it was not carried over to the new site");
       } else {
-        fixed(entry.path, name, "[TBD] не исправлено автоматически");
+        fixed(entry.path, name, "[TBD] not fixed automatically");
       }
     }
   }
   const lines = [
-    "# Исправления SEO при переносе",
+    "# SEO fixes made in the move",
     "",
-    "Генерируется `npm run seed` по `content/crawl-issues.json`; руками не править.",
-    "Правило — история 8: повтор title дополняется отличием, пустой description — первые ~155 символов",
-    "текста самой страницы, нет H1 — первый заголовок становится H1, несколько H1 — первый остаётся, остальные H2.",
-    "Текст страниц не меняется.",
+    "Generated by `npm run seed` from `content/crawl-issues.json`; do not edit by hand.",
+    "The rule: a duplicate title gets a distinguishing addition; an empty description becomes the first ~155 characters",
+    "of the page's own text; with no H1 the first heading becomes H1; with several H1 the first stays and the others become H2.",
+    "The text of the pages is not changed.",
     "",
-    `Находок в обходе: ${issues.reduce((n, e) => n + e.issues.length, 0)}. Записей ниже: ${fixes.length}.`,
+    `Findings of the crawl: ${issues.reduce((n, e) => n + e.issues.length, 0)}. Rows below: ${fixes.length}.`,
     "",
-    "| Страница | Находка | Что сделано |",
+    "| Page | Finding | What was done |",
     "|---|---|---|",
     ...[...new Set(fixes)].sort(),
     "",

@@ -8,7 +8,7 @@ export type { EnquiryType };
 /**
  * The enquiry form of a page. `type` picks the questions (see `definitions.ts`);
  * the submission goes to POST /forms/enquiry and lands in the admin under
- * «Заявки». The phone and email shown when sending fails come from the site
+ * “Enquiries”. The phone and email shown when sending fails come from the site
  * settings.
  */
 export async function EnquiryForm({ type, studio }: { type: EnquiryType; studio?: number | string }) {

@@ -8,17 +8,17 @@ const linkFields = [
 
 export const Settings: GlobalConfig = {
   slug: "settings",
-  label: "Настройки сайта",
+  label: "Site settings",
   access: { read: () => true },
   fields: [
     { name: "phone", type: "text" },
     { name: "email", type: "email" },
-    { name: "instagram", type: "text", admin: { description: "Ссылка на профиль" } },
-    { name: "nav", type: "array", label: "Меню", fields: linkFields },
+    { name: "instagram", type: "text", admin: { description: "Link to the profile" } },
+    { name: "nav", type: "array", label: "Menu", fields: linkFields },
     {
       name: "footer",
       type: "group",
-      label: "Подвал",
+      label: "Footer",
       fields: [
         { name: "text", type: "textarea" },
         { name: "links", type: "array", fields: linkFields },
@@ -29,7 +29,7 @@ export const Settings: GlobalConfig = {
 
 export const Home: GlobalConfig = {
   slug: "home",
-  label: "Главная",
+  label: "Home page",
   access: { read: () => true },
   fields: [
     {
@@ -46,7 +46,7 @@ export const Home: GlobalConfig = {
     {
       name: "sections",
       type: "array",
-      label: "Тексты секций",
+      label: "Section texts",
       fields: [
         {
           name: "key",
@@ -54,7 +54,7 @@ export const Home: GlobalConfig = {
           required: true,
           admin: {
             description:
-              "classes, gallery, reviews, locations, other-studios, membership; серии feature-1…, perk-1…, stage-1…, review-1…. В заголовке *курсив* и « / » — перенос строки",
+              "classes, gallery, reviews, locations, other-studios, membership; series feature-1…, perk-1…, stage-1…, review-1…. In a heading, *italics* and “ / ” for a line break",
           },
         },
         { name: "eyebrow", type: "text" },
@@ -62,7 +62,7 @@ export const Home: GlobalConfig = {
         { name: "body", type: "textarea" },
       ],
     },
-    photosField("gallery", "Фото галереи"),
+    photosField("gallery", "Gallery photos"),
     {
       name: "seo",
       type: "group",

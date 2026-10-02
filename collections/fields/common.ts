@@ -38,7 +38,7 @@ export const seoField: Field = {
   type: "group",
   label: "SEO",
   fields: [
-    { name: "title", type: "text", label: "Title (вкладка браузера и Google)" },
+    { name: "title", type: "text", label: "Title (browser tab and Google)" },
     { name: "description", type: "textarea", label: "Meta description" },
   ],
 };
@@ -47,11 +47,11 @@ export const publishedField: Field = {
   name: "published",
   type: "checkbox",
   defaultValue: true,
-  label: "Опубликовано",
+  label: "Published",
   admin: { position: "sidebar" },
 };
 
-export const photosField = (name = "photos", label = "Фото"): Field => ({
+export const photosField = (name = "photos", label = "Photos"): Field => ({
   name,
   type: "upload",
   relationTo: "media",

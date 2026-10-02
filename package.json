@@ -11,6 +11,7 @@
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation MUX_TOKEN_ID=importmap MUX_TOKEN_SECRET=importmap payload generate:importmap",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation node --env-file-if-exists=.env --import tsx scripts/seed/index.ts",
+    "howto": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx scripts/howto/record.ts",
     "test": "vitest run",
     "test:mobile": "cross-env MOBILE_ALL=1 vitest run tests/site/mobile.test.ts"
   },

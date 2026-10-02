@@ -36,16 +36,16 @@ export function pathField(overrides: Partial<TextField> = {}): TextField {
     index: true,
     admin: {
       position: "sidebar",
-      description: "Адрес страницы как на старом сайте, например /pottery-classes-nanaimo",
+      description: "The page address as on the old site, e.g. /pottery-classes-nanaimo",
     },
     hooks: {
       beforeValidate: [({ value }) => normalizePath(value)],
     },
     validate: (value: unknown) => {
-      if (typeof value !== "string" || !value) return "Укажите адрес";
-      if (/^https?:/i.test(value)) return "Неверная ссылка: укажите адрес страницы, например /about";
-      if (!value.startsWith("/")) return "Адрес начинается с /";
-      if (/\s/.test(value)) return "В адресе не должно быть пробелов";
+      if (typeof value !== "string" || !value) return "Enter the page address";
+      if (/^https?:/i.test(value)) return "Not a full link: enter the page address, e.g. /about";
+      if (!value.startsWith("/")) return "The address starts with /";
+      if (/\s/.test(value)) return "The address must not contain spaces";
       return true;
     },
     ...overrides,
