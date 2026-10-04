@@ -26,7 +26,7 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium, type Browser, type BrowserContext, type Locator, type Page } from "playwright";
-import { checkHandover, durations, readme, VIDEOS, type HowtoVideo } from "./lib";
+import { checkHandover, durations, HOWTO_DB_FILE, HOWTO_DIST_DIR, HOWTO_PRODUCT_PATH, howtoSiteEnv, localBase, readme, VIDEOS, type HowtoVideo } from "./lib";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const args = process.argv.slice(2);
@@ -34,13 +34,14 @@ const flag = (name: string) => args.includes(`--${name}`);
 const option = (name: string) => (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1] : undefined);
 
 const port = Number(process.env.HOWTO_PORT || 3231);
-const external = option("base")?.replace(/\/$/, "");
+const baseOption = option("base");
+const external = baseOption === undefined ? undefined : localBase(baseOption);
 const base = external || `http://localhost:${port}`;
 const only = option("only")?.split(",").map((s) => s.trim()).filter(Boolean);
 const serveOnly = flag("serve");
 
-const DB_FILE = "howto.db";
-const DIST_DIR = ".next/howto";
+const DB_FILE = HOWTO_DB_FILE;
+const DIST_DIR = HOWTO_DIST_DIR;
 const handover = path.join(root, "handover");
 const mediaDir = path.join(root, "media");
 const SIZE = { width: 1280, height: 800 };
@@ -57,8 +58,7 @@ const DEMO = {
   enquiryEmail: "demo@example.com",
   enquiryText: "Demo enquiry, sent to record this how-to video.",
 };
-/** The pages whose pictures the seed uploads: the product of the photo and price videos. */
-const PRODUCT_PATH = "/product-page/apron";
+const PRODUCT_PATH = HOWTO_PRODUCT_PATH;
 const TEXT_PAGE_PATH = "/about-us";
 
 type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -67,24 +67,15 @@ type Fixtures = { photo: string; video: string };
 
 const log = (msg: string) => console.log(`[howto] ${msg}`);
 const warn = (msg: string) => console.log(`[howto] WARNING ${msg}`);
+/** A step of a video that is not on screen: the video would be handed over with a step missing, so the run stops. */
+const missing = (msg: string): never => {
+  throw new Error(`step not found: ${msg}`);
+};
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // ---- The temporary site ------------------------------------------------------
 
-const siteEnv = (): NodeJS.ProcessEnv => ({
-  ...process.env,
-  DATABASE_URI: `file:./${DB_FILE}`,
-  NEXT_PUBLIC_SERVER_URL: base,
-  NEXT_DIST_DIR: DIST_DIR,
-  PORT: String(port),
-  SITE_ENV: "",
-  SEED_IMAGES: `${PRODUCT_PATH},/product-page/apron-trimming-tool-bundle`,
-  MUX_TOKEN_ID: "",
-  MUX_TOKEN_SECRET: "",
-  BLOB_READ_WRITE_TOKEN: "",
-  SMTP_HOST: "",
-  NODE_ENV: "development",
-});
+const siteEnv = (): NodeJS.ProcessEnv => howtoSiteEnv(base, port, process.env);
 
 let server: ChildProcess | undefined;
 let workDir = "";
@@ -169,7 +160,7 @@ async function uploadedNames(token: string | undefined): Promise<Set<string> | u
     }
     return names;
   } catch {
-    return undefined; // the server is already down: fall back to "everything new in media/"
+    return undefined; // the server is already down: nothing in media/ is removed
   }
 }
 
@@ -187,11 +178,14 @@ async function stopSite(token?: string) {
     for (const [file, text] of nextFiles || []) {
       if (readFileSync(path.join(root, file), "utf8") !== text) writeFileSync(path.join(root, file), text);
     }
-    if (mediaBefore) {
+    if (mediaBefore && !names) {
+      const added = listFiles(mediaDir).filter((f) => !mediaBefore!.has(f));
+      if (added.length) warn(`the list of uploaded files is not available: ${added.length} new files in media/ are left as they are (${added.slice(0, 5).join(", ")}${added.length > 5 ? ", …" : ""})`);
+    } else if (mediaBefore && names) {
       let removed = 0;
       for (const file of listFiles(mediaDir)) {
         if (mediaBefore.has(file)) continue;
-        if (names && !names.has(path.basename(file))) continue;
+        if (!names.has(path.basename(file))) continue;
         rmSync(path.join(mediaDir, file), { force: true });
         removed++;
       }
@@ -416,8 +410,7 @@ async function openCollection(page: Page, slug: string, caption: string) {
     await page.waitForLoadState("load");
     await page.waitForTimeout(600);
   } else {
-    warn(`no link to ${slug} on the dashboard: opened by address`);
-    await open(page, listURL(slug));
+    missing(`no link to ${slug} on the dashboard`);
   }
 }
 
@@ -429,7 +422,7 @@ async function openDoc(page: Page, slug: string, doc: Doc, caption: string, sear
     if (input) {
       await type(page, input, search);
       await page.waitForTimeout(1500);
-    } else warn(`no search box in the list of ${slug}`);
+    } else missing(`no search box in the list of ${slug}`);
   }
   const link = await firstVisible(page, [row], 8000);
   if (link) await point(page, link);
@@ -440,8 +433,7 @@ async function openDoc(page: Page, slug: string, doc: Doc, caption: string, sear
     await page.waitForURL((u) => u.pathname.endsWith(`${listURL(slug)}/${doc.id}`), { timeout: 120_000 });
     await page.waitForLoadState("load");
   } else {
-    warn(`${slug} ${doc.id} is not in the list on screen: opened by address`);
-    await open(page, `${listURL(slug)}/${doc.id}`);
+    missing(`${slug} ${doc.id} is not in the list on screen`);
   }
   await page.locator("#action-save").waitFor({ state: "visible", timeout: 120_000 });
   await page.waitForTimeout(500);
@@ -456,8 +448,7 @@ async function createNew(page: Page, slug: string, caption: string) {
     await link.click();
     await page.waitForURL((u) => u.pathname.endsWith("/create"), { timeout: 120_000 });
   } else {
-    warn(`no Create New link in the list of ${slug}: opened by address`);
-    await open(page, `${listURL(slug)}/create`);
+    missing(`no Create New link in the list of ${slug}`);
   }
   await page.locator("#action-save").waitFor({ state: "visible", timeout: 120_000 });
   await page.waitForTimeout(1000);
@@ -596,7 +587,7 @@ const scenarios: Record<string, Scenario> = {
     await openCollection(page, "videos", "Videos are under “Videos”. Open it.");
     const note = await firstVisible(page, [".collection-list__sub-header", ".custom-view-description", "text=/Video hosting is not connected/"]);
     if (note) await point(page, note);
-    else warn("the note about the video hosting is not on the list of videos");
+    else missing("the note about the video hosting is not on the list of videos");
     await say(page, "This note says video hosting (Mux) is not connected yet: an uploaded file is kept as a placeholder.", 4400);
     await unring(page);
     await createNew(page, "videos", "Click “Create New”.");

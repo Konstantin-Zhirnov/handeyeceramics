@@ -51,6 +51,7 @@ export default async function setup(project: TestProject) {
     SITE_ENV: "",
     NEXT_PUBLIC_SERVER_URL: `http://localhost:${port}`,
     // The pictures of three pages: enough for the tests of pages with photos, and quick to upload.
+    SEED_FIXES: "0",
     SEED_IMAGES: process.env.SEED_IMAGES ?? "/about-us,/gift-card,/commissions-and-film-props",
     MUX_TOKEN_ID: "",
     MUX_TOKEN_SECRET: "",

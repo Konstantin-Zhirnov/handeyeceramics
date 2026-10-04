@@ -59,10 +59,11 @@ describe("what the crawl cut out", () => {
   const text = async (url: string) => load(await (await fetch(`${base()}${url}`)).text())("main").text();
 
   it("stays in the text of the rental page and does not travel into the plan", async () => {
-    expect(await text("/wheel-rental")).toContain("[REDACTED]");
-    const plans = await text("/pricing-plans/plans-pricing");
-    expect(plans).toContain("Pottery Wheel Rental Program");
-    expect(plans).not.toContain("REDACTED");
+    const rental = await text("/wheel-rental");
+    expect(rental).toContain("[REDACTED]");
+    // The rental plan lives on its own page; the plans page shows only the Wix plan.
+    expect(rental).toContain("Pottery Wheel Rental Program");
+    expect(await text("/pricing-plans/plans-pricing")).not.toContain("REDACTED");
   });
 
   it("and the rental plan in the CMS carries no such mark", async () => {

@@ -18,7 +18,15 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ path: string[] }> };
 
-const toPath = async (params: Props["params"]) => "/" + (await params).path.map(decodeURIComponent).join("/");
+/** The decoded path; a segment that does not decode stays as it came (and resolves to nothing — a 404). */
+const decode = (s: string) => {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+};
+const toPath = async (params: Props["params"]) => "/" + (await params).path.map(decode).join("/");
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const r = await resolvePath(await toPath(params));

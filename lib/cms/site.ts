@@ -44,7 +44,7 @@ const publishedStudios = cache(async (): Promise<Studio[]> => {
   const payload = await getCMS();
   const res = await payload.find({
     collection: "studios",
-    where: { published: { not_equals: false } },
+    overrideAccess: false, // the access rule of studios: a visitor reads only published ones
     sort: "id",
     depth: 1,
     limit: 100,
@@ -73,7 +73,7 @@ function card(doc: Studio): StudioCard {
 
 export const getSiteData = cache(async (): Promise<SiteData> => {
   const payload = await getCMS();
-  const [settings, studios] = await Promise.all([payload.findGlobal({ slug: "settings" }), publishedStudios()]);
+  const [settings, studios] = await Promise.all([payload.findGlobal({ slug: "settings", overrideAccess: false }), publishedStudios()]);
   const link = (l: { label: string; href: string }) => ({ label: l.label, href: l.href });
   const rated = studios.filter((s) => s.status !== "planned" && (s.google?.count || 0) > 0);
   return {
@@ -119,36 +119,40 @@ export function studioView(doc: Studio, site: SiteData): StudioView {
   };
 }
 
+/** Open studios with their address and phone, as the contact page lists them; planned ones are left out. */
+export async function openStudios(): Promise<StudioView[]> {
+  const [studios, site] = await Promise.all([publishedStudios(), getSiteData()]);
+  return studios.filter((s) => s.status !== "planned").map((s) => studioView(s, site));
+}
+
 const studioIds = (c: Class): number[] => (c.studio || []).map((s) => (typeof s === "object" ? s.id : s));
 
 /**
  * Classes the site may show: a class tied to studios is shown only while at
- * least one of them is published.
+ * least one of them is published (the access rule of classes).
  */
 const visibleClasses = cache(async (): Promise<Class[]> => {
   const payload = await getCMS();
-  const published = new Set((await publishedStudios()).map((s) => s.id));
-  const res = await payload.find({ collection: "classes", sort: "id", depth: 1, limit: 500, pagination: false });
-  return res.docs.filter((c) => {
-    const ids = studioIds(c);
-    return !ids.length || ids.some((id) => published.has(id));
-  });
+  // the access rule of classes: a visitor does not get a class whose every studio is unpublished
+  const res = await payload.find({ collection: "classes", overrideAccess: false, sort: "id", depth: 1, limit: 500, pagination: false });
+  return res.docs;
 });
 
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** The timetable of one studio: its classes that have sessions. Nothing for a planned studio. */
+/** The timetable of one studio: its classes that have sessions or a price. Nothing for a planned studio. */
 export async function studioSchedule(doc: Studio): Promise<ScheduleRow[]> {
   if (doc.status === "planned") return [];
   const suffixes = [doc.short, doc.name].filter(Boolean).map((s) => ` — ${s}`);
   return (await visibleClasses())
-    .filter((c) => c.sessions?.length && studioIds(c).includes(doc.id))
+    .filter((c) => (c.sessions?.length || c.price) && studioIds(c).includes(doc.id))
     .map((c) => {
       const suffix = suffixes.find((s) => c.title.endsWith(s));
       return {
         label: suffix ? c.title.slice(0, -suffix.length) : c.title,
-        times: c
-          .sessions!.map((s) => [s.weekday ? capital(s.weekday) : "", s.date ? s.date.slice(0, 10) : "", s.time].filter(Boolean).join(" "))
+        price: c.price || "",
+        times: (c.sessions || [])
+          .map((s) => [s.weekday ? capital(s.weekday) : "", s.date ? s.date.slice(0, 10) : "", s.time].filter(Boolean).join(" "))
           .join(" · "),
       };
     });
@@ -186,7 +190,7 @@ const sectionText = (s?: SectionRow): SectionText => ({ eyebrow: s?.eyebrow || "
 /** The home global: hero, SEO, gallery photos and section texts by key. */
 export const getHome = cache(async () => {
   const payload = await getCMS();
-  const home = await payload.findGlobal({ slug: "home", depth: 1 });
+  const home = await payload.findGlobal({ slug: "home", depth: 1, overrideAccess: false });
   const rows: SectionRow[] = home.sections || [];
   return {
     hero: {
@@ -210,12 +214,12 @@ export const getHome = cache(async () => {
  */
 export async function sitePaths(): Promise<string[]> {
   const payload = await getCMS();
-  const all = { depth: 0, limit: 2000, pagination: false, overrideAccess: false, select: { path: true } } as const;
+  const all = { depth: 0, limit: 2000, pagination: false, select: { path: true } } as const;
   const [pages, studios, products, redirects] = await Promise.all([
-    payload.find({ collection: "pages", sort: "path", ...all }),
-    payload.find({ collection: "studios", sort: "id", ...all }),
-    payload.find({ collection: "products", sort: "path", ...all }),
-    payload.find({ collection: "redirects", depth: 0, limit: 2000, pagination: false, select: { from: true } }),
+    payload.find({ collection: "pages", sort: "path", overrideAccess: false, ...all }),
+    payload.find({ collection: "studios", sort: "id", overrideAccess: false, ...all }),
+    payload.find({ collection: "products", sort: "path", overrideAccess: false, ...all }),
+    payload.find({ collection: "redirects", depth: 0, limit: 2000, pagination: false, overrideAccess: false, select: { from: true } }),
   ]);
   const moved = new Set(redirects.docs.map((r) => r.from));
   const paths = ["/", ...studios.docs.map((d) => d.path), ...pages.docs.map((d) => d.path), ...products.docs.map((d) => d.path)];

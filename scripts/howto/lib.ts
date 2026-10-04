@@ -160,3 +160,45 @@ export function durations(dir: string, videos: HowtoVideo[] = VIDEOS): Record<st
   }
   return out;
 }
+
+/**
+ * The address the videos are recorded against: only a site on this machine, so that a
+ * recording never edits the live site. Gives the address without a trailing slash.
+ */
+export function localBase(input: string): string {
+  let url: URL | undefined;
+  try {
+    url = new URL(input);
+  } catch {
+    url = undefined;
+  }
+  if (!url || !/^https?:$/.test(url.protocol) || !["localhost", "127.0.0.1"].includes(url.hostname)) {
+    throw new Error(`--base must be a site on this machine (localhost or 127.0.0.1), not ${input}`);
+  }
+  return url.origin;
+}
+
+/** The temporary database of the videos: deleted after the run. */
+export const HOWTO_DB_FILE = "howto.db";
+export const HOWTO_DIST_DIR = ".next/howto";
+/** The pages whose pictures the seed uploads: the product of the photo and price videos. */
+export const HOWTO_PRODUCT_PATH = "/product-page/apron";
+
+/** The environment of the temporary site: its own database, build folder and port, no outside services. */
+export function howtoSiteEnv(base: string, port: number, env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return {
+    ...env,
+    DATABASE_URI: `file:./${HOWTO_DB_FILE}`,
+    NEXT_PUBLIC_SERVER_URL: base,
+    NEXT_DIST_DIR: HOWTO_DIST_DIR,
+    PORT: String(port),
+    SITE_ENV: "",
+    SEED_IMAGES: `${HOWTO_PRODUCT_PATH},/product-page/apron-trimming-tool-bundle`,
+    SEED_FIXES: "0",
+    MUX_TOKEN_ID: "",
+    MUX_TOKEN_SECRET: "",
+    BLOB_READ_WRITE_TOKEN: "",
+    SMTP_HOST: "",
+    NODE_ENV: "development",
+  };
+}

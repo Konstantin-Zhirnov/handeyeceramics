@@ -2,7 +2,8 @@
 
 Run: python scripts/crawl/validate.py [content_dir]   -> exit 0 and "OK ..." or exit 1 with errors.
 Checks: inventory schema, product/pricing fields, stable order, local images present,
-crawl-issues structure, no door codes / passwords / private contacts left in text.
+crawl-issues structure, no door codes / passwords / private e-mails or phones (any number
+outside BUSINESS_PHONES) left in text.
 """
 import json
 import os
@@ -16,6 +17,11 @@ BASE = {"url": str, "path": str, "status": (int, type(None)), "title": str, "des
         "h1": list, "headings": list, "text": str, "blocks": list, "images": list}
 PRODUCT = {"price": (int, float, type(None)), "currency": str, "category": str, "options": list}
 PLAN = {"name": str, "price": str, "currency": str, "period": str, "description": str}
+# The studio's own numbers, published on its site: the phone in the header and on /contact-us,
+# and the "studio cell" printed on the glaze-session product pages. Any other number is private.
+BUSINESS_PHONES = {"7788983414", "7788745424"}
+# Fields that hold addresses (Wix media ids are long runs of digits), not text a visitor reads.
+ADDRESS_FIELDS = {"url", "src", "local", "href"}
 ISSUE_TYPES = {"duplicate-title", "empty-description", "no-h1", "multiple-h1", "broken-link",
                "broken-image"}
 
@@ -66,7 +72,7 @@ def check(content_dir):
                     for field, typ in PLAN.items():
                         if not isinstance(p.get(field), typ):
                             err(where, f"plan field '{field}' missing")
-            leftovers = set().union(*[secrets_in(v) for v in strings(r)])
+            leftovers = record_secrets(r)
             if leftovers:
                 err(where, f"unredacted {', '.join(sorted(leftovers))}")
     if not inv["pages"] or not inv["products"] or not inv["pricing"]:
@@ -91,19 +97,29 @@ def check(content_dir):
 
 
 def strings(o):
+    """Every text of a record, without the addresses (ADDRESS_FIELDS)."""
     if isinstance(o, str):
         yield o
     elif isinstance(o, dict):
-        for v in o.values():
-            yield from strings(v)
+        for k, v in o.items():
+            if k not in ADDRESS_FIELDS or (isinstance(v, str) and v.startswith("tel:")):
+                yield from strings(v)
     elif isinstance(o, list):
         for v in o:
             yield from strings(v)
 
 
+def record_secrets(record):
+    """Kinds of secrets left anywhere in a record's texts."""
+    return set().union(*[secrets_in(v) for v in strings(record)])
+
+
 def secrets_in(s):
-    """Patterns that must never survive redaction (business phones/info@ are allowed)."""
+    """Patterns that must never survive redaction (BUSINESS_PHONES and info@ are allowed)."""
     found = set()
+    for m in crawl.RE_PHONE.finditer(s):
+        if "".join(m.groups()) not in BUSINESS_PHONES:
+            found.add("phone")
     for m in crawl.RE_DOOR.finditer(s):
         if crawl.REDACTED not in m.group(0):
             found.add("door-code")

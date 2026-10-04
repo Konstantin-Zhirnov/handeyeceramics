@@ -7,6 +7,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { load } from "cheerio";
 import { beforeAll, describe, expect, inject, it } from "vitest";
+import { isWixLitter } from "../../scripts/seed/wix-litter";
+import { expected404, expectedRedirects } from "./expected";
 
 type Block = { type: string; text?: string; level?: number };
 type Rec = {
@@ -25,20 +27,6 @@ const inv = JSON.parse(readFileSync(path.join(root, "content/inventory.json"), "
 const records: Rec[] = [...inv.pages, ...inv.products, ...inv.pricing, ...inv.other];
 
 // Hand-written from the redirect rules (story 6 and the task brief).
-const CHINATOWN = "/classes/vancouver-chinatown";
-const MT_PLEASANT = "/classes/vancouver-mount-pleasant";
-const expectedRedirects: Record<string, string> = {
-  "/home": "/",
-  "/paywall": "/",
-  "/service-page/beginner-and-intermediate-hand-building-1": CHINATOWN, // 739 Gore Ave
-  "/service-page/beginner-to-intermediate-wheel-throwing": MT_PLEASANT, // 322 E 5th Ave
-  "/service-page/copy-of-tuesday-evening-wheel-throwing": CHINATOWN,
-  "/service-page/test-class": CHINATOWN,
-  "/service-page/tuesday-6-30-wheel-throwing": CHINATOWN,
-  "/booking-calendar/copy-of-tuesday-evening-wheel-throwing": CHINATOWN,
-  "/booking-calendar/tuesday-6-30-wheel-throwing": CHINATOWN,
-};
-const expected404 = new Set(["/product-page/private-lessons"]);
 // No exemptions: the home page carries the H1 and the text of the old one, like every other page.
 const prototypeTemplates = new Set<string>();
 // Story 8: this title repeats the title of a content page, so the product's
@@ -51,6 +39,7 @@ const retitled: Record<string, string> = {
 // Wix store and navigation chrome, not page content.
 const chrome = (b: Block) => {
   const t = (b.text || "").trim();
+  if (isWixLitter(b)) return true;
   if (!t) return true;
   if (b.type === "text" && ["*", "Excluding Sales Tax", "Quantity *", "Price", "Regular Price", "Sale Price"].includes(t)) return true;
   if (b.type === "button" && t === "Add to Cart") return true;
@@ -98,7 +87,8 @@ describe.each(records.map((r) => [r.path, r] as const))("%s", (p, rec) => {
     if (retitled[p]) expect(title).toBe(retitled[p]);
     else expect(title).toBe(rec.title);
     if (rec.description) expect(description).toBe(rec.description);
-    const h1 = rec.h1[0] ?? rec.headings[0]?.text;
+    // The notice of an empty Wix storefront is not a heading of the page: the H1 is then the title.
+    const h1 = rec.h1[0] ?? rec.headings.find((h) => !/products to show here right now/.test(h.text))?.text;
     if (h1) expect(squash($("h1").text())).toBe(squash(h1));
   });
 

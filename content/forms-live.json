@@ -6,6 +6,7 @@
       "capturedAt": "2026-09-30",
       "submit": "Send",
       "confirmation": "Thanks for submitting!",
+      "confirmationSource": "https://www.handeyeceramics.com/contact-us (2026-10-03): the server HTML of the page, a rich-text element (comp-l0vo2vdw) inside the form — the Wix form's success message, shown only after a submit",
       "selectPlaceholder": "Choose an option",
       "fields": [
         {
@@ -168,6 +169,7 @@
       "capturedAt": "2026-09-30",
       "submit": "Send",
       "confirmation": "Thanks for submitting! We'll be in touch soon.",
+      "confirmationSource": "https://www.handeyeceramics.com/commissions-form (2026-10-03): the server HTML of the page, a rich-text element (comp-l4n0pa4d) inside the form — the Wix form's success message, shown only after a submit",
       "selectPlaceholder": "Choose an option",
       "fields": [
         {

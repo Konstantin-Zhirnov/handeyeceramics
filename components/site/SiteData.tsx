@@ -47,7 +47,8 @@ export type StudioView = StudioCard & {
   geo: { lat: number; lng: number } | null;
 };
 
-export type ScheduleRow = { label: string; times: string };
+/** A class of the studio: its name, its sessions and its price as the admin has them. */
+export type ScheduleRow = { label: string; times: string; price: string };
 
 export type ClassTab = {
   id: string;

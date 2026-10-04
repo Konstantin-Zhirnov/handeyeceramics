@@ -80,6 +80,6 @@ Findings of the crawl: 74. Rows below: 74.
 | `/product-page/wheel-rental-subscription` | empty description | the first 152 characters of the product text |
 | `/product-page/wheel-throwing-intermediate-only-spring` | empty description | the first 153 characters of the product text |
 | `/saturday-night-drop-in` | empty description | the first 152 characters of the page text |
-| `/saturday-night-drop-in` | no H1 | the first heading “We don’t have any products to show here right now.” became H1 |
+| `/saturday-night-drop-in` | no H1 | H1 is “Saturday Night Drop in”, from the title; the empty-store notice stays plain text |
 | `/shop` | no H1 | no headings: H1 is “Store”, from the title |
-| `/youth-pottery-classes-shop` | no H1 | the first heading “We don’t have any products to show here right now.” became H1 |
+| `/youth-pottery-classes-shop` | no H1 | H1 is “Youth Classes Shop”, from the title; the empty-store notice stays plain text |

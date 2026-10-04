@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getPayload, type Payload } from "payload";
 import config from "@payload-config";
 import { normalizePath } from "@/collections/fields/path";
+import { withoutLoops } from "@/lib/redirect-loops";
 import type { Page, Product, Redirect, Studio } from "@/payload-types";
 
 export const getCMS = cache((): Promise<Payload> => getPayload({ config }));
@@ -31,10 +32,29 @@ export function redirectTarget(rule: Redirect): string | null {
   return ref && typeof ref === "object" && "path" in ref ? (ref.path as string) : null;
 }
 
+/** One document, read as a visitor: the access rules of the collection hide what is unpublished or hidden. */
 async function one<T>(payload: Payload, collection: string, where: Record<string, unknown>, depth = 1) {
-  const res = await payload.find({ collection: collection as never, where: where as never, limit: 1, depth, pagination: false });
+  const res = await payload.find({
+    collection: collection as never,
+    where: where as never,
+    limit: 1,
+    depth,
+    pagination: false,
+    overrideAccess: false,
+  });
   return res.docs[0] as T | undefined;
 }
+
+/** Every redirect rule from the admin, from → target, without the rules that loop. */
+const redirectTable = cache(async (payload: Payload) => {
+  const res = await payload.find({ collection: "redirects", limit: 0, depth: 1, pagination: false, overrideAccess: false });
+  const map = new Map<string, string>();
+  for (const rule of res.docs as Redirect[]) {
+    const to = redirectTarget(rule);
+    if (rule.from && to) map.set(rule.from, to);
+  }
+  return withoutLoops(map);
+});
 
 /**
  * The one router of the public site: a path → the document to show, a
@@ -45,22 +65,20 @@ export const resolvePath = cache(async (input: string): Promise<Resolution> => {
   if (!path) return null;
   const payload = await getCMS();
 
-  const rule = await one<Redirect>(payload, "redirects", { from: { equals: path } });
-  if (rule) {
-    const to = redirectTarget(rule);
-    if (to && normalizePath(to) !== path) return { redirect: to };
-  }
+  // The same table as proxy.ts, with the same loop rule: a rule that leads back to itself is not applied.
+  const to = (await redirectTable(payload)).get(path);
+  if (to && normalizePath(to) !== path) return { redirect: to };
 
-  const studio = await one<Studio>(payload, "studios", { path: { equals: path }, published: { not_equals: false } });
+  const studio = await one<Studio>(payload, "studios", { path: { equals: path } });
   if (studio) {
-    const page = await one<Page>(payload, "pages", { path: { equals: path }, published: { not_equals: false } }, 2);
+    const page = await one<Page>(payload, "pages", { path: { equals: path } }, 2);
     return { kind: "studio", doc: studio, page };
   }
 
-  const product = await one<Product>(payload, "products", { path: { equals: path }, visible: { not_equals: false } });
+  const product = await one<Product>(payload, "products", { path: { equals: path } });
   if (product) return { kind: "product", doc: product };
 
-  const page = await one<Page>(payload, "pages", { path: { equals: path }, published: { not_equals: false } }, 2);
+  const page = await one<Page>(payload, "pages", { path: { equals: path } }, 2);
   if (page) {
     if (path === PLANS_PATH) return { kind: "plans", doc: page };
     if (path === SHOP_PATH || page.blocks?.some((b) => b.blockType === "productList")) return { kind: "shop", doc: page };

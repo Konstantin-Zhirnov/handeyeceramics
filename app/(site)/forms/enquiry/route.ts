@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { normalizePath } from "@/collections/fields/path";
 import { answersOf, FORMS, isEnquiryType, validate } from "@/components/forms/definitions";
 import { getCMS } from "@/lib/cms/resolve";
-import { site } from "@/lib/site";
 
 /**
  * Receives the enquiry forms — the only way an enquiry gets in: the collection
@@ -72,14 +71,14 @@ const fail = (status: number, message: string, errors?: Record<string, string>) 
   NextResponse.json({ ok: false, message, ...(errors ? { errors } : {}) }, { status });
 
 async function fallbackMessage() {
-  let phone: string = site.phoneDisplay;
+  let phone = "";
   try {
-    const settings = await (await getCMS()).findGlobal({ slug: "settings", depth: 0 });
+    const settings = await (await getCMS()).findGlobal({ slug: "settings", depth: 0, overrideAccess: false });
     phone = settings.phone || phone;
   } catch {
-    /* the CMS is what failed: the phone from the code is all there is */
+    /* the CMS is what failed: no contact to offer */
   }
-  return `We couldn't send your message. Please call us at ${phone}.`;
+  return phone ? `We couldn't send your message. Please call us at ${phone}.` : "We couldn't send your message. Please try again later.";
 }
 
 export async function POST(request: Request) {
@@ -117,7 +116,7 @@ export async function POST(request: Request) {
     const studioId = Number(body.studio);
     const studio =
       Number.isInteger(studioId) && studioId > 0
-        ? await payload.findByID({ collection: "studios", id: studioId, depth: 0, disableErrors: true })
+        ? await payload.findByID({ collection: "studios", id: studioId, depth: 0, disableErrors: true, overrideAccess: false })
         : null;
     // Local API with access overridden: this route is the gate, so it sets
     // every field itself and the status is always "new".

@@ -6,7 +6,7 @@
  * SEED_IMAGES=0 skips uploading pictures; SEED_IMAGES="/about-us,/gift-card"
  * uploads only the pictures of these pages (the tests use it for speed).
  * Writes content/seo-fixes.md: every finding of content/crawl-issues.json and
- * what was done about it.
+ * what was done about it (not with SEED_FIXES=0: a seed of a throw-away database).
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -14,6 +14,8 @@ import { getPayload, type Payload } from "payload";
 import config from "../../payload.config";
 import { classTabs, gallery, locations, reviews, site, stageChapters, steps } from "../../lib/site";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
+import { continuesLine, isWixLitter } from "./wix-litter";
+import { writesFixes } from "./fixes";
 import * as L from "./lexical";
 import * as homeText from "./home";
 
@@ -71,6 +73,7 @@ const FORM_TYPES: Record<string, "contact" | "commission"> = { "/contact-us": "c
 /** Wix store and navigation chrome — not page content. */
 function isChrome(b: Block): boolean {
   const t = (b.text || "").trim();
+  if (isWixLitter(b)) return true;
   if (b.type === "image" || b.type === "form") return false;
   if (!t) return true;
   if (b.type === "text" && ["*", "Excluding Sales Tax", "Quantity *", "Price", "Regular Price", "Sale Price"].includes(t)) return true;
@@ -144,10 +147,14 @@ async function media(local: string | undefined, alt: string): Promise<number | u
 const altFor = (img: { alt?: string }, fallback: string) => (img.alt || "").trim() || fallback;
 const pageName = (r: Rec) => r.title.replace(SITE_SUFFIX, "");
 
-/** Story 8: the first H1 stays; with no H1 the first heading becomes it. */
+/**
+ * Story 8: the first H1 stays; with no H1 the first heading becomes it. The
+ * notice of an empty Wix storefront is not a heading of the page: with nothing
+ * else, the H1 is the page title.
+ */
 function pickH1(r: Rec): { index: number; text: string } {
   let index = r.blocks.findIndex((b) => b.type === "heading" && b.level === 1);
-  if (index < 0) index = r.blocks.findIndex((b) => b.type === "heading");
+  if (index < 0) index = r.blocks.findIndex((b) => b.type === "heading" && !isEmptyStore(b));
   return index >= 0 ? { index, text: r.blocks[index].text! } : { index: -1, text: pageName(r) };
 }
 
@@ -178,6 +185,8 @@ async function toBlocks(r: Rec, h1Index: number) {
   const planSpot = textPlans().spots.get(r.path);
   let plansDone = false;
 
+  /** The paragraph last added to `nodes`, to glue a line Wix split onto it. */
+  let lastPara: string | null = null;
   const flushList = () => {
     if (list.length) nodes.push(L.list(list));
     list = [];
@@ -186,6 +195,7 @@ async function toBlocks(r: Rec, h1Index: number) {
     flushList();
     if (nodes.length) out.push({ blockType: "text", body: L.root(nodes) });
     nodes = [];
+    lastPara = null;
   };
   const flushImages = () => {
     if (images.length === 1) out.push({ blockType: "image", image: images[0] });
@@ -211,6 +221,8 @@ async function toBlocks(r: Rec, h1Index: number) {
     if (b.type === "paragraph" && tile.includes((b.text || "").trim())) continue;
     tile = isProductTile(b) ? b.text || "" : b.type === "image" ? tile : "";
     if (b.type !== "image") flushImages();
+    const joinsLine = b.type === "paragraph" && lastPara !== null && continuesLine(lastPara, b.text || "");
+    if (b.type !== "paragraph") lastPara = null;
     if (isProductTile(b)) {
       if (!tilesDone) {
         flushText();
@@ -235,7 +247,8 @@ async function toBlocks(r: Rec, h1Index: number) {
         break;
       case "heading":
         flushList();
-        nodes.push(L.heading(b.text!, Math.min(6, Math.max(2, b.level || 2))));
+        // The empty-storefront notice is a sentence, not a section heading.
+        nodes.push(isEmptyStore(b) ? L.paragraph(b.text!) : L.heading(b.text!, Math.min(6, Math.max(2, b.level || 2))));
         break;
       case "button": {
         flushList();
@@ -246,7 +259,11 @@ async function toBlocks(r: Rec, h1Index: number) {
       }
       default:
         flushList();
-        nodes.push(L.paragraph(b.text!));
+        if (joinsLine) {
+          nodes.pop();
+          lastPara = `${lastPara} ${b.text!.trim()}`;
+        } else lastPara = b.type === "paragraph" ? b.text!.trim() : null;
+        nodes.push(L.paragraph(b.type === "paragraph" ? lastPara! : b.text!));
     }
   }
   flushImages();
@@ -272,7 +289,15 @@ function seoFor(r: Rec) {
 function noteH1(r: Rec, h1: { index: number; text: string }) {
   if (r.h1.length > 1) fixed(r.path, `${r.h1.length} H1`, `H1 is “${h1.text}”, the others became H2`);
   if (r.h1.length === 0)
-    fixed(r.path, "no H1", h1.index >= 0 ? `the first heading “${h1.text}” became H1` : `no headings: H1 is “${h1.text}”, from the title`);
+    fixed(
+      r.path,
+      "no H1",
+      h1.index >= 0
+        ? `the first heading “${h1.text}” became H1`
+        : r.blocks.some(isEmptyStore)
+          ? `H1 is “${h1.text}”, from the title; the empty-store notice stays plain text`
+          : `no headings: H1 is “${h1.text}”, from the title`,
+    );
 }
 
 // ---- Seed steps ---------------------------------------------------------------
@@ -693,7 +718,7 @@ async function main() {
   await seedClasses(studio);
   const redirects = await seedRedirects(studio);
   await seedGlobals();
-  writeFixes();
+  if (writesFixes(process.env)) writeFixes();
 
   console.log(
     `seed: ${n} pages, ${locations.length} studios, ${inv.products.length} products, ${redirects} redirects, ${mediaByLocal.size} images`,

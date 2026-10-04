@@ -158,15 +158,31 @@ export function EnquiryFormFields({ type, studio, phone, email }: Props) {
           data-enquiry-failed
           className="rounded-[14px] border border-red-800/40 bg-white px-4 py-3 text-ink outline-none sm:col-span-2"
         >
-          {notice || "We couldn't send your message."} Please call us at{" "}
-          <a className="font-semibold underline" href={telHref(phone)}>
-            {phone}
-          </a>{" "}
-          or email{" "}
-          <a className="font-semibold underline" href={`mailto:${email}`}>
-            {email}
-          </a>
-          . What you typed is still here.
+          {notice || "We couldn't send your message."}{" "}
+          {phone && email ? (
+            <>
+              Please call us at{" "}
+              <a className="font-semibold underline" href={telHref(phone)}>
+                {phone}
+              </a>{" "}
+              or email{" "}
+              <a className="font-semibold underline" href={`mailto:${email}`}>
+                {email}
+              </a>
+              .
+            </>
+          ) : phone || email ? (
+            <>
+              Please contact us at{" "}
+              <a className="font-semibold underline" href={phone ? telHref(phone) : `mailto:${email}`}>
+                {phone || email}
+              </a>
+              .
+            </>
+          ) : (
+            "Please try again later."
+          )}{" "}
+          What you typed is still here.
         </div>
       )}
 

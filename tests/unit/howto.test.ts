@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkHandover, readme, webmDuration, type HowtoVideo } from "../../scripts/howto/lib";
+import { checkHandover, howtoSiteEnv, localBase, readme, webmDuration, type HowtoVideo } from "../../scripts/howto/lib";
+import { writesFixes } from "../../scripts/seed/fixes";
 
 /** The start of a WebM file, written by hand: a Segment Info with a time scale and a duration. */
 function webm(durationInTicks: number, nanosecondsPerTick = 1_000_000, float32 = false): Buffer {
@@ -81,5 +82,26 @@ describe("checkHandover", () => {
     expect(stale).toMatch(/README.*09-gone\.webm/);
     rmSync(dir, { recursive: true, force: true });
     expect(checkHandover(make(files, null), videos).join("\n")).toMatch(/README\.md.*missing/);
+  });
+});
+
+describe("localBase", () => {
+  it("accepts only a site on this machine", () => {
+    expect(localBase("http://localhost:3231/")).toBe("http://localhost:3231");
+    expect(localBase("http://127.0.0.1:3210")).toBe("http://127.0.0.1:3210");
+  });
+
+  it("refuses the live site and any other host", () => {
+    expect(() => localBase("https://www.handeyeceramics.com")).toThrow(/localhost or 127.0.0.1/);
+    expect(() => localBase("http://localhost.example.com:3210")).toThrow(/localhost or 127.0.0.1/);
+    expect(() => localBase("http://192.168.1.5:3210")).toThrow(/localhost or 127.0.0.1/);
+    expect(() => localBase("not a url")).toThrow(/localhost or 127.0.0.1/);
+  });
+});
+
+describe("the temporary site of the videos", () => {
+  it("is seeded without rewriting content/seo-fixes.md, which only a seed of the working database writes", () => {
+    expect(writesFixes({} as NodeJS.ProcessEnv)).toBe(true);
+    expect(writesFixes(howtoSiteEnv("http://localhost:3231", 3231, {} as NodeJS.ProcessEnv))).toBe(false);
   });
 });

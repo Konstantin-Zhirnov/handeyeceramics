@@ -7,6 +7,7 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { load, type CheerioAPI } from "cheerio";
 import { beforeAll, describe, expect, inject, it } from "vitest";
+import { assertThrowAwayTarget } from "./editor";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const base = () => inject("baseURL");
@@ -34,6 +35,7 @@ async function cmsUpdate(collection: string, where: Record<string, string>, data
 
 /** Any edit of tests/site/cms-update.ts: an update, `create` or `remove`. */
 async function cms(input: Record<string, unknown>) {
+  assertThrowAwayTarget(base());
   const uri = inject("databaseURI");
   if (!uri) throw new Error("with TEST_BASE_URL also set DATABASE_URI to the database of that server");
   // Not spawnSync: a blocked event loop leaves stale keep-alive sockets behind, and the next fetch resets.

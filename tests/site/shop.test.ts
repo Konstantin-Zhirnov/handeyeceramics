@@ -186,32 +186,31 @@ describe("plans", () => {
   it("prints the plans of the old site word for word", async () => {
     const { status, $ } = await get(PLANS);
     expect(status).toBe(200);
-    // One plan on the old plans page, eight membership options, the wheel rental.
-    expect($("main [data-plan]")).toHaveLength(10);
+    // The old plans page had one plan; memberships and the rental stay on their own pages.
+    expect($("main [data-plan] h3").toArray().map((h) => $(h).text().trim())).toEqual(["Tuesday Evening"]);
     const tuesday = plan($, "Tuesday Evening");
-    expect(tuesday).toHaveLength(1);
     expect(price($, "Tuesday Evening")).toBe("CA$267.75");
     expect(period($, "Tuesday Evening")).toEqual(["Valid for 7 days"]);
     expect(tuesday.text()).toContain("6 week Tuesday evening wheel throwing classes (6:30-9:00PM)");
-    expect(price($, "Option 1")).toBe("CA$230.00");
-    expect(plan($, "Option 1").text()).toContain("24/7 access every day of month");
-    expect(price($, "Option 8 Semi Clay Craver (Nanaimo)")).toBe("CA$80.00");
-    expect(price($, "Pottery Wheel Rental Program")).toBe("CA$125.00");
-    expect(plan($, "Pottery Wheel Rental Program").text()).toContain(
+    const { $: m } = await get(MEMBERSHIPS);
+    expect(price(m, "Option 1")).toBe("CA$230.00");
+    expect(plan(m, "Option 1").text()).toContain("24/7 access every day of month");
+    expect(price(m, "Option 8 Semi Clay Craver (Nanaimo)")).toBe("CA$80.00");
+    const { $: r } = await get(RENTAL);
+    expect(plan(r, "Pottery Wheel Rental Program").text()).toContain(
       "Our pottery wheel rental program costs $125/month + GST ($131.25 after tax).",
     );
-    // Group headings are headings of the old pages.
-    expect($("main h2").toArray().map((h) => $(h).text().trim())).toEqual(["Studio Memberships", "Pottery Wheel Rental"]);
     // The old pricing widget's card, glued into one line by the crawl, is not page text.
     expect(text($)).not.toContain("Buy Now");
   });
 
   it("names a period only where the old text names one", async () => {
-    const { $ } = await get(PLANS);
+    const { $ } = await get(MEMBERSHIPS);
     // "$175+gst per month", "$150 monthly", "$80 per month", "$125/month".
-    for (const name of ["Option 2", "Option 3", "Option 7 Clay Craver (Nanaimo)", "Option 8 Semi Clay Craver (Nanaimo)", "Pottery Wheel Rental Program"]) {
+    for (const name of ["Option 2", "Option 3", "Option 7 Clay Craver (Nanaimo)", "Option 8 Semi Clay Craver (Nanaimo)"]) {
       expect(period($, name), name).toEqual(["per month"]);
     }
+    expect(period((await get(RENTAL)).$, "Pottery Wheel Rental Program")).toEqual(["per month"]);
     // "$230+Gst (location …)", "$145+gst", "$230+gst Location …", "$230+gst 30% off clay …": no period in the text.
     for (const name of ["Option 1", "Option 4", "Option 5", "Option 6 (Nanaimo)"]) {
       expect(period($, name), name).toEqual([]);
@@ -247,13 +246,13 @@ describe("plans", () => {
     expect(productLinks(shop)).toHaveLength(2);
   });
 
-  it("shows every plan of the admin, and a price changed there on every page that lists it", async () => {
+  it("shows the plans of the admin that belong to no page group, and a price changed there on every page that lists it", async () => {
     const { editorToken } = await import("./editor");
     const token = await editorToken(base());
     const { docs } = await (await fetch(`${base()}/api/plans?limit=200&depth=0`)).json();
     const { $ } = await get(PLANS);
     const shown = $("main [data-plan] h3").toArray().map((h) => $(h).text().trim()).sort();
-    expect(shown).toEqual(docs.map((d: { name: string }) => d.name).sort());
+    expect(shown).toEqual(docs.filter((d: { group?: string | null }) => !d.group).map((d: { name: string }) => d.name).sort());
 
     const option = docs.find((d: { name: string }) => d.name === "Option 2");
     const setPrice = async (value: number) => {
@@ -266,7 +265,6 @@ describe("plans", () => {
     };
     await setPrice(181.5);
     try {
-      expect(price((await get(PLANS)).$, "Option 2")).toBe("CA$181.50");
       expect(price((await get(MEMBERSHIPS)).$, "Option 2")).toBe("CA$181.50");
     } finally {
       await setPrice(175);

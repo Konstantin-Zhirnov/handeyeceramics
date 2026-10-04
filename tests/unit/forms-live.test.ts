@@ -22,6 +22,8 @@ type LiveForm = {
   capturedAt: string;
   submit: string;
   confirmation: string;
+  /** Where the confirmation text was read on the old site; "[TBD]" text when it could not be established. */
+  confirmationSource?: string;
   selectPlaceholder: string;
   fields: LiveField[];
   visibility: null | { dependsOn: string; visibleFields: Record<string, string[]> };
@@ -45,6 +47,14 @@ describe.each(["contact", "commission"] as const)("the %s form against the live 
   it("has a dated source", () => {
     expect(want.url).toMatch(/^https:\/\/www\.handeyeceramics\.com\//);
     expect(want.capturedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("says where its confirmation text was read, or leaves it [TBD]", () => {
+    if (want.confirmation === "[TBD]") return;
+    // "<the page's address> (<date read>): <where on the page>"
+    const source = want.confirmationSource || "";
+    expect(source.startsWith(`${want.url} (`), source).toBe(true);
+    expect(source.slice(want.url.length)).toMatch(/^ \(\d{4}-\d{2}-\d{2}\): .{20,}/);
   });
 
   it("asks the same questions, in order, with the same choices and placeholders", () => {

@@ -1,5 +1,4 @@
 import { getCMS } from "@/lib/cms/resolve";
-import { site } from "@/lib/site";
 import { EnquiryFormFields } from "./EnquiryFormFields";
 import type { EnquiryType } from "./definitions";
 
@@ -12,14 +11,14 @@ export type { EnquiryType };
  * settings.
  */
 export async function EnquiryForm({ type, studio }: { type: EnquiryType; studio?: number | string }) {
-  let phone: string = site.phoneDisplay;
-  let email: string = site.email;
+  let phone = "";
+  let email = "";
   try {
-    const settings = await (await getCMS()).findGlobal({ slug: "settings", depth: 0 });
+    const settings = await (await getCMS()).findGlobal({ slug: "settings", depth: 0, overrideAccess: false });
     phone = settings.phone || phone;
     email = settings.email || email;
   } catch {
-    /* settings unavailable: the contacts from the code stand in */
+    /* settings unavailable: the form says so without a contact */
   }
   return <EnquiryFormFields type={type} studio={studio} phone={phone} email={email} />;
 }

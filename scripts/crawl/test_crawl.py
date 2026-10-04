@@ -112,3 +112,24 @@ class IssuesAndDeterminismTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReadmeTest(unittest.TestCase):
+    """content/README.md is in a public repository: it is written in English."""
+
+    def test_summary_is_english(self):
+        inv = {"pages": [dict(rec("/a", "A"), kind="page")], "products": [], "pricing": [], "other": [], "images": []}
+        issues = [{"path": "/a", "issues": [{"type": "no-h1"}]}]
+        redactions = [{"path": "/a", "kind": "email", "count": 1, "fields": ["text"]}]
+        text = crawl.summary(inv, issues, redactions, images=False)
+        self.assertNotRegex(text, "[Ѐ-ӿ]")
+        self.assertIn("| pages | page | 200 | 1 |", text)
+        self.assertIn("no-h1: 1", text)
+
+    def test_hand_written_notes_survive_a_new_crawl(self):
+        old = "# Old summary\n\n" + crawl.README_NOTES + "\n\n## Notes\n\n- checked by hand\n"
+        new = crawl.readme_text("# New summary\n", old)
+        self.assertTrue(new.startswith("# New summary\n"))
+        self.assertIn("- checked by hand", new)
+        self.assertNotIn("Old summary", new)
+        self.assertEqual(crawl.readme_text("# New summary\n", None), "# New summary\n")

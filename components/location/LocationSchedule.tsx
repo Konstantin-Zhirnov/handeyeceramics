@@ -10,8 +10,8 @@ import type { ScheduleRow, StudioView } from "../site/SiteData";
 export function LocationSchedule({ studio, rows }: { studio: StudioView; rows: ScheduleRow[] }) {
   const open = studio.status === "open";
   const lines = [
-    ...rows.map((r) => ({ label: r.label, text: r.times })),
-    ...studio.notes.map((n) => ({ label: n.label, text: n.text })),
+    ...rows.map((r) => ({ label: r.label, text: r.times, price: r.price })),
+    ...studio.notes.map((n) => ({ label: n.label, text: n.text, price: "" })),
   ];
   return (
     <section className="shell py-14 md:py-20">
@@ -34,6 +34,11 @@ export function LocationSchedule({ studio, rows }: { studio: StudioView; rows: S
                 <span className="display text-[1.24rem] text-ink">{row.label}</span>
                 <span className="text-[0.92rem] leading-relaxed text-ink-soft sm:max-w-[26ch] sm:text-right">
                   {row.text}
+                  {row.price && (
+                    <span className="block font-semibold text-ink" data-price>
+                      {row.price}
+                    </span>
+                  )}
                 </span>
               </Reveal>
             ))}

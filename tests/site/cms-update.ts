@@ -5,8 +5,20 @@
  * {"collection", "create": data} adds a document, {"collection", "where", "remove": true} deletes.
  * Run by tests/site/studios.test.ts; not a test itself.
  */
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { getPayload } from "payload";
-import config from "../../payload.config";
+
+// Refuses any database but a throw-away one: a SQLite file in the temp folder, or one you vouch for with TEST_TEMP_DB=1.
+const uri = process.env.DATABASE_URI || "";
+const file = uri.startsWith("file:") ? path.resolve(uri.slice(5)).toLowerCase() : "";
+const inTemp = file !== "" && file.startsWith(path.resolve(tmpdir()).toLowerCase() + path.sep);
+const server = new URL(process.env.TEST_BASE_URL || "http://localhost").hostname;
+if (!["localhost", "127.0.0.1"].includes(server) || (!inTemp && process.env.TEST_TEMP_DB !== "1")) {
+  console.error("cms-update: refusing to edit a database that is not a throw-away test database (set TEST_TEMP_DB=1 on localhost)");
+  process.exit(2);
+}
+const { default: config } = await import("../../payload.config");
 
 const { collection, where, data, create, remove } = JSON.parse(process.env.CMS_UPDATE || "{}");
 const payload = await getPayload({ config });

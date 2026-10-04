@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { chromium, type Browser, type Page } from "playwright";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
+import { expected404, expectedRedirects } from "./expected";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const inv = JSON.parse(readFileSync(path.join(root, "content/inventory.json"), "utf8"));
@@ -52,7 +53,10 @@ describe("on a 390px phone", () => {
     // Redirects and the one dead address of the old site are checked in inventory.test.ts.
     const plain = await fetch(url, { redirect: "manual" });
     await plain.arrayBuffer();
-    if (plain.status !== 200) return;
+    // Only the known redirects and the one dead address may answer anything but 200.
+    if (expectedRedirects[p]) return expect(plain.status).toBe(301);
+    if (expected404.has(p)) return expect(plain.status).toBe(404);
+    expect(plain.status, `${p} answers`).toBe(200);
     opened++;
     await page.goto(url, { waitUntil: "load", timeout: 240_000 });
     const seen = await page.evaluate(() => ({
@@ -68,7 +72,7 @@ describe("on a 390px phone", () => {
   });
 
   it(everything ? "opened the pages of the inventory, not a handful" : "opened every template", () => {
-    // 31 pages (one of them a redirect), 42 products (one dead), the plans page, the shop, 3 studio pages.
-    expect(opened).toBeGreaterThanOrEqual(everything ? 70 : templates.length);
+    // Every address that should answer 200 was opened: no more, no less.
+    expect(opened).toBe(paths.filter((p) => !expectedRedirects[p] && !expected404.has(p)).length);
   });
 });
