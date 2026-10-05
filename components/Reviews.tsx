@@ -16,12 +16,12 @@ export function Reviews({ text, review }: { text: SectionText; review?: SectionT
       <Reveal as="figure" className="mx-auto max-w-[62ch] text-center">
         {text.eyebrow && <span className="eyebrow text-clay-600">{text.eyebrow}</span>}
         <p className="mt-5 text-[1.1rem] tracking-[0.25em] text-terracotta">★★★★★</p>
-        <blockquote className="display mt-5 text-[1.5rem] leading-[1.28] text-ink sm:text-[1.95rem]">
+        <blockquote className="display mt-5 text-title leading-[1.28] text-ink sm:text-heading-sm">
           “{review.body}”
         </blockquote>
         <figcaption className="mt-7 flex flex-col items-center gap-0.5">
-          <span className="text-[0.95rem] font-bold text-ink">{review.heading}</span>
-          <span className="text-[0.85rem] text-ink-soft">{review.eyebrow}</span>
+          <span className="text-copy font-bold text-ink">{review.heading}</span>
+          <span className="text-label text-ink-soft">{review.eyebrow}</span>
         </figcaption>
       </Reveal>
     </section>

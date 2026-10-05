@@ -23,7 +23,7 @@ export async function SiteShell({
   return (
     <SiteDataProvider value={data}>
       <Header currentLocation={currentLocation} />
-      <main className={flush ? undefined : "bg-clay-50 pb-20 pt-[104px] lg:pt-[128px]"}>{children}</main>
+      <main id="main" className={flush ? undefined : "bg-clay-50 pb-20 pt-[104px] lg:pt-[128px]"}>{children}</main>
       <Footer />
       <MobileCallBar />
     </SiteDataProvider>
@@ -35,7 +35,7 @@ export function PageHeading({ eyebrow, title, children }: { eyebrow?: string; ti
   return (
     <header className="mx-auto max-w-[62rem] px-5 sm:px-8">
       {eyebrow && <p className="eyebrow text-clay-600">{eyebrow}</p>}
-      <h1 className="display mt-3 text-[2rem] leading-[1.08] text-ink sm:text-[3rem] [overflow-wrap:anywhere]">{title}</h1>
+      <h1 className="display mt-3 text-heading-sm leading-[1.08] text-ink sm:text-display [overflow-wrap:anywhere]">{title}</h1>
       {children}
     </header>
   );

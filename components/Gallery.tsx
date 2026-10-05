@@ -15,7 +15,7 @@ export function Gallery({ text, photos }: { text: SectionText; photos: Photo[] }
           <div>
             {text.eyebrow && <span className="eyebrow text-clay-600">{text.eyebrow}</span>}
             {text.heading && (
-              <h2 className="display mt-3 max-w-[16ch] text-[2.2rem] text-ink sm:text-[3rem]">
+              <h2 className="display mt-3 max-w-[16ch] text-heading text-ink sm:text-display">
                 <Emph text={text.heading} />
               </h2>
             )}
@@ -23,7 +23,7 @@ export function Gallery({ text, photos }: { text: SectionText; photos: Photo[] }
           {instagram && handle && (
             <a
               href={instagram}
-              className="flex h-12 items-center gap-2 rounded-full border border-ink/20 px-5 text-[0.86rem] font-semibold text-ink transition-colors hover:bg-clay-100"
+              className="flex h-12 items-center gap-2 rounded-full border border-ink/20 px-5 text-label font-semibold text-ink transition-colors hover:bg-clay-100"
             >
               <span className="relative h-4 w-4">
                 <Image src="/images/icon-instagram.png" alt="" fill sizes="16px" />

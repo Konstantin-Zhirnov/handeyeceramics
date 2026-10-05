@@ -9,7 +9,7 @@ import { STAGE_EVENT, type StageState } from "./stage-event";
 import { useSiteData } from "./site/SiteData";
 
 const linkClass =
-  "flex min-h-[40px] items-center text-[0.88rem] leading-snug text-ink-soft transition-colors hover:text-ink";
+  "flex min-h-11 items-center text-label leading-snug text-ink-soft transition-colors hover:text-ink";
 
 /** Contacts, links and studios — all from the site settings and the studios in the CMS. */
 export function Footer() {
@@ -21,13 +21,13 @@ export function Footer() {
           <div>
             <Logo />
             {footerText && (
-              <p className="mt-5 max-w-[34ch] text-[0.9rem] leading-relaxed text-ink-soft">{footerText}</p>
+              <p className="mt-5 max-w-[34ch] text-ui leading-relaxed text-ink-soft">{footerText}</p>
             )}
             <div className="mt-6 flex flex-col gap-2.5">
               {phoneHref && (
                 <a
                   href={phoneHref}
-                  className="display flex h-12 items-center text-[1.5rem] text-ink transition-colors hover:text-terracotta"
+                  className="display flex h-12 items-center text-title text-ink transition-colors hover:text-terracotta"
                 >
                   {phone}
                 </a>
@@ -35,7 +35,7 @@ export function Footer() {
               {email && (
                 <a
                   href={`mailto:${email}`}
-                  className="flex h-11 items-center text-[0.92rem] font-medium text-ink-soft transition-colors hover:text-ink"
+                  className="flex h-11 items-center text-ui font-medium text-ink-soft transition-colors hover:text-ink"
                 >
                   {email}
                 </a>
@@ -57,7 +57,7 @@ export function Footer() {
           <div className="grid gap-8 sm:grid-cols-3">
             {footerLinks.length > 0 && (
               <div className="sm:col-span-2">
-                <h3 className="eyebrow text-clay-600">Explore</h3>
+                <h2 className="eyebrow text-clay-600">Explore</h2>
                 <ul className="mt-4 grid gap-x-8 gap-y-0.5 sm:grid-cols-2">
                   {footerLinks.map((link) => (
                     <li key={link.label}>
@@ -71,7 +71,7 @@ export function Footer() {
             )}
             {studios.length > 0 && (
               <div>
-                <h3 className="eyebrow text-clay-600">Studios</h3>
+                <h2 className="eyebrow text-clay-600">Studios</h2>
                 <ul className="mt-4 flex flex-col gap-0.5">
                   {studios.map((studio) => (
                     <li key={studio.path}>
@@ -86,7 +86,7 @@ export function Footer() {
           </div>
         </Reveal>
 
-        <div className="mt-12 border-t border-ink/12 pt-6 text-[0.78rem] text-ink-soft">
+        <div className="mt-12 border-t border-ink/12 pt-6 text-caption text-ink-soft">
           <p>© 2023 Hand Eye Design Ceramics Inc.</p>
         </div>
       </div>
@@ -120,14 +120,14 @@ export function MobileCallBar({ hideDuringHero = false }: { hideDuringHero?: boo
       <div className="flex gap-2.5">
         <a
           href="/#classes"
-          className="flex h-13 flex-1 items-center justify-center rounded-full bg-terracotta text-[0.9rem] font-semibold text-clay-50"
+          className="flex h-13 flex-1 items-center justify-center rounded-full bg-terracotta text-ui font-semibold text-clay-50"
         >
           Book a class
         </a>
         {phoneHref && (
           <a
             href={phoneHref}
-            className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full bg-sky-brand text-[0.9rem] font-semibold text-sky-ink"
+            className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full bg-sky-brand text-ui font-semibold text-sky-ink"
           >
             <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-4 w-4">
               <path

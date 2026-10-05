@@ -9,14 +9,17 @@
 @theme {
   --color-sky-brand: #abd9f5;
   --color-sky-soft: #dcedf8;
-  --color-sky-deep: #3d87c0;
+  /* Link and focus colour: 4.5:1 or better as text on clay-50, clay-100 and white. */
+  --color-sky-deep: #27679a;
   --color-sky-ink: #123a55;
 
   --color-clay-50: #f5efe6;
   --color-clay-100: #ece2d4;
   --color-clay-200: #dccdb9;
+  /* Decoration only: too light for text on any clay surface. */
   --color-clay-400: #b39a80;
-  --color-clay-600: #8a5f42;
+  /* Small labels: 4.5:1 or better on clay-50 and clay-100; on clay-200 use ink. */
+  --color-clay-600: #80573b;
   --color-terracotta: #7a4e33;
 
   --color-ink: #2a1d15;
@@ -24,6 +27,30 @@
 
   --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
   --font-body: var(--font-karla), ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale: sizes only, leading is set where the text is set.
+     `text-micro` … `text-lede` are Karla, `text-title-sm` … `text-display`
+     are the Bodoni steps. A size that is not here is a deliberate one-off
+     (the header wordmark, the clamp() hero lines). */
+  --text-micro: 0.72rem; /* badges, the eyebrow */
+  --text-caption: 0.8rem; /* breadcrumbs, fine print */
+  --text-label: 0.86rem; /* nav, tabs, meta lines */
+  --text-ui: 0.9rem; /* buttons, list rows */
+  --text-copy: 0.95rem; /* supporting paragraphs */
+  --text-lede: 1.02rem; /* long-form body */
+  --text-title-sm: 1.3rem;
+  --text-title: 1.5rem;
+  --text-title-lg: 1.8rem;
+  --text-heading-sm: 2rem;
+  --text-heading: 2.2rem;
+  --text-heading-lg: 2.6rem;
+  --text-display: 3rem;
+
+  /* Corners, in px: the root font size changes at 768px and corners must not. */
+  --radius-inset: 14px; /* fields, thumbnails, notices inside a card */
+  --radius-card: 20px; /* media and content cards */
+  --radius-panel: 24px; /* section panels, hero halves on phones */
+  --radius-stage: 30px; /* hero halves on desktop, the menu sheet */
 }
 
 /* ---- Mobile-first base ------------------------------------------------
@@ -73,6 +100,16 @@ svg {
   color: var(--color-ink);
 }
 
+/* Keyboard focus: one ring for every control, in the page's one cool colour.
+   In the base layer, so a utility on the element (the cream ring over the hero
+   photo, `outline-none` on a status message) still wins. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-sky-deep);
+    outline-offset: 2px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -111,7 +148,7 @@ svg {
 }
 
 @utility eyebrow {
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -214,7 +251,7 @@ svg {
   --top: 82px;
   --bottom: 16px;
   --photo-h: clamp(170px, 32svh, 330px);
-  --radius: 24px;
+  --radius: var(--radius-panel);
 }
 
 @media (min-width: 1024px) {
@@ -222,7 +259,7 @@ svg {
     --edge: max(var(--g), calc((100% - 92rem) / 2));
     --top: 96px;
     --bottom: 24px;
-    --radius: 30px;
+    --radius: var(--radius-stage);
   }
 }
 

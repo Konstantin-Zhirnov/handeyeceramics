@@ -3,6 +3,7 @@
 import {
   motion,
   useMotionValueEvent,
+  useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
@@ -54,7 +55,9 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
   }));
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const p = useSpring(scrollYProgress, { stiffness: 140, damping: 32, mass: 0.35 });
+  const eased = useSpring(scrollYProgress, { stiffness: 140, damping: 32, mass: 0.35 });
+  // Reduced motion: the stage follows the scroll itself, with no spring carrying it on afterwards.
+  const p = useReducedMotion() ? scrollYProgress : eased;
   const expand = useTransform(p, [0, EXPAND_END], [0, 1], { clamp: true });
   const seq = useTransform(p, [EXPAND_END, 1], [0, 1], { clamp: true });
 
@@ -160,7 +163,7 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
 
             {/* The prototype's line, kept as decoration. */}
             <p
-              className="rise display mt-3 text-[2.15rem] leading-[1.02] text-ink sm:text-[2.9rem] lg:mt-5 lg:text-[clamp(3rem,4.6vw,4.6rem)]"
+              className="rise display mt-3 text-heading leading-[1.02] text-ink sm:text-display lg:mt-5 lg:text-[clamp(3rem,4.6vw,4.6rem)]"
               style={{ animationDelay: "0.18s" }}
             >
               {hero.title.split(" / ").map((line, i) => (
@@ -179,7 +182,7 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
             </p>
 
             <p
-              className="rise mt-3 max-w-[40ch] text-[0.95rem] leading-relaxed text-ink-soft lg:mt-6 lg:text-[1.02rem]"
+              className="rise mt-3 max-w-[40ch] text-copy leading-relaxed text-ink-soft lg:mt-6 lg:text-lede"
               style={{ animationDelay: "0.26s" }}
             >
               {hero.subtitle}
@@ -189,16 +192,19 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
               className="rise mt-4 flex gap-2.5 lg:mt-8 lg:gap-3"
               style={{ animationDelay: "0.34s" }}
             >
-              <a
-                href={hero.cta.href || "#classes"}
-                className="flex h-12 flex-1 items-center justify-center rounded-full bg-terracotta px-6 text-[0.9rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5 sm:flex-none lg:h-13 lg:px-8"
-              >
-                {hero.cta.label}
-              </a>
+              {/* No label in the admin — no button: an empty pill has no name and nothing to say. */}
+              {hero.cta.label.trim() && (
+                <a
+                  href={hero.cta.href || "#classes"}
+                  className="flex h-12 flex-1 items-center justify-center rounded-full bg-terracotta px-6 text-ui font-semibold text-clay-50 transition-transform hover:-translate-y-0.5 sm:flex-none lg:h-13 lg:px-8"
+                >
+                  {hero.cta.label}
+                </a>
+              )}
               {/* one tap to call — full number from sm up, short label on small phones */}
               <a
                 href={phoneHref}
-                className="flex h-12 flex-1 items-center justify-center rounded-full border border-ink/25 px-5 text-[0.9rem] font-semibold text-ink transition-colors hover:bg-clay-50 sm:flex-none lg:h-13 lg:px-7"
+                className="flex h-12 flex-1 items-center justify-center rounded-full border border-ink/25 px-5 text-ui font-semibold text-ink transition-colors hover:bg-clay-50 sm:flex-none lg:h-13 lg:px-7"
               >
                 <span className="sm:hidden">Call us</span>
                 <span className="hidden sm:inline">Call {phone}</span>
@@ -206,7 +212,7 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
             </div>
 
             <p
-              className="stage-proof rise mt-4 flex items-center gap-2 text-[0.8rem] text-ink-soft lg:mt-8"
+              className="stage-proof rise mt-4 flex items-center gap-2 text-caption text-ink-soft lg:mt-8"
               style={{ animationDelay: "0.42s" }}
             >
               <span className="tracking-[0.12em] text-terracotta">★★★★★</span>
@@ -243,11 +249,11 @@ function Chapter({
       <p className="eyebrow text-sky-brand">
         {chapter.n} — {chapter.label}
       </p>
-      <p className="display mt-2 text-[1.6rem] leading-[1.08] sm:mt-3 sm:text-[2.6rem] lg:text-[2.5rem]">
+      <p className="display mt-2 text-title leading-[1.08] sm:mt-3 sm:text-heading-lg lg:text-heading-lg">
         {chapter.title}
       </p>
       {/* phones: eyebrow + title only, so the copy sits below the object */}
-      <p className="mt-3 hidden max-w-[40ch] text-[0.95rem] leading-relaxed text-clay-50/80 sm:block">
+      <p className="mt-3 hidden max-w-[40ch] text-copy leading-relaxed text-clay-50/80 sm:block">
         {chapter.body}
       </p>
     </motion.div>

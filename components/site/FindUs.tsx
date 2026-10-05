@@ -20,14 +20,14 @@ export async function FindUs() {
   return (
     <section data-find-us className="mx-auto mt-6 grid max-w-[62rem] gap-4 px-5 sm:grid-cols-3 sm:px-8">
       {studios.map((s) => (
-        <div key={s.id} className="rounded-[20px] border border-clay-200 bg-clay-100 px-5 py-4">
+        <div key={s.id} className="rounded-card border border-clay-200 bg-clay-100 px-5 py-4">
           <h3 className="display text-lg text-ink">{s.name}</h3>
           <p className="mt-2 text-ink-soft">{s.street}</p>
           {(s.locality || s.regionCode) && (
             <p className="text-ink-soft">{[s.locality, [s.regionCode, s.postalCode].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</p>
           )}
           {s.phoneHref && (
-            <a href={s.phoneHref} className="mt-3 inline-block font-semibold text-sky-deep underline">
+            <a href={s.phoneHref} className="mt-1 inline-flex min-h-11 items-center font-semibold text-sky-deep underline underline-offset-2">
               {s.phone}
             </a>
           )}

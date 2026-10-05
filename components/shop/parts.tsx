@@ -46,14 +46,14 @@ export async function BuyNotice() {
         type="button"
         disabled
         aria-disabled="true"
-        className="cursor-not-allowed rounded-[28px] border border-clay-200 bg-clay-100 px-6 py-3 text-left text-[0.94rem] font-semibold text-ink-soft"
+        className="cursor-not-allowed rounded-stage border border-clay-200 bg-clay-100 px-6 py-3 text-left text-copy font-semibold text-ink-soft"
       >
         {BUY_LABEL}
       </button>
       {phone.href && (
         <a
           href={phone.href}
-          className="flex h-12 items-center justify-center rounded-full bg-sky-brand px-7 text-[0.94rem] font-semibold text-sky-ink transition-transform hover:-translate-y-0.5"
+          className="flex h-12 items-center justify-center rounded-full bg-sky-brand px-7 text-copy font-semibold text-sky-ink transition-transform hover:-translate-y-0.5"
         >
           Call {phone.display}
         </a>
@@ -63,7 +63,7 @@ export async function BuyNotice() {
 }
 
 export const EmptyShelf = () => (
-  <p data-empty className="rounded-[20px] border border-dashed border-clay-200 px-6 py-10 text-center text-ink-soft">
+  <p data-empty className="rounded-card border border-dashed border-clay-200 px-6 py-10 text-center text-ink-soft">
     No products here yet.
   </p>
 );
@@ -88,10 +88,10 @@ export function ProductGrid({ products, lead = false }: { products: Product[]; l
                   sizes="(max-width: 640px) 50vw, 20rem"
                   loading={lead && i < 2 ? "eager" : undefined}
                   fetchPriority={lead && i === 0 ? "high" : undefined}
-                  className="aspect-square w-full rounded-[16px] bg-clay-100 object-cover transition-transform group-hover:-translate-y-0.5"
+                  className="aspect-square w-full rounded-inset bg-clay-100 object-cover transition-transform group-hover:-translate-y-0.5"
                 />
               ) : (
-                <span aria-hidden className="block aspect-square w-full rounded-[16px] bg-clay-100" />
+                <span aria-hidden className="block aspect-square w-full rounded-inset bg-clay-100" />
               )}
               <span className="mt-3 block leading-snug text-ink [overflow-wrap:anywhere] group-hover:underline">{p.name}</span>
               <span className="mt-1 block text-sm text-ink-soft">
@@ -143,7 +143,7 @@ export function ProductOptions({ options }: { options: Product["options"] }) {
             <select
               id={`option-${i}`}
               defaultValue=""
-              className="w-full min-w-0 rounded-[14px] border border-clay-200 bg-clay-50 px-4 py-3 text-ink"
+              className="w-full min-w-0 rounded-inset border border-clay-200 bg-clay-50 px-4 py-3 text-ink"
             >
               <option value="">Select</option>
               {choices.map((c, j) => (
@@ -171,7 +171,7 @@ export async function StorefrontNav({ current }: { current: string }) {
             <Link
               href={s.path}
               aria-current={s.path === current ? "page" : undefined}
-              className={`block rounded-full border px-4 py-2 text-sm [overflow-wrap:anywhere] ${
+              className={`flex min-h-11 items-center rounded-full border px-4 py-2 text-sm [overflow-wrap:anywhere] ${
                 s.path === current ? "border-ink bg-ink text-clay-50" : "border-clay-200 text-ink hover:bg-clay-100"
               }`}
             >
@@ -188,7 +188,7 @@ export async function StorefrontNav({ current }: { current: string }) {
 export function PlanList({ plans, grouped = true }: { plans: Plan[]; grouped?: boolean }) {
   if (!plans.length) {
     return (
-      <p data-empty className="rounded-[20px] border border-dashed border-clay-200 px-6 py-10 text-center text-ink-soft">
+      <p data-empty className="rounded-card border border-dashed border-clay-200 px-6 py-10 text-center text-ink-soft">
         No plans here yet.
       </p>
     );
@@ -202,12 +202,12 @@ export function PlanList({ plans, grouped = true }: { plans: Plan[]; grouped?: b
     <div className="flex flex-col gap-12">
       {[...groups].map(([name, items]) => (
         <section key={name} data-plan-group>
-          {name && <h2 className="display mb-5 text-[1.6rem] text-ink">{name}</h2>}
+          {name && <h2 className="display mb-5 text-title text-ink">{name}</h2>}
           <ul className="grid gap-4 sm:grid-cols-2">
             {items.map((p) => (
-              <li key={p.id} data-plan className="flex min-w-0 flex-col rounded-[24px] border border-clay-200 bg-clay-100 px-6 py-6">
+              <li key={p.id} data-plan className="flex min-w-0 flex-col rounded-panel border border-clay-200 bg-clay-100 px-6 py-6">
                 <h3 className="text-lg font-semibold text-ink [overflow-wrap:anywhere]">{p.name}</h3>
-                <p className="display mt-3 text-[1.8rem] leading-none text-ink">
+                <p className="display mt-3 text-title-lg leading-none text-ink">
                   <span data-plan-price>{formatPrice(p.price) || TBD}</span>
                 </p>
                 {p.period && (

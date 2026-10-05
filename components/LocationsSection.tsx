@@ -14,11 +14,11 @@ export function LocationsSection({ text }: { text: SectionText }) {
       <Reveal className="max-w-[48ch]">
         {text.eyebrow && <span className="eyebrow text-clay-600">{text.eyebrow}</span>}
         {text.heading && (
-          <h2 className="display mt-3 text-[2.2rem] text-ink sm:text-[3rem]">
+          <h2 className="display mt-3 text-heading text-ink sm:text-display">
             <Emph text={text.heading} />
           </h2>
         )}
-        {text.body && <p className="mt-4 text-[0.96rem] leading-relaxed text-ink-soft">{text.body}</p>}
+        {text.body && <p className="mt-4 text-copy leading-relaxed text-ink-soft">{text.body}</p>}
       </Reveal>
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -26,7 +26,7 @@ export function LocationsSection({ text }: { text: SectionText }) {
           <Reveal as="article" key={loc.path} delay={revealDelay(i)} className="h-full">
             <Link
               href={loc.path}
-              className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-ink/10 bg-clay-50 transition-shadow hover:shadow-[0_18px_36px_rgba(28,21,18,0.10)]"
+              className="group flex h-full flex-col overflow-hidden rounded-panel border border-ink/10 bg-clay-50 transition-shadow hover:shadow-[0_18px_36px_rgba(28,21,18,0.10)]"
             >
               <div className="relative h-[180px] overflow-hidden bg-clay-200">
                 {loc.photo && (
@@ -42,8 +42,8 @@ export function LocationsSection({ text }: { text: SectionText }) {
                 )}
                 {loc.tag && (
                   <span
-                    className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] ${
-                      loc.status === "planned" ? "bg-clay-200 text-clay-600" : "bg-sky-brand text-sky-ink"
+                    className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-micro font-bold uppercase tracking-[0.12em] ${
+                      loc.status === "planned" ? "bg-clay-200 text-ink" : "bg-sky-brand text-sky-ink"
                     }`}
                   >
                     {loc.tag}
@@ -51,10 +51,10 @@ export function LocationsSection({ text }: { text: SectionText }) {
                 )}
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="display text-[1.32rem] text-ink">{loc.name}</h3>
-                <p className="mt-1 text-[0.86rem] font-semibold text-clay-600">{loc.street}</p>
-                <p className="mt-3 flex-1 text-[0.86rem] leading-relaxed text-ink-soft">{loc.note}</p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-[0.86rem] font-bold text-ink">
+                <h3 className="display text-title-sm text-ink">{loc.name}</h3>
+                <p className="mt-1 text-label font-semibold text-clay-600">{loc.street}</p>
+                <p className="mt-3 flex-1 text-label leading-relaxed text-ink-soft">{loc.note}</p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-label font-bold text-ink">
                   {loc.status === "planned" ? "Get notified" : `See ${loc.short} classes`}
                   <svg viewBox="0 0 16 12" fill="none" aria-hidden className="h-2.5 w-4">
                     <path

@@ -22,7 +22,7 @@ const ENDPOINT = "/forms/enquiry";
 const TRAP = "company_url";
 
 const control =
-  "block w-full min-h-12 rounded-[14px] border bg-white px-4 py-3 text-base text-ink placeholder:text-ink-soft/70 " +
+  "block w-full min-h-12 rounded-inset border bg-white px-4 py-3 text-base text-ink placeholder:text-ink-soft/70 " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-deep disabled:opacity-60";
 
 /** "(778) 898-3414" → "tel:+17788983414" (ten digits are a Canadian number). */
@@ -105,7 +105,7 @@ export function EnquiryFormFields({ type, studio, phone, email }: Props) {
         tabIndex={-1}
         role="status"
         data-enquiry-sent={type}
-        className="rounded-[20px] border border-clay-200 bg-clay-100 px-5 py-6 text-ink outline-none"
+        className="rounded-card border border-clay-200 bg-clay-100 px-5 py-6 text-ink outline-none"
       >
         <p className="display text-xl">{CONFIRMATION[type]}</p>
       </div>
@@ -156,7 +156,7 @@ export function EnquiryFormFields({ type, studio, phone, email }: Props) {
           tabIndex={-1}
           role="alert"
           data-enquiry-failed
-          className="rounded-[14px] border border-red-800/40 bg-white px-4 py-3 text-ink outline-none sm:col-span-2"
+          className="rounded-inset border border-red-800/40 bg-white px-4 py-3 text-ink outline-none sm:col-span-2"
         >
           {notice || "We couldn't send your message."}{" "}
           {phone && email ? (
@@ -190,7 +190,7 @@ export function EnquiryFormFields({ type, studio, phone, email }: Props) {
         <button
           type="submit"
           disabled={state === "sending"}
-          className="flex h-13 min-w-40 items-center justify-center rounded-full bg-terracotta px-7 text-[0.9rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-deep disabled:opacity-70"
+          className="flex h-13 min-w-40 items-center justify-center rounded-full bg-terracotta px-7 text-ui font-semibold text-clay-50 transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-deep disabled:opacity-70"
         >
           {state === "sending" ? "Sending…" : SUBMIT}
         </button>

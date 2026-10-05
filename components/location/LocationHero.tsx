@@ -27,7 +27,7 @@ export function LocationHero({
     <section className="shell pt-[84px] pb-4 lg:max-w-[92rem] lg:pt-24">
       <nav
         aria-label="Breadcrumb"
-        className="rise flex flex-wrap items-center gap-2 px-1 py-3 text-[0.8rem] font-semibold text-ink-soft"
+        className="rise flex flex-wrap items-center gap-2 px-1 py-3 text-caption font-semibold text-ink-soft"
         style={{ animationDelay: "0.05s" }}
       >
         <Link href="/" className="hover:text-ink">
@@ -40,7 +40,7 @@ export function LocationHero({
       </nav>
 
       <div className="grid gap-3 lg:grid-cols-[42fr_58fr] lg:gap-[14px]">
-        <div className="grain relative order-2 overflow-hidden rounded-[24px] border border-clay-200 bg-clay-100 px-5 py-7 sm:px-8 lg:order-1 lg:rounded-[30px] lg:px-12 lg:py-12">
+        <div className="grain relative order-2 overflow-hidden rounded-panel border border-clay-200 bg-clay-100 px-5 py-7 sm:px-8 lg:order-1 lg:rounded-stage lg:px-12 lg:py-12">
           <div className="relative z-10">
             {studio.tag && (
               <p className="rise eyebrow text-clay-600" style={{ animationDelay: "0.12s" }}>
@@ -49,14 +49,14 @@ export function LocationHero({
             )}
 
             <h1
-              className="rise display mt-4 text-[1.95rem] leading-[1.06] text-ink sm:text-[3rem] lg:text-[clamp(2.8rem,3.8vw,3.9rem)] [overflow-wrap:anywhere]"
+              className="rise display mt-4 text-heading-sm leading-[1.06] text-ink sm:text-display lg:text-[clamp(2.8rem,3.8vw,3.9rem)] [overflow-wrap:anywhere]"
               style={{ animationDelay: "0.2s" }}
             >
               {/* Keeps the exact "… in <place>" wording in the H1 text for
                   search; the italic place name carries the reference's style. */}
               {place ? (
                 <>
-                  {first} <span className="text-clay-400">in</span>{" "}
+                  {first} <span className="text-clay-600">in</span>{" "}
                   <br />
                   <em className="italic">{place}</em>
                 </>
@@ -67,7 +67,7 @@ export function LocationHero({
 
             {studio.intro && (
               <p
-                className="rise mt-5 max-w-[44ch] whitespace-pre-line text-[0.98rem] leading-relaxed text-ink-soft"
+                className="rise mt-5 max-w-[44ch] whitespace-pre-line text-copy leading-relaxed text-ink-soft"
                 style={{ animationDelay: "0.28s" }}
               >
                 {studio.intro}
@@ -75,7 +75,7 @@ export function LocationHero({
             )}
 
             {studio.street && (
-              <p className="rise mt-5 text-[0.95rem] font-semibold text-clay-600" style={{ animationDelay: "0.34s" }}>
+              <p className="rise mt-5 text-copy font-semibold text-clay-600" style={{ animationDelay: "0.34s" }}>
                 {studio.street}
                 {open && studio.locality && `, ${studio.locality}`}
               </p>
@@ -88,7 +88,7 @@ export function LocationHero({
                 href={studio.google.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rise mt-4 inline-flex min-h-11 items-center gap-2.5 rounded-full border border-ink/15 bg-clay-50 px-4 text-[0.86rem] text-ink transition-colors hover:bg-clay-50/60"
+                className="rise mt-4 inline-flex min-h-11 items-center gap-2.5 rounded-full border border-ink/15 bg-clay-50 px-4 text-label text-ink transition-colors hover:bg-clay-50/60"
                 style={{ animationDelay: "0.4s" }}
               >
                 <span className="font-bold">{studio.google.rating.toFixed(1)}</span>
@@ -104,7 +104,7 @@ export function LocationHero({
               {open ? (
                 <a
                   href={bookHref}
-                  className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-terracotta px-8 text-[0.92rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
+                  className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-terracotta px-8 text-ui font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
                 >
                   Book at {studio.short}
                 </a>
@@ -112,7 +112,7 @@ export function LocationHero({
                 email && (
                   <a
                     href={`mailto:${email}?subject=${encodeURIComponent(`${studio.name} studio`)}`}
-                    className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-terracotta px-8 text-[0.92rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
+                    className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-terracotta px-8 text-ui font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
                   >
                     Tell me when it opens
                   </a>
@@ -121,7 +121,7 @@ export function LocationHero({
               {studio.phoneHref && (
                 <a
                   href={studio.phoneHref}
-                  className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-ink/25 px-7 text-[0.92rem] font-semibold text-ink transition-colors hover:bg-clay-50"
+                  className="flex h-13 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-ink/25 px-7 text-ui font-semibold text-ink transition-colors hover:bg-clay-50"
                 >
                   Call {studio.phone}
                 </a>
@@ -135,14 +135,14 @@ export function LocationHero({
               className="rise mt-7 flex flex-wrap items-center gap-3 border-t border-ink/10 pt-6"
               style={{ animationDelay: "0.52s" }}
             >
-              <span className="text-[0.85rem] text-ink-soft">Looking for another studio?</span>
+              <span className="text-label text-ink-soft">Looking for another studio?</span>
               <LocationSwitcher current={studio.path} />
             </div>
           </div>
         </div>
 
         <div
-          className="rise-media relative order-1 min-h-[260px] overflow-hidden rounded-[24px] bg-clay-200 sm:min-h-[340px] lg:order-2 lg:min-h-0 lg:rounded-[30px]"
+          className="rise-media relative order-1 min-h-[260px] overflow-hidden rounded-panel bg-clay-200 sm:min-h-[340px] lg:order-2 lg:min-h-0 lg:rounded-stage"
           style={{ animationDelay: "0.15s" }}
         >
           {studio.photo && (

@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
  */
 const MuxPlayer = dynamic(() => import("@mux/mux-player-react"), {
   ssr: false,
-  loading: () => <div aria-hidden className="aspect-video w-full rounded-[20px] bg-clay-100" />,
+  loading: () => <div aria-hidden className="aspect-video w-full rounded-card bg-clay-100" />,
 });
 
 export function MuxVideo({ playbackId }: { playbackId: string }) {

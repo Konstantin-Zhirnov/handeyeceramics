@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useSiteData } from "./site/SiteData";
 
 function PinIcon({ className = "" }: { className?: string }) {
@@ -32,6 +32,7 @@ export function LocationSwitcher({
   const { studios } = useSiteData();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const listId = useId();
   const active = studios.find((l) => l.path === current);
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export function LocationSwitcher({
 
   const trigger =
     tone === "glass"
-      ? "border-clay-50/40 text-clay-50 hover:bg-clay-50/15"
+      ? "border-clay-50/40 text-clay-50 hover:bg-clay-50/15 focus-visible:outline-clay-50"
       : tone === "sky"
       ? "border-sky-ink/25 text-sky-ink hover:bg-white/55"
       : "border-ink/15 text-ink hover:bg-clay-100";
@@ -63,8 +64,8 @@ export function LocationSwitcher({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-haspopup="menu"
-        className={`flex h-11 items-center gap-2 rounded-full border px-4 text-[0.84rem] font-semibold transition-colors ${trigger}`}
+        aria-controls={listId}
+        className={`flex h-11 items-center gap-2 rounded-full border px-4 text-label font-semibold transition-colors ${trigger}`}
       >
         <PinIcon className="h-4 w-4" />
         {active ? active.short : "All studios"}
@@ -73,9 +74,10 @@ export function LocationSwitcher({
         </svg>
       </button>
 
-      {/* Always in the page and only hidden: the fade and the 8px drop are a CSS transition, both ways. */}
+      {/* Always in the page and only hidden: the fade and the 8px drop are a CSS transition, both ways.
+          A plain list of links, reached with Tab: no menu roles, which would promise arrow keys. */}
       <div
-        role="menu"
+        id={listId}
         aria-hidden={!open}
         className={`absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-ink/10 bg-clay-50 p-1.5 shadow-[0_20px_44px_rgba(28,21,18,0.16)] transition-[opacity,transform,visibility] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
           open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0"
@@ -86,20 +88,19 @@ export function LocationSwitcher({
                 key={loc.path}
                 href={loc.path}
                 onClick={() => setOpen(false)}
-                role="menuitem"
                 className={`flex flex-col rounded-xl px-3.5 py-3 transition-colors ${
                   loc.path === current ? "bg-sky-brand/45" : "hover:bg-clay-100"
                 }`}
               >
-                <span className="flex items-center gap-2 text-[0.9rem] font-bold text-ink">
+                <span className="flex items-center gap-2 text-ui font-bold text-ink">
                   {loc.name}
                   {loc.status === "planned" && (
-                    <span className="rounded-full bg-clay-200 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-clay-600">
+                    <span className="rounded-full bg-clay-200 px-2 py-0.5 text-micro font-bold uppercase tracking-[0.1em] text-ink">
                       Soon
                     </span>
                   )}
                 </span>
-                <span className="mt-0.5 text-[0.78rem] text-ink-soft">{loc.region}</span>
+                <span className="mt-0.5 text-caption text-ink-soft">{loc.region}</span>
               </Link>
             ))}
       </div>

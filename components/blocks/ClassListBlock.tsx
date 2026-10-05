@@ -19,7 +19,7 @@ export async function ClassListBlock({ heading, studio }: { heading?: string | n
       {heading && <h2 className="display mb-4 text-2xl text-ink">{heading}</h2>}
       <ul className="flex flex-col gap-4">
         {(docs as Class[]).map((c) => (
-          <li key={c.id} className="rounded-[20px] border border-clay-200 bg-clay-100 px-5 py-4">
+          <li key={c.id} className="rounded-card border border-clay-200 bg-clay-100 px-5 py-4">
             <h3 className="text-lg text-ink">{c.title}</h3>
             {c.price && <p className="text-ink-soft">{c.price}</p>}
             {c.description && <p className="mt-2 whitespace-pre-line text-ink-soft">{c.description}</p>}

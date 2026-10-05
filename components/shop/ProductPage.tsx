@@ -48,10 +48,10 @@ export function ProductPage({ doc }: { doc: Product }) {
               height={first.height || 1200}
               sizes="(max-width: 768px) 100vw, 30rem"
               priority
-              className="h-auto w-full rounded-[20px] bg-clay-100"
+              className="h-auto w-full rounded-card bg-clay-100"
             />
           ) : (
-            <div aria-hidden className="aspect-square w-full rounded-[20px] bg-clay-100" />
+            <div aria-hidden className="aspect-square w-full rounded-card bg-clay-100" />
           )}
           {rest.length > 0 && (
             <ul className="mt-3 grid grid-cols-3 gap-3">
@@ -63,7 +63,7 @@ export function ProductPage({ doc }: { doc: Product }) {
                     width={320}
                     height={320}
                     sizes="(max-width: 768px) 33vw, 10rem"
-                    className="aspect-square w-full rounded-[14px] bg-clay-100 object-cover"
+                    className="aspect-square w-full rounded-inset bg-clay-100 object-cover"
                   />
                 </li>
               ))}

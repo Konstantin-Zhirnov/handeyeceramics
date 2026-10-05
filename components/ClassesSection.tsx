@@ -25,7 +25,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
         <Reveal className="text-center">
           {text.eyebrow && <span className="eyebrow text-clay-600">{text.eyebrow}</span>}
           {text.heading && (
-            <h2 className="display mx-auto mt-3 max-w-[15ch] text-[2.2rem] text-ink sm:text-[3rem]">
+            <h2 className="display mx-auto mt-3 max-w-[15ch] text-heading text-ink sm:text-display">
               <Emph text={text.heading} />
             </h2>
           )}
@@ -42,7 +42,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                     key={tab.id}
                     type="button"
                     onClick={() => setActive(tab.id)}
-                    className="relative h-11 whitespace-nowrap rounded-full px-5 text-[0.86rem] font-semibold transition-colors"
+                    className="relative h-11 whitespace-nowrap rounded-full px-5 text-label font-semibold transition-colors"
                   >
                     {current.id === tab.id && (
                       <m.span
@@ -69,7 +69,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.55, ease }}
-              className="grid overflow-hidden rounded-[26px] bg-clay-50 shadow-[0_24px_50px_rgba(28,21,18,0.09)] md:rounded-[32px] lg:grid-cols-2"
+              className="grid overflow-hidden rounded-panel bg-clay-50 shadow-[0_24px_50px_rgba(28,21,18,0.09)] md:rounded-stage lg:grid-cols-2"
             >
               <div className="relative min-h-[260px] bg-clay-200 lg:min-h-[440px]">
                 {current.photo && (
@@ -82,15 +82,15 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                   />
                 )}
                 {current.badge && (
-                  <span className="absolute left-4 top-4 rounded-full bg-clay-50/92 px-3.5 py-2 text-[0.74rem] font-semibold text-ink">
+                  <span className="absolute left-4 top-4 rounded-full bg-clay-50/92 px-3.5 py-2 text-caption font-semibold text-ink">
                     {current.badge}
                   </span>
                 )}
               </div>
 
               <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-11">
-                <h3 className="display text-[1.75rem] text-ink sm:text-[2.15rem]">{current.title}</h3>
-                {current.body && <p className="mt-4 text-[0.97rem] leading-relaxed text-ink-soft">{current.body}</p>}
+                <h3 className="display text-title-lg text-ink sm:text-heading">{current.title}</h3>
+                {current.body && <p className="mt-4 text-copy leading-relaxed text-ink-soft">{current.body}</p>}
                 <ul className="mt-6 flex flex-col gap-3">
                   {current.points.map((point, i) => (
                     <m.li
@@ -98,7 +98,7 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.15 + i * 0.07, duration: 0.4, ease }}
-                      className="flex gap-3 text-[0.9rem] leading-relaxed text-ink-soft"
+                      className="flex gap-3 text-ui leading-relaxed text-ink-soft"
                     >
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta" />
                       {point}
@@ -109,14 +109,14 @@ export function ClassesSection({ text, tabs }: { text: SectionText; tabs: ClassT
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <a
                     href={current.bookHref}
-                    className="flex h-13 items-center justify-center rounded-full bg-terracotta px-7 text-[0.9rem] font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
+                    className="flex h-13 items-center justify-center rounded-full bg-terracotta px-7 text-ui font-semibold text-clay-50 transition-transform hover:-translate-y-0.5"
                   >
                     Book now
                   </a>
                   {phoneHref && (
                     <a
                       href={phoneHref}
-                      className="flex h-13 items-center justify-center rounded-full border border-ink/20 px-7 text-[0.9rem] font-semibold text-ink transition-colors hover:bg-clay-100"
+                      className="flex h-13 items-center justify-center rounded-full border border-ink/20 px-7 text-ui font-semibold text-ink transition-colors hover:bg-clay-100"
                     >
                       Ask us a question
                     </a>

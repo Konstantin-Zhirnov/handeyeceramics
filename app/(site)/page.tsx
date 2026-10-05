@@ -41,7 +41,7 @@ export default async function Home() {
   return (
     <SiteDataProvider value={data}>
       <Header />
-      <main>
+      <main id="main">
         <HeroStage hero={home.hero} chapters={home.list("stage")} h1={page ? page.h1 || page.title : undefined} />
         <FeatureStrip items={home.list("feature")} />
         <ClassesSection text={home.text("classes")} tabs={tabs} />

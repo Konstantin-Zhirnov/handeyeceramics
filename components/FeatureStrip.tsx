@@ -50,8 +50,9 @@ export function FeatureStrip({ items }: { items: SectionText[] }) {
             >
               {icons[i % icons.length]}
             </svg>
-            <h3 className="display mt-4 text-[1.32rem] text-ink">{item.heading}</h3>
-            <p className="mt-2 text-[0.92rem] leading-relaxed text-ink-soft">{item.body}</p>
+            {/* h2: the strip follows the page's H1 directly, with no section heading of its own. */}
+            <h2 className="display mt-4 text-title-sm text-ink">{item.heading}</h2>
+            <p className="mt-2 text-ui leading-relaxed text-ink-soft">{item.body}</p>
           </Reveal>
         ))}
       </div>
