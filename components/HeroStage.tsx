@@ -9,6 +9,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
+import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { SequenceCanvas } from "./SequenceCanvas";
 import { STAGE_EVENT, type StageState } from "./stage-event";
@@ -45,7 +46,9 @@ function emit(state: StageState) {
  * JavaScript runs; scroll only moves --p and the chapter layers.
  */
 export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: SectionText[]; h1?: string }) {
-  const { phone, phoneHref, googleReviews } = useSiteData();
+  const { phone, phoneHref, googleReviews, studios } = useSiteData();
+  // The studios a visitor can walk into today; one that is only planned waits for its opening.
+  const openStudios = studios.filter((s) => s.status === "open");
   // Chapter copy: the home global's stage-1…stage-3 (eyebrow — label, heading, body).
   const stageChapters: ChapterData[] = chapters.slice(0, WINDOWS.length).map((c, i) => ({
     n: String(i + 1).padStart(2, "0"),
@@ -120,6 +123,38 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
             style={{ opacity: "var(--p)" }}
           />
 
+          {/* The classes of every open studio, one card each, in view for as long as
+              the stage is: nobody leaves thinking we teach in one city only. Names
+              and places come from the CMS. Phones have room for the short name
+              only; three cards share the width of the photo. */}
+          {openStudios.length > 0 && (
+            <nav aria-label="Classes by studio" className="stage-studios z-10">
+              <ul className="rise flex gap-1.5 md:gap-2 lg:flex-col" style={{ animationDelay: "0.5s" }}>
+                {openStudios.map((s) => (
+                  <li key={s.path} className="min-w-0 flex-1 md:flex-none">
+                    <Link
+                      href={s.path}
+                      className="flex h-full items-center gap-2.5 rounded-inset bg-clay-50 px-2 py-2 shadow-[0_1px_0_rgba(42,29,21,0.08)] transition-colors hover:bg-clay-100 md:px-3.5 md:py-2.5"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden className="hidden h-4 w-4 shrink-0 text-terracotta md:block">
+                        <path d="M12 21s6.5-5.6 6.5-10a6.5 6.5 0 1 0-13 0c0 4.4 6.5 10 6.5 10Z" stroke="currentColor" strokeWidth="1.6" />
+                        <circle cx="12" cy="11" r="2.3" stroke="currentColor" strokeWidth="1.6" />
+                      </svg>
+                      <span className="flex min-w-0 flex-col leading-tight">
+                        <span className="text-micro font-bold uppercase tracking-[0.12em] text-clay-600">Classes</span>
+                        <span className="text-micro font-bold text-ink md:text-label">
+                          <span className="md:hidden">{s.short}</span>
+                          <span className="hidden md:inline">{s.name}</span>
+                        </span>
+                        <span className="text-micro text-ink-soft md:text-caption">{s.region}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+
           <div className="stage-overlay">
             <div className="absolute bottom-[96px] left-[var(--edge)] right-[var(--edge)] md:bottom-16">
               <div className="relative min-h-[5.5rem] max-w-[34rem] sm:min-h-[9.5rem] lg:max-w-[23rem]">
@@ -182,7 +217,7 @@ export function HeroStage({ hero, chapters, h1 }: { hero: HeroText; chapters: Se
             </p>
 
             <p
-              className="rise mt-3 max-w-[40ch] text-copy leading-relaxed text-ink-soft lg:mt-6 lg:text-lede"
+              className="stage-lede rise mt-3 max-w-[40ch] text-copy leading-relaxed text-ink-soft lg:mt-6 lg:text-lede"
               style={{ animationDelay: "0.26s" }}
             >
               {hero.subtitle}

@@ -51,7 +51,7 @@ export default async function Home() {
         <Membership text={home.text("membership")} perks={home.list("perk")} href={MEMBERSHIP_PATH} />
         {page && (
           <section id="about" className="scroll-mt-24 bg-clay-50 py-16 md:py-24">
-            <Blocks blocks={page.blocks} />
+            <Blocks blocks={page.blocks} wide />
           </section>
         )}
       </main>
