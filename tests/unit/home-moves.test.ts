@@ -46,6 +46,7 @@ describe("homeMoves", () => {
       expect.stringMatching(/^3168 Uplands Drive, Nanaimo/),
       "6 pm 6 wk classes, Date Nights, Youth Classes and private party bookings held here.",
       "If booking a private class we will assign you a location depending on availability and space",
+      "Beginner Intermediate",
       "★★★★★",
       expect.stringMatching(/^I recently finished/),
       "Courtney P.",
@@ -55,10 +56,21 @@ describe("homeMoves", () => {
   it("drops the locations paragraphs from the home page altogether and keeps the mission line", () => {
     const dropped = [...moves.dropped].sort((a, b) => a - b).map((i) => home.blocks[i].text);
     expect(dropped[0]).toBe("We have 3 locations");
-    expect(dropped).toHaveLength(7);
+    expect(dropped).toHaveLength(8);
+    expect(dropped).toContain("Beginner Intermediate");
     expect(dropped.some((t) => /^We.re here to help/.test(t))).toBe(false);
     // Moved, not dropped: the words of the testimonial and the membership line stay on the page.
     expect(moves.dropped.has([...moves.skip].find((i) => home.blocks[i].text === "Courtney P.")!)).toBe(false);
+  });
+
+  it("turns the GALLERY label into a link to the gallery page and keeps the class photo labels", () => {
+    const [index, href] = [...moves.links.entries()][0];
+    expect(home.blocks[index].text).toBe("GALLERY");
+    expect(href).toBe("/gallery");
+    expect(moves.skip.has(index)).toBe(false);
+    const kept = home.blocks.filter((b: { text?: string }, i: number) => !moves.skip.has(i)).map((b: { text?: string }) => b.text);
+    expect(kept).toContain("Beginner");
+    expect(kept).toContain("Intermediate");
   });
 
   it("moves nothing from a page without these blocks", () => {
@@ -67,5 +79,6 @@ describe("homeMoves", () => {
     expect(other.membership).toBeUndefined();
     expect(other.skip.size).toBe(0);
     expect(other.dropped.size).toBe(0);
+    expect(other.links.size).toBe(0);
   });
 });

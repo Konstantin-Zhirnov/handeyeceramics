@@ -186,7 +186,8 @@ async function toBlocks(r: Rec, h1Index: number) {
   const planSpot = textPlans().spots.get(r.path);
   let plansDone = false;
   // The home page's testimonial and membership line stand in their own sections of the home global (home-moves.ts).
-  const moved = r.path === "/" ? homeMoves(r.blocks).skip : new Set<number>();
+  const home = r.path === "/" ? homeMoves(r.blocks) : null;
+  const moved = home?.skip ?? new Set<number>();
 
   /** The paragraph last added to `nodes`, to glue a line Wix split onto it. */
   let lastPara: string | null = null;
@@ -248,11 +249,14 @@ async function toBlocks(r: Rec, h1Index: number) {
       case "list-item":
         list.push(b.text!);
         break;
-      case "heading":
+      case "heading": {
         flushList();
-        // The empty-storefront notice is a sentence, not a section heading.
-        nodes.push(isEmptyStore(b) ? L.paragraph(b.text!) : L.heading(b.text!, Math.min(6, Math.max(2, b.level || 2))));
+        const link = home?.links.get(i);
+        // The empty-storefront notice is a sentence, not a section heading; the home page's "GALLERY" label is a link.
+        if (link) nodes.push(L.linkParagraph(b.text!, link));
+        else nodes.push(isEmptyStore(b) ? L.paragraph(b.text!) : L.heading(b.text!, Math.min(6, Math.max(2, b.level || 2))));
         break;
+      }
       case "button": {
         flushList();
         const href = b.href ? LINK_FIXES[b.href] || b.href : "";

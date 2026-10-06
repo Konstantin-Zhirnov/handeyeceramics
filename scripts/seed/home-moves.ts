@@ -4,11 +4,16 @@
  * section) and the "See Classes" button under the H1 (the hero's call to
  * action). Carried over twice they read as duplicates, so the seed moves their
  * words into those sections, verbatim, and leaves the blocks out of the page.
- * The "We have 3 locations" paragraphs are left out altogether (decision of
- * 2026-10-06): the studios have their cards, pages and timetables.
+ * The "We have 3 locations" paragraphs and the heading that repeats the labels
+ * of the class photos are left out altogether (decisions of 2026-10-06): the
+ * studios have their cards, pages and timetables, the labels are links already.
+ * The "GALLERY" label becomes the link to the gallery page it was on Wix.
  * The one rule, shared by the seed and tests/unit/home-moves.test.ts.
  */
-export type HomeBlock = { type: string; text?: string; level?: number };
+export type HomeBlock = { type: string; text?: string; level?: number; href?: string };
+
+/** Where the old home page's "GALLERY" label pointed: the gallery page. */
+export const GALLERY_PATH = "/gallery";
 
 export type HomeMoves = {
   /** Indices of the inventory blocks that are not blocks of the page any more. */
@@ -21,6 +26,8 @@ export type HomeMoves = {
    * for these on the home page.
    */
   dropped: Set<number>;
+  /** Blocks that become a link paragraph: the "GALLERY" label, a link to the gallery page as it was on Wix. */
+  links: Map<number, string>;
   /** The testimonial: the paragraph after the stars and the name after it. */
   review?: { quote: string; author: string };
   /** The membership pitch, the lines Wix split joined by a space. */
@@ -31,7 +38,7 @@ const STARS = /^★+$/;
 const text = (b: HomeBlock | undefined) => (b?.text || "").trim();
 
 export function homeMoves(blocks: HomeBlock[]): HomeMoves {
-  const moves: HomeMoves = { skip: new Set(), dropped: new Set() };
+  const moves: HomeMoves = { skip: new Set(), dropped: new Set(), links: new Map() };
 
   // The button right under the H1: the hero keeps the H1 and has its own button.
   const h1 = blocks.findIndex((b) => b.type === "heading" && b.level === 1);
@@ -57,6 +64,21 @@ export function homeMoves(blocks: HomeBlock[]): HomeMoves {
       moves.dropped.add(i);
     }
   }
+
+  // Wix printed the labels of the two class photos ("Beginner", "Intermediate") once more as one heading.
+  // The heading goes; the labels stay as the links they are.
+  blocks.forEach((b, i) => {
+    if (b.type !== "heading" || (b.level ?? 0) < 2) return;
+    const labels = blocks.slice(Math.max(0, i - 3), i + 4).filter((n) => n.type === "button" && n.href).map(text);
+    if (labels.length >= 2 && labels.join(" ") === text(b)) {
+      moves.skip.add(i);
+      moves.dropped.add(i);
+    }
+  });
+
+  // The "GALLERY" label: on Wix it led to the gallery page; the crawl kept the word, not the link.
+  const gallery = blocks.findIndex((b) => b.type === "heading" && /^gallery$/i.test(text(b)));
+  if (gallery >= 0) moves.links.set(gallery, GALLERY_PATH);
 
   // The testimonial: stars, the quote, the name.
   const stars = blocks.findIndex((b) => b.type === "heading" && STARS.test(text(b)));
