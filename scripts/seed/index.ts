@@ -15,6 +15,7 @@ import config from "../../payload.config";
 import { classTabs, gallery, locations, reviews, site, stageChapters, steps } from "../../lib/site";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
 import { continuesLine, isWixLitter } from "./wix-litter";
+import { homeMoves } from "./home-moves";
 import { writesFixes } from "./fixes";
 import * as L from "./lexical";
 import * as homeText from "./home";
@@ -184,6 +185,8 @@ async function toBlocks(r: Rec, h1Index: number) {
   let emptyStore = false;
   const planSpot = textPlans().spots.get(r.path);
   let plansDone = false;
+  // The home page's testimonial and membership line stand in their own sections of the home global (home-moves.ts).
+  const moved = r.path === "/" ? homeMoves(r.blocks).skip : new Set<number>();
 
   /** The paragraph last added to `nodes`, to glue a line Wix split onto it. */
   let lastPara: string | null = null;
@@ -215,7 +218,7 @@ async function toBlocks(r: Rec, h1Index: number) {
       continue;
     }
     if (isEmptyStore(b)) emptyStore = true;
-    if (i === h1Index || isChrome(b)) continue;
+    if (i === h1Index || moved.has(i) || isChrome(b)) continue;
     // A tile's picture and the name printed under it belong to the product list.
     if (isProductTile(b)) images = [];
     if (b.type === "paragraph" && tile.includes((b.text || "").trim())) continue;
@@ -635,16 +638,22 @@ async function seedGlobals() {
     const id = await media(path.join("public", g.src), g.alt);
     if (id) galleryIds.push(id);
   }
+  // The old home page's own words for the membership section and the testimonial, so the page says each once.
+  const moved = homeMoves(homeRec.blocks);
+  const sections = homeText.sections.map((s) => (s.key === "membership" && moved.membership ? { ...s, body: moved.membership } : s));
+  const testimonials = reviews.map((r, i) =>
+    i === 0 && moved.review ? { ...r, quote: moved.review.quote, author: moved.review.author } : r,
+  );
   await payload.updateGlobal({
     slug: "home",
     data: {
       hero: homeText.hero,
       gallery: galleryIds,
       sections: [
-        ...homeText.sections,
+        ...sections,
         ...stageChapters.map((c, i) => ({ key: `stage-${i + 1}`, eyebrow: c.label, heading: c.title, body: c.body })),
         ...steps.map((s, i) => ({ key: `step-${i + 1}`, heading: s.title, body: s.body })),
-        ...reviews.map((r, i) => ({ key: `review-${i + 1}`, eyebrow: r.meta, heading: r.author, body: r.quote })),
+        ...testimonials.map((r, i) => ({ key: `review-${i + 1}`, eyebrow: r.meta, heading: r.author, body: r.quote })),
       ],
       seo: seoFor(homeRec),
     },

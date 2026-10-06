@@ -49,7 +49,8 @@ export const sections: { key: string; eyebrow?: string; heading?: string; body?:
   {
     key: "membership",
     eyebrow: "Membership & rentals",
-    heading: "Studio access, / as low as $145 a month",
+    // The price is in the body: the old home page's own membership line stands here (home-moves.ts); this body is the fallback.
+    heading: "Studio access, / on your own time",
     body: "Taken a few classes and want somewhere to keep going? Our members practise on their own schedule in a studio that already knows their name.",
   },
   {

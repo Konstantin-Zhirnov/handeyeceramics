@@ -182,6 +182,17 @@ describe("home page", () => {
     expect($("#about h1")).toHaveLength(0);
     expect($("#about h2").toArray().map((el) => $(el).text().trim())).toContain("Group Workshops");
   });
+
+  it("says each thing once: the old page's testimonial and membership line stand in their sections, not in the old text too", async () => {
+    const { $ } = await page("/");
+    const main = $("main").text().replace(/\s+/g, " ");
+    const times = (s: string) => main.split(s).length - 1;
+    expect(times("Courtney P.")).toBe(1);
+    expect(times("I recently finished a 6 week")).toBe(1);
+    expect(times("as low as $145 monthly")).toBe(1);
+    expect($("#about").text()).not.toContain("Courtney P.");
+    expect($("#about").text()).not.toContain("Unlock creative potential");
+  });
 });
 
 describe("class list block", () => {

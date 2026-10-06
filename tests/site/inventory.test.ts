@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { load } from "cheerio";
 import { beforeAll, describe, expect, inject, it } from "vitest";
+import { homeMoves } from "../../scripts/seed/home-moves";
 import { isWixLitter } from "../../scripts/seed/wix-litter";
 import { expected404, expectedRedirects } from "./expected";
 
@@ -27,8 +28,10 @@ const inv = JSON.parse(readFileSync(path.join(root, "content/inventory.json"), "
 const records: Rec[] = [...inv.pages, ...inv.products, ...inv.pricing, ...inv.other];
 
 // Hand-written from the redirect rules (story 6 and the task brief).
-// No exemptions: the home page carries the H1 and the text of the old one, like every other page.
+// The home page carries the H1 and the text of the old one, like every other page — except the
+// "We have 3 locations" paragraphs, which the studios' cards, pages and timetables replace (home-moves.ts).
 const prototypeTemplates = new Set<string>();
+const dropped = (rec: Rec) => (rec.path === "/" ? homeMoves(rec.blocks).dropped : new Set<number>());
 // Story 8: this title repeats the title of a content page, so the product's
 // category is added to it (content/seo-fixes.md).
 const retitled: Record<string, string> = {
@@ -94,8 +97,9 @@ describe.each(records.map((r) => [r.path, r] as const))("%s", (p, rec) => {
 
   it.runIf(isPage && !prototypeTemplates.has(p))("contains the text of the old page", () => {
     const body = squash(load(pages.get(p)!.html)("body").text());
+    const gone = dropped(rec);
     const missing = rec.blocks
-      .filter((b) => b.text !== undefined && !chrome(b))
+      .filter((b, i) => b.text !== undefined && !chrome(b) && !gone.has(i))
       .map((b) => squash(b.text!))
       .filter((t) => !body.includes(t));
     expect(missing).toEqual([]);
