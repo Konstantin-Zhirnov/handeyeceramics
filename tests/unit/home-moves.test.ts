@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { homeMoves } from "../../scripts/seed/home-moves";
+import { homeMoves, INTERMEDIATE_PHOTO } from "../../scripts/seed/home-moves";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const inv = JSON.parse(readFileSync(path.join(root, "content/inventory.json"), "utf8"));
@@ -14,6 +14,15 @@ const home = inv.pages.find((r: { path: string }) => r.path === "/");
 
 describe("homeMoves", () => {
   const moves = homeMoves(home.blocks);
+
+  it("swaps the photo above the Intermediate label, a double of the gallery's, for one from the page the label leads to", () => {
+    const [index, photo] = [...moves.swaps.entries()][0];
+    expect(home.blocks[index].type).toBe("image");
+    expect(home.blocks[index + 1].text).toBe("Intermediate");
+    expect(photo).toBe(INTERMEDIATE_PHOTO);
+    const replacement = inv.images.find((img: { src: string }) => img.src.includes(photo));
+    expect(replacement.usedOn).toContain(home.blocks[index + 1].href);
+  });
 
   it("takes the testimonial for the reviews section, word for word", () => {
     expect(moves.review?.author).toBe("Courtney P.");

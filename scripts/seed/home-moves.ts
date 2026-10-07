@@ -8,12 +8,23 @@
  * of the class photos are left out altogether (decisions of 2026-10-06): the
  * studios have their cards, pages and timetables, the labels are links already.
  * The "GALLERY" label becomes the link to the gallery page it was on Wix.
+ * The photo above the "Intermediate" label was the same shot as one of the
+ * gallery's (two files on Wix, one picture): it is swapped for a photo from
+ * the page the label leads to (decision of 2026-10-07).
  * The one rule, shared by the seed and tests/unit/home-moves.test.ts.
  */
-export type HomeBlock = { type: string; text?: string; level?: number; href?: string };
+export type HomeBlock = { type: string; text?: string; level?: number; href?: string; src?: string };
 
 /** Where the old home page's "GALLERY" label pointed: the gallery page. */
 export const GALLERY_PATH = "/gallery";
+
+/**
+ * The Wix media id of the photo that stands above the "Intermediate" label
+ * instead of the gallery's double: "Pottery students focusing intently on
+ * their pots as they raise the walls", from the Nanaimo classes page the
+ * label leads to.
+ */
+export const INTERMEDIATE_PHOTO = "62bba2_a40c7fbd7ff643708a469726d6afa0aa";
 
 export type HomeMoves = {
   /** Indices of the inventory blocks that are not blocks of the page any more. */
@@ -28,6 +39,8 @@ export type HomeMoves = {
   dropped: Set<number>;
   /** Blocks that become a link paragraph: the "GALLERY" label, a link to the gallery page as it was on Wix. */
   links: Map<number, string>;
+  /** Image blocks shown with another photo of the inventory, by the Wix media id in its `src`. */
+  swaps: Map<number, string>;
   /** The testimonial: the paragraph after the stars and the name after it. */
   review?: { quote: string; author: string };
   /** The membership pitch, the lines Wix split joined by a space. */
@@ -38,7 +51,7 @@ const STARS = /^★+$/;
 const text = (b: HomeBlock | undefined) => (b?.text || "").trim();
 
 export function homeMoves(blocks: HomeBlock[]): HomeMoves {
-  const moves: HomeMoves = { skip: new Set(), dropped: new Set(), links: new Map() };
+  const moves: HomeMoves = { skip: new Set(), dropped: new Set(), links: new Map(), swaps: new Map() };
 
   // The button right under the H1: the hero keeps the H1 and has its own button.
   const h1 = blocks.findIndex((b) => b.type === "heading" && b.level === 1);
@@ -79,6 +92,12 @@ export function homeMoves(blocks: HomeBlock[]): HomeMoves {
   // The "GALLERY" label: on Wix it led to the gallery page; the crawl kept the word, not the link.
   const gallery = blocks.findIndex((b) => b.type === "heading" && /^gallery$/i.test(text(b)));
   if (gallery >= 0) moves.links.set(gallery, GALLERY_PATH);
+
+  // The photo right above the "Intermediate" label doubles one of the gallery's: another photo stands there.
+  const intermediate = blocks.findIndex((b) => b.type === "button" && /^intermediate$/i.test(text(b)));
+  if (intermediate > 0 && blocks[intermediate - 1].type === "image" && !blocks[intermediate - 1].src?.includes(INTERMEDIATE_PHOTO)) {
+    moves.swaps.set(intermediate - 1, INTERMEDIATE_PHOTO);
+  }
 
   // The testimonial: stars, the quote, the name.
   const stars = blocks.findIndex((b) => b.type === "heading" && STARS.test(text(b)));

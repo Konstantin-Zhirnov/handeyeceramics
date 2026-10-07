@@ -238,7 +238,9 @@ async function toBlocks(r: Rec, h1Index: number) {
     switch (b.type) {
       case "image": {
         flushText();
-        const id = await media(b.local, altFor(b, pageName(r)));
+        const swap = home?.swaps.get(i);
+        const pic = (swap && (inv.images as Block[]).find((img) => img.src?.includes(swap))) || b;
+        const id = await media(pic.local, altFor(pic, pageName(r)));
         if (id) images.push(id);
         break;
       }
