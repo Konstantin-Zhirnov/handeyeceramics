@@ -136,7 +136,7 @@ type SpinProps = {
  * the frame scrolls through the viewport, so the wheel seems to creep round.
  * Only `transform` moves; reduced motion leaves the picture still.
  */
-export function Spin({ children, className, degrees = 24 }: SpinProps) {
+export function Spin({ children, className, degrees = 44 }: SpinProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -145,7 +145,7 @@ export function Spin({ children, className, degrees = 24 }: SpinProps) {
 
   return (
     <div ref={ref} className={className}>
-      <motion.div className="will-change-transform" style={{ rotate, scale: reduced ? 1 : 1.28 }}>
+      <motion.div className="will-change-transform" style={{ rotate, scale: reduced ? 1 : 1.42 }}>
         {children}
       </motion.div>
     </div>
