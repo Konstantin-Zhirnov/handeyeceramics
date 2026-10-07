@@ -16,7 +16,7 @@ export function Reviews({ text, review }: { text: SectionText; review?: SectionT
       <Reveal as="figure" className="mx-auto max-w-[62ch] text-center">
         {text.eyebrow && <span className="eyebrow text-clay-600">{text.eyebrow}</span>}
         <p className="mt-5 text-[1.1rem] tracking-[0.25em] text-terracotta">★★★★★</p>
-        <blockquote className="display mt-5 text-title leading-[1.28] text-ink sm:text-heading-sm">
+        <blockquote className="display mt-5 text-title-sm leading-[1.4] text-ink sm:text-title">
           “{review.body}”
         </blockquote>
         <figcaption className="mt-7 flex flex-col items-center gap-0.5">
