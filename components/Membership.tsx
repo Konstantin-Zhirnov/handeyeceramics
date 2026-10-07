@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Reveal, revealDelay } from "./motion-primitives";
+import { Parallax, Reveal, revealDelay } from "./motion-primitives";
 import { useSiteData, type SectionText } from "./site/SiteData";
 
 /** Texts: home global, `membership` and `perk-N`. In the heading ` / ` starts the highlighted line. */
@@ -13,7 +13,7 @@ export function Membership({ text, perks, href }: { text: SectionText; perks: Se
     <section id="membership" className="grain relative overflow-hidden bg-ink py-16 text-clay-50 md:py-24">
       <div className="shell relative z-10 grid gap-12 lg:grid-cols-[0.95fr_1fr] lg:items-center lg:gap-16">
         <Reveal>
-          <div className="relative aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-panel lg:ml-auto">
+          <Parallax className="relative aspect-[4/5] w-full max-w-[440px] overflow-hidden rounded-panel lg:ml-auto">
             <Image
               src="/images/red-apron.png"
               alt="A studio member at the wheel on a weekday morning"
@@ -21,7 +21,7 @@ export function Membership({ text, perks, href }: { text: SectionText; perks: Se
               sizes="(max-width: 1024px) 90vw, 42vw"
               className="object-cover"
             />
-          </div>
+          </Parallax>
         </Reveal>
 
         <div>

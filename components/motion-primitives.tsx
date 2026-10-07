@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
 /** Long, soft ease-out: the move lands quickly and then settles, like clay
@@ -86,5 +87,67 @@ export function Reveal({ children, className, delay = 0, as: Tag = "div" }: Reve
     >
       {children}
     </Tag>
+  );
+}
+
+type ParallaxProps = {
+  children: ReactNode;
+  className?: string;
+  /** Total vertical travel in pixels while the element crosses the viewport. */
+  distance?: number;
+};
+
+/**
+ * Scroll parallax for a framed image: the child is scaled up just enough to
+ * cover the frame at both ends of the travel and drifts up as the frame
+ * scrolls through the viewport. Content renders in place on the server; the
+ * motion value only touches `transform`, so nothing re-renders on scroll.
+ * Reduced motion: no scale, no drift.
+ */
+export function Parallax({ children, className, distance = 56 }: ParallaxProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const travel = reduced ? 0 : distance;
+  const y = useTransform(scrollYProgress, [0, 1], [travel / 2, -travel / 2]);
+
+  return (
+    <div ref={ref} className={className}>
+      <motion.div
+        className="absolute inset-0 will-change-transform"
+        style={{ y, scale: reduced ? 1 : 1.12 }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+type SpinProps = {
+  children: ReactNode;
+  className?: string;
+  /** Total rotation in degrees while the element crosses the viewport. */
+  degrees?: number;
+};
+
+/**
+ * Scroll-driven turn for a picture shot from above a wheel: the child is
+ * scaled up to keep the frame's corners covered and turns a few degrees as
+ * the frame scrolls through the viewport, so the wheel seems to creep round.
+ * Only `transform` moves; reduced motion leaves the picture still.
+ */
+export function Spin({ children, className, degrees = 10 }: SpinProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const turn = reduced ? 0 : degrees;
+  const rotate = useTransform(scrollYProgress, [0, 1], [-turn / 2, turn / 2]);
+
+  return (
+    <div ref={ref} className={className}>
+      <motion.div className="will-change-transform" style={{ rotate, scale: reduced ? 1 : 1.16 }}>
+        {children}
+      </motion.div>
+    </div>
   );
 }

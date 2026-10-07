@@ -4,7 +4,7 @@ import Link from "next/link";
 import { RichText, type JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
 import type { Media, Video } from "@/payload-types";
 import { mediaSrc } from "@/lib/cms/media";
-import { Reveal } from "@/components/motion-primitives";
+import { Reveal, Spin } from "@/components/motion-primitives";
 import { FormBlock } from "./FormBlock";
 import { MuxVideo } from "./MuxVideo";
 import { ClassListBlock } from "./ClassListBlock";
@@ -37,6 +37,8 @@ type FrameProps = {
   end?: boolean;
   /** Lower: a picture beside a short text. */
   low?: boolean;
+  /** Turns a few degrees with the scroll, for a picture taken over the wheel (`<Spin>`). */
+  spin?: boolean;
 };
 
 /**
@@ -44,7 +46,7 @@ type FrameProps = {
  * whole, is never stretched past its own pixels (the old site's photos are
  * small) and never grows taller than a share of the screen.
  */
-function Frame({ media, sizes, tile = false, settle = false, cap, end = false, low = false }: FrameProps) {
+function Frame({ media, sizes, tile = false, settle = false, cap, end = false, low = false, spin = false }: FrameProps) {
   if (!media?.url) return null;
   const width = media.width || 1600;
   const height = media.height || 1200;
@@ -60,7 +62,13 @@ function Frame({ media, sizes, tile = false, settle = false, cap, end = false, l
   const shape = { "--frame-natural": `${width}px`, "--frame-ratio": (width / height).toFixed(4), ...(cap ? { "--frame-cap": cap } : {}) } as CSSProperties;
   return (
     <div className={`frame overflow-hidden rounded-panel bg-clay-100 ${low ? "frame-low" : ""} ${settle ? "frame-settle" : ""} ${end ? "lg:ml-auto" : ""}`} style={shape}>
-      <Image {...picture} className="h-auto w-full" />
+      {spin ? (
+        <Spin>
+          <Image {...picture} className="h-auto w-full" />
+        </Spin>
+      ) : (
+        <Image {...picture} className="h-auto w-full" />
+      )}
     </div>
   );
 }
@@ -241,7 +249,7 @@ function ChapterView({ chapter: c, flip, quiet, card, wide }: View) {
         >
           <div className={`relative z-10 max-w-[26rem] lg:col-span-4 lg:row-start-1 lg:max-w-none ${flip ? "lg:col-start-1" : "lg:col-start-9"}`}>
             <Lead texts={c.lead} wide={wide} />
-            <Plate block={c.media} sizes="(max-width: 1024px) 100vw, 26rem" settle end={!flip} low />
+            <Plate block={c.media} sizes="(max-width: 1024px) 100vw, 26rem" settle end={!flip} low spin={card} />
           </div>
           <Reveal className={`@container relative z-10 lg:col-span-8 lg:row-start-1 ${flip ? "lg:col-start-5" : "lg:col-start-1"}`}>
             <Copy texts={c.texts} voice="display" quiet={quiet} />
