@@ -93,30 +93,30 @@ export function Reveal({ children, className, delay = 0, as: Tag = "div" }: Reve
 type ParallaxProps = {
   children: ReactNode;
   className?: string;
-  /** Total vertical travel in pixels while the element crosses the viewport. */
-  distance?: number;
+  /** How much taller than its frame the picture layer is, as a share of the frame; the drift uses most of it. */
+  bleed?: number;
 };
 
 /**
- * Scroll parallax for a framed image: the child is scaled up just enough to
- * cover the frame at both ends of the travel and drifts up as the frame
- * scrolls through the viewport. Content renders in place on the server; the
- * motion value only touches `transform`, so nothing re-renders on scroll.
- * Reduced motion: no scale, no drift.
+ * Scroll parallax for a framed, `fill` picture: the layer is taller than its
+ * frame by `bleed` on each side and drifts down through the frame as the
+ * frame scrolls up through the viewport, so the picture seems to lag behind
+ * the page. Content renders in place on the server; the motion value only
+ * touches `transform`, so nothing re-renders on scroll. Reduced motion: the
+ * layer fits the frame and stays put.
  */
-export function Parallax({ children, className, distance = 56 }: ParallaxProps) {
+export function Parallax({ children, className, bleed = 0.2 }: ParallaxProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const travel = reduced ? 0 : distance;
-  const y = useTransform(scrollYProgress, [0, 1], [travel / 2, -travel / 2]);
+  // The layer is (1 + 2·bleed) frames tall; a shift of bleed·frame is bleed/(1+2·bleed) of its own height.
+  const shift = reduced ? 0 : (bleed / (1 + 2 * bleed)) * 100 * 0.9;
+  const y = useTransform(scrollYProgress, [0, 1], [`${-shift}%`, `${shift}%`]);
+  const inset = reduced ? "0" : `${-bleed * 100}% 0`;
 
   return (
     <div ref={ref} className={className}>
-      <motion.div
-        className="absolute inset-0 will-change-transform"
-        style={{ y, scale: reduced ? 1 : 1.12 }}
-      >
+      <motion.div className="absolute will-change-transform" style={{ inset, y }}>
         {children}
       </motion.div>
     </div>
@@ -136,7 +136,7 @@ type SpinProps = {
  * the frame scrolls through the viewport, so the wheel seems to creep round.
  * Only `transform` moves; reduced motion leaves the picture still.
  */
-export function Spin({ children, className, degrees = 10 }: SpinProps) {
+export function Spin({ children, className, degrees = 24 }: SpinProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -145,7 +145,7 @@ export function Spin({ children, className, degrees = 10 }: SpinProps) {
 
   return (
     <div ref={ref} className={className}>
-      <motion.div className="will-change-transform" style={{ rotate, scale: reduced ? 1 : 1.16 }}>
+      <motion.div className="will-change-transform" style={{ rotate, scale: reduced ? 1 : 1.28 }}>
         {children}
       </motion.div>
     </div>
