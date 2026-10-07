@@ -13,6 +13,7 @@ import path from "node:path";
 import { getPayload, type Payload } from "payload";
 import config from "../../payload.config";
 import { classTabs, gallery, locations, reviews, site, stageChapters, steps } from "../../lib/site";
+import { pickMedia, sourceName } from "./media-key";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
 import { continuesLine, isWixLitter } from "./wix-litter";
 import { homeMoves } from "./home-moves";
@@ -127,6 +128,20 @@ const onlyImages =
   );
 
 const mediaByLocal = new Map<string, number>();
+type MediaDoc = { id: number; filename?: string | null; alt?: string | null; createdAt: string };
+let mediaBySource: Map<string, MediaDoc[]> | undefined;
+/** Every media document, grouped by the inventory file it came from (see scripts/seed/media-key.ts). */
+async function mediaIndex(): Promise<Map<string, MediaDoc[]>> {
+  if (mediaBySource) return mediaBySource;
+  mediaBySource = new Map();
+  const all = await payload.find({ collection: "media", limit: 0, pagination: false, depth: 0 });
+  for (const d of all.docs as MediaDoc[]) {
+    if (!d.filename) continue;
+    const key = sourceName(d.filename);
+    mediaBySource.set(key, [...(mediaBySource.get(key) ?? []), d]);
+  }
+  return mediaBySource;
+}
 async function media(local: string | undefined, alt: string): Promise<number | undefined> {
   if (!withImages || !local) return undefined;
   if (onlyImages && !onlyImages.has(local)) return undefined;
@@ -134,15 +149,30 @@ async function media(local: string | undefined, alt: string): Promise<number | u
   const file = path.join(root, local);
   if (!existsSync(file)) return undefined;
   const filename = path.basename(file);
-  const found = await payload.find({ collection: "media", where: { filename: { equals: filename } }, limit: 1, depth: 0 });
+  // Storage may have renamed the file (`name-7.jpg`): match by source name, not the stored one.
+  const index = await mediaIndex();
+  const found = pickMedia(index.get(sourceName(filename)) ?? []);
+  const wanted = alt || filename;
+  if (found && found.alt !== wanted) {
+    await payload.update({ collection: "media", id: found.id, data: { alt: wanted }, depth: 0 }).catch((e) => {
+      console.warn(`  ! image ${found.filename}: ${(e as Error).message}`);
+    });
+  }
   const doc =
-    found.docs[0] ??
-    (await payload.create({ collection: "media", data: { alt: alt || filename }, filePath: file, depth: 0 }).catch((e) => {
-      console.warn(`  ! image ${filename}: ${(e as Error).message}`);
-      return undefined;
-    }));
-  if (doc) mediaByLocal.set(local, doc.id as number);
-  return doc?.id as number | undefined;
+    found ??
+    (await payload
+      .create({ collection: "media", data: { alt: wanted }, filePath: file, depth: 0 })
+      .then((d) => {
+        const created = d as unknown as MediaDoc;
+        index.set(sourceName(filename), [created]);
+        return created;
+      })
+      .catch((e) => {
+        console.warn(`  ! image ${filename}: ${(e as Error).message}`);
+        return undefined;
+      }));
+  if (doc) mediaByLocal.set(local, doc.id);
+  return doc?.id;
 }
 
 const altFor = (img: { alt?: string }, fallback: string) => (img.alt || "").trim() || fallback;

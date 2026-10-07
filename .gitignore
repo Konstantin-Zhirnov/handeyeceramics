@@ -28,3 +28,6 @@ out
 
 # Handover material for the owner (screen recordings): not for the public repo
 /handover/
+
+# One-off backups taken by scripts/dedupe-media.mts before writing to a database
+/backups/
