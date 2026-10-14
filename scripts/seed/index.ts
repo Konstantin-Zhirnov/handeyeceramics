@@ -20,6 +20,8 @@ import { homeMoves } from "./home-moves";
 import { writesFixes } from "./fixes";
 import * as L from "./lexical";
 import * as homeText from "./home";
+import { parseSessionLabel } from "./sessions";
+import { EMAIL_TEMPLATES } from "./email-templates";
 
 const root = process.cwd();
 const withImages = process.env.SEED_IMAGES !== "0";
@@ -473,11 +475,66 @@ async function seedProducts() {
       salePrice,
       images,
       description,
+      // The "Date" drop-down also becomes class dates (sessions) with seats; it stays an option until the product page lists the sessions.
       options: options.map((o) => ({ title: o.title, choices: o.choices.join("\n") })),
       category: (r.categories?.length ? r.categories.join(", ") : r.category) || undefined,
+      taxGroup: taxGroupOf(r),
       seo,
       visible: true,
     });
+  }
+}
+
+/** Clay, tools and pieces are goods (GST and PST); everything else sold is a service (GST only). */
+const GOODS_CATEGORIES = new Set(["Clay", "Tools"]);
+const taxGroupOf = (r: Rec) => ((r.categories || []).some((c) => GOODS_CATEGORIES.has(c)) ? "goods" : "service");
+
+const isDateOption = (o: ProductOption) => o.title.trim().toLowerCase() === "date";
+
+/** The labels of the old site carry no year: the nearest year on or after the month before the crawl (September 2026). */
+const LABEL_FLOOR = new Date("2026-08-01T00:00:00Z");
+
+/**
+ * One session per choice of a product's "Date" drop-down, keyed by product and
+ * label. Seats: 17 for Hand Building (the owner's figure), 10 and "not
+ * confirmed" for the rest. Studio: Nanaimo when the product's name says so,
+ * else Chinatown. A label without dates is hidden; a finished course is closed.
+ */
+async function seedSessions(studio: Record<string, number>) {
+  const now = new Date();
+  let n = 0;
+  for (const r of inv.products as Rec[]) {
+    const dates = optionsOf(r).find(isDateOption);
+    if (!dates) continue;
+    const product = (await payload.find({ collection: "products", where: { path: { equals: r.path } }, limit: 1, depth: 0 })).docs[0];
+    if (!product) continue;
+    const name = r.name || pageName(r);
+    const handBuilding = /hand building/i.test(name);
+    const studioId = /nanaimo/i.test(name) ? studio.nanaimo : studio["vancouver-chinatown"];
+    for (const label of dates.choices) {
+      const parsed = parseSessionLabel(label, LABEL_FLOOR);
+      const status = !parsed.startsAt ? "hidden" : parsed.endsAt && parsed.endsAt < now ? "closed" : "open";
+      await upsert("sessions", { and: [{ product: { equals: product.id } }, { label: { equals: label } }] }, {
+        label,
+        product: product.id,
+        studio: studioId,
+        startsAt: parsed.startsAt?.toISOString() ?? null,
+        endsAt: parsed.endsAt?.toISOString() ?? null,
+        weekday: parsed.weekday ?? null,
+        time: parsed.time ?? null,
+        seats: handBuilding ? 17 : 10,
+        seatsUnconfirmed: !handBuilding,
+        status,
+      });
+      n++;
+    }
+  }
+  return n;
+}
+
+async function seedEmailTemplates() {
+  for (const t of EMAIL_TEMPLATES) {
+    await upsert("email-templates", { key: { equals: t.key } }, { ...t, enabled: true });
   }
 }
 
@@ -637,6 +694,8 @@ async function seedRedirects(studio: Record<string, number>) {
 
   rules.push(["/classes/nanaimo", toStudio("nanaimo")]);
   for (const [from, to] of Object.entries(SYSTEM_PAGES)) rules.push([from, toUrl(to)]);
+  // The Wix cart and checkout: the new cart takes both addresses.
+  for (const from of ["/cart-page", "/checkout"]) rules.push([from, toUrl("/cart")]);
 
   // /service-page/*: to the page of the studio the class ran at.
   const serviceStudio = new Map<string, string>();
@@ -759,14 +818,16 @@ async function main() {
     n++;
   }
   await seedProducts();
+  const sessions = await seedSessions(studio);
   await seedPlans();
   await seedClasses(studio);
   const redirects = await seedRedirects(studio);
   await seedGlobals();
+  await seedEmailTemplates();
   if (writesFixes(process.env)) writeFixes();
 
   console.log(
-    `seed: ${n} pages, ${locations.length} studios, ${inv.products.length} products, ${redirects} redirects, ${mediaByLocal.size} images`,
+    `seed: ${n} pages, ${locations.length} studios, ${inv.products.length} products, ${sessions} sessions, ${redirects} redirects, ${mediaByLocal.size} images`,
   );
   process.exit(0);
 }

@@ -21,6 +21,7 @@ import {
   Users,
   videosCollection,
 } from "./collections";
+import { EmailTemplates, Holds, Orders, Registrations, Sessions, Subscriptions } from "./collections/orders";
 import { Home, Settings } from "./globals";
 
 const filename = fileURLToPath(import.meta.url);
@@ -132,6 +133,12 @@ export default buildConfig({
     Products,
     Plans,
     Enquiries,
+    Sessions,
+    Orders,
+    Registrations,
+    Holds,
+    Subscriptions,
+    EmailTemplates,
   ],
   globals: [Settings, Home],
   plugins,

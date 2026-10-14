@@ -173,6 +173,14 @@ export const Studios: CollectionConfig = {
     photosField(),
     seoField,
     publishedField,
+    {
+      name: "doorCode",
+      type: "text",
+      label: "Door code",
+      // Only a signed-in editor reads it through the API; the site puts it into emails on the server.
+      access: { read: ({ req }) => Boolean(req.user) },
+      admin: { position: "sidebar", description: "Goes into the order confirmation and the class reminder emailed to students of this studio. Never shown on the site" },
+    },
   ],
 };
 
@@ -260,6 +268,22 @@ export const Products: CollectionConfig = {
       type: "text",
       admin: { description: "Categories, separated by commas. The product is shown on the shop pages that list one of them" },
     },
+    {
+      name: "taxGroup",
+      type: "select",
+      required: true,
+      defaultValue: "service",
+      label: "Tax group",
+      options: [
+        { label: "Goods (GST and PST)", value: "goods" },
+        { label: "Service (GST only)", value: "service" },
+        { label: "Exempt (no tax)", value: "exempt" },
+      ],
+      admin: {
+        position: "sidebar",
+        description: "Goods — clay, tools, pieces: GST and the province's PST. Service — classes, drop-ins, rentals: GST only. Exempt — no tax",
+      },
+    },
     seoField,
     { name: "visible", type: "checkbox", defaultValue: true, admin: { position: "sidebar" } },
   ],
@@ -282,6 +306,12 @@ export const Plans: CollectionConfig = {
       admin: { description: "Group: the heading on the plans page; the “Plan list” block picks plans by it" },
     },
     { name: "order", type: "number", defaultValue: 0 },
+    {
+      name: "stripePriceId",
+      type: "text",
+      label: "Stripe price",
+      admin: { description: "Price ID from the Stripe dashboard, price_…; empty — no Subscribe button" },
+    },
   ],
 };
 

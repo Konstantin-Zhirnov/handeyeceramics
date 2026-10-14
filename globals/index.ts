@@ -14,6 +14,12 @@ export const Settings: GlobalConfig = {
     { name: "phone", type: "text" },
     { name: "email", type: "email" },
     { name: "instagram", type: "text", admin: { description: "Link to the profile" } },
+    {
+      name: "stripePortalUrl",
+      type: "text",
+      label: "Subscription portal",
+      admin: { description: "Customer portal link from Stripe; empty — no link" },
+    },
     { name: "nav", type: "array", label: "Menu", fields: linkFields },
     {
       name: "footer",

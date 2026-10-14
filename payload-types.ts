@@ -76,6 +76,12 @@ export interface Config {
     products: Product;
     plans: Plan;
     enquiries: Enquiry;
+    sessions: Session;
+    orders: Order;
+    registrations: Registration;
+    holds: Hold;
+    subscriptions: Subscription;
+    'email-templates': EmailTemplate;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -93,6 +99,12 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     plans: PlansSelect<false> | PlansSelect<true>;
     enquiries: EnquiriesSelect<false> | EnquiriesSelect<true>;
+    sessions: SessionsSelect<false> | SessionsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
+    holds: HoldsSelect<false> | HoldsSelect<true>;
+    subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
+    'email-templates': EmailTemplatesSelect<false> | EmailTemplatesSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -303,6 +315,10 @@ export interface Studio {
     description?: string | null;
   };
   published?: boolean | null;
+  /**
+   * Goes into the order confirmation and the class reminder emailed to students of this studio. Never shown on the site
+   */
+  doorCode?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -490,6 +506,10 @@ export interface Product {
    * Categories, separated by commas. The product is shown on the shop pages that list one of them
    */
   category?: string | null;
+  /**
+   * Goods — clay, tools, pieces: GST and the province's PST. Service — classes, drop-ins, rentals: GST only. Exempt — no tax
+   */
+  taxGroup: 'goods' | 'service' | 'exempt';
   seo?: {
     title?: string | null;
     description?: string | null;
@@ -516,6 +536,10 @@ export interface Plan {
    */
   group?: string | null;
   order?: number | null;
+  /**
+   * Price ID from the Stripe dashboard, price_…; empty — no Subscribe button
+   */
+  stripePriceId?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -540,6 +564,198 @@ export interface Enquiry {
   studio?: (number | null) | Studio;
   page?: string | null;
   status?: ('new' | 'in-progress' | 'done') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * The dates a class runs on. Each date has its own seats; the shop sells a seat on a date.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions".
+ */
+export interface Session {
+  id: number;
+  /**
+   * As shown to the student, e.g. Thurs 4pm-6:30pm Nov 5-Dec 10
+   */
+  label: string;
+  product: number | Product;
+  class?: (number | null) | Class;
+  studio: number | Studio;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  weekday?: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday') | null;
+  /**
+   * e.g. 4pm-6:30pm
+   */
+  time?: string | null;
+  seats: number;
+  sold?: number | null;
+  left?: number | null;
+  /**
+   * In dollars. Empty — the product's current price
+   */
+  price?: number | null;
+  /**
+   * In dollars. Empty — no discount
+   */
+  salePrice?: number | null;
+  teacher?: string | null;
+  status: 'open' | 'closed' | 'hidden';
+  seatsUnconfirmed?: boolean | null;
+  /**
+   * Tick it to email every student of this date that their pieces are ready
+   */
+  piecesReady?: boolean | null;
+  piecesReadySentAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * What was bought and paid. The server writes orders; here you follow them and add notes.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  number?: string | null;
+  status: 'pending' | 'paid' | 'expired' | 'canceled' | 'refunded' | 'partially_refunded';
+  note?: string | null;
+  paidAt?: string | null;
+  customer?: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  };
+  attendee?: string | null;
+  pickupStudio?: (number | null) | Studio;
+  lines?:
+    | {
+        kind: 'session' | 'product' | 'plan';
+        session?: (number | null) | Session;
+        product?: (number | null) | Product;
+        plan?: (number | null) | Plan;
+        label: string;
+        option?: string | null;
+        quantity: number;
+        /**
+         * In cents
+         */
+        unitAmount: number;
+        taxGroup?: ('goods' | 'service' | 'exempt') | null;
+        /**
+         * In cents
+         */
+        taxAmount?: number | null;
+        /**
+         * In cents
+         */
+        lineTotal?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * In cents
+   */
+  subtotal?: number | null;
+  /**
+   * In cents
+   */
+  tax?: number | null;
+  /**
+   * In cents
+   */
+  total?: number | null;
+  /**
+   * In cents
+   */
+  refundedAmount?: number | null;
+  currency?: string | null;
+  gateway?: string | null;
+  stripeSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
+  stripeCustomerId?: string | null;
+  events?:
+    | {
+        at: string;
+        type: string;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Who took a seat on which date. Filter by class date to see the list of a class.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations".
+ */
+export interface Registration {
+  id: number;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  session: number | Session;
+  product?: (number | null) | Product;
+  studio?: (number | null) | Studio;
+  order?: (number | null) | Order;
+  status: 'confirmed' | 'refunded' | 'imported';
+  reminderSentAt?: string | null;
+  followupSentAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holds".
+ */
+export interface Hold {
+  id: number;
+  session: number | Session;
+  quantity: number;
+  /**
+   * The id of the pending order
+   */
+  ref: string;
+  expiresAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Memberships paid monthly through Stripe. Stripe keeps them up to date; you cannot edit them here.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions".
+ */
+export interface Subscription {
+  id: number;
+  plan?: (number | null) | Plan;
+  customer?: {
+    name?: string | null;
+    email?: string | null;
+  };
+  status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'unpaid';
+  currentPeriodEnd?: string | null;
+  stripeSubscriptionId?: string | null;
+  stripeCustomerId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * The emails the site sends. Placeholders: {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates".
+ */
+export interface EmailTemplate {
+  id: number;
+  key: 'order-confirmation' | 'class-reminder' | 'pieces-ready' | 'next-course';
+  subject: string;
+  body: string;
+  enabled?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -630,6 +846,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'enquiries';
         value: number | Enquiry;
+      } | null)
+    | ({
+        relationTo: 'sessions';
+        value: number | Session;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'registrations';
+        value: number | Registration;
+      } | null)
+    | ({
+        relationTo: 'holds';
+        value: number | Hold;
+      } | null)
+    | ({
+        relationTo: 'subscriptions';
+        value: number | Subscription;
+      } | null)
+    | ({
+        relationTo: 'email-templates';
+        value: number | EmailTemplate;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -815,6 +1055,7 @@ export interface StudiosSelect<T extends boolean = true> {
         description?: T;
       };
   published?: T;
+  doorCode?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -960,6 +1201,7 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   category?: T;
+  taxGroup?: T;
   seo?:
     | T
     | {
@@ -981,6 +1223,7 @@ export interface PlansSelect<T extends boolean = true> {
   description?: T;
   group?: T;
   order?: T;
+  stripePriceId?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1004,6 +1247,147 @@ export interface EnquiriesSelect<T extends boolean = true> {
   studio?: T;
   page?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions_select".
+ */
+export interface SessionsSelect<T extends boolean = true> {
+  label?: T;
+  product?: T;
+  class?: T;
+  studio?: T;
+  startsAt?: T;
+  endsAt?: T;
+  weekday?: T;
+  time?: T;
+  seats?: T;
+  sold?: T;
+  left?: T;
+  price?: T;
+  salePrice?: T;
+  teacher?: T;
+  status?: T;
+  seatsUnconfirmed?: T;
+  piecesReady?: T;
+  piecesReadySentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  number?: T;
+  status?: T;
+  note?: T;
+  paidAt?: T;
+  customer?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+        phone?: T;
+      };
+  attendee?: T;
+  pickupStudio?: T;
+  lines?:
+    | T
+    | {
+        kind?: T;
+        session?: T;
+        product?: T;
+        plan?: T;
+        label?: T;
+        option?: T;
+        quantity?: T;
+        unitAmount?: T;
+        taxGroup?: T;
+        taxAmount?: T;
+        lineTotal?: T;
+        id?: T;
+      };
+  subtotal?: T;
+  tax?: T;
+  total?: T;
+  refundedAmount?: T;
+  currency?: T;
+  gateway?: T;
+  stripeSessionId?: T;
+  stripePaymentIntentId?: T;
+  stripeCustomerId?: T;
+  events?:
+    | T
+    | {
+        at?: T;
+        type?: T;
+        note?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations_select".
+ */
+export interface RegistrationsSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  phone?: T;
+  session?: T;
+  product?: T;
+  studio?: T;
+  order?: T;
+  status?: T;
+  reminderSentAt?: T;
+  followupSentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "holds_select".
+ */
+export interface HoldsSelect<T extends boolean = true> {
+  session?: T;
+  quantity?: T;
+  ref?: T;
+  expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions_select".
+ */
+export interface SubscriptionsSelect<T extends boolean = true> {
+  plan?: T;
+  customer?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+      };
+  status?: T;
+  currentPeriodEnd?: T;
+  stripeSubscriptionId?: T;
+  stripeCustomerId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates_select".
+ */
+export interface EmailTemplatesSelect<T extends boolean = true> {
+  key?: T;
+  subject?: T;
+  body?: T;
+  enabled?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1076,6 +1460,10 @@ export interface Setting {
    * Link to the profile
    */
   instagram?: string | null;
+  /**
+   * Customer portal link from Stripe; empty — no link
+   */
+  stripePortalUrl?: string | null;
   nav?:
     | {
         label: string;
@@ -1143,6 +1531,7 @@ export interface SettingsSelect<T extends boolean = true> {
   phone?: T;
   email?: T;
   instagram?: T;
+  stripePortalUrl?: T;
   nav?:
     | T
     | {
