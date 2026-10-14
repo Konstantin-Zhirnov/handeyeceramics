@@ -4,6 +4,7 @@
  * against a server you already started instead.
  */
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -20,6 +21,8 @@ declare module "vitest" {
     baseURL: string;
     /** The database of the site under test, for tests that edit the CMS; "" if unknown. */
     databaseURI: string;
+    /** The bearer secret of GET /cron/daily on the site under test; "" when none is set (TEST_BASE_URL without CRON_SECRET). */
+    cronSecret: string;
   }
 }
 
@@ -41,6 +44,7 @@ export default async function setup(project: TestProject) {
   if (process.env.TEST_BASE_URL) {
     project.provide("baseURL", process.env.TEST_BASE_URL.replace(/\/$/, ""));
     project.provide("databaseURI", process.env.DATABASE_URI || "");
+    project.provide("cronSecret", process.env.CRON_SECRET || "");
     const target = process.env.TEST_BASE_URL.replace(/\/$/, "");
     return () => forgetEditor(target);
   }
@@ -57,7 +61,9 @@ export default async function setup(project: TestProject) {
     MUX_TOKEN_SECRET: "",
     BLOB_READ_WRITE_TOKEN: "",
     SMTP_HOST: "",
-    NEXT_DIST_DIR: ".next/test",
+    // The daily mail job needs a bearer secret: a one-off one for this run unless the environment names one.
+    CRON_SECRET: process.env.CRON_SECRET || randomBytes(18).toString("base64url"),
+    NEXT_DIST_DIR: process.env.NEXT_DIST_DIR || ".next/test",
     NODE_ENV: "development",
   } as NodeJS.ProcessEnv;
 
@@ -69,6 +75,7 @@ export default async function setup(project: TestProject) {
   await waitFor(`${baseURL}/robots.txt`, 300_000);
   project.provide("baseURL", baseURL);
   project.provide("databaseURI", env.DATABASE_URI!);
+  project.provide("cronSecret", env.CRON_SECRET!);
   return stop;
 }
 

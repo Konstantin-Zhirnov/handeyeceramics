@@ -10,7 +10,9 @@
  */
 import type { Access, CollectionConfig, Field, FieldHook, Where } from "payload";
 import { availability } from "../lib/booking/availability";
+import { EMAIL_TEMPLATE_KEYS, EMAIL_TEMPLATE_LABELS } from "../lib/mail/keys";
 import { signedIn } from "./fields/common";
+import { piecesReadyMail } from "./hooks/piecesReady";
 
 const GROUP = "Sales";
 
@@ -46,6 +48,7 @@ export const Sessions: CollectionConfig = {
     description: "The dates a class runs on. Each date has its own seats; the shop sells a seat on a date.",
   },
   defaultSort: "startsAt",
+  hooks: { afterChange: [piecesReadyMail] },
   fields: [
     {
       name: "label",
@@ -112,7 +115,7 @@ export const Sessions: CollectionConfig = {
       type: "checkbox",
       defaultValue: false,
       label: "Pieces are ready for pickup",
-      admin: { position: "sidebar", description: "Tick it to email every student of this date that their pieces are ready" },
+      admin: { position: "sidebar", description: "Tick it to email every confirmed student of this date that their pieces are ready. Each student gets it once; the time is recorded below. If some letters failed, untick and tick again: only the students who did not get it are emailed" },
     },
     {
       name: "piecesReadySentAt",
@@ -317,6 +320,7 @@ export const Registrations: CollectionConfig = {
     },
     { name: "reminderSentAt", type: "date", label: "Reminder sent", admin: { position: "sidebar", readOnly: true } },
     { name: "followupSentAt", type: "date", label: "Next-course email sent", admin: { position: "sidebar", readOnly: true } },
+    { name: "piecesReadySentAt", type: "date", label: "“Pieces ready” email sent", admin: { position: "sidebar", readOnly: true } },
   ],
 };
 
@@ -377,8 +381,6 @@ export const Subscriptions: CollectionConfig = {
   ],
 };
 
-export const EMAIL_TEMPLATE_KEYS = ["order-confirmation", "class-reminder", "pieces-ready", "next-course"] as const;
-
 export const EmailTemplates: CollectionConfig = {
   slug: "email-templates",
   labels: { singular: "Email template", plural: "Email templates" },
@@ -397,12 +399,7 @@ export const EmailTemplates: CollectionConfig = {
       required: true,
       unique: true,
       label: "Email",
-      options: [
-        { label: "Order confirmation", value: "order-confirmation" },
-        { label: "Class reminder (the day before)", value: "class-reminder" },
-        { label: "Pieces are ready", value: "pieces-ready" },
-        { label: "Next course invitation", value: "next-course" },
-      ],
+      options: EMAIL_TEMPLATE_KEYS.map((value) => ({ label: EMAIL_TEMPLATE_LABELS[value], value })),
     },
     { name: "subject", type: "text", required: true, label: "Subject" },
     { name: "body", type: "textarea", required: true, label: "Text", admin: { rows: 14 } },

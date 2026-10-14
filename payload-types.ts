@@ -604,7 +604,7 @@ export interface Session {
   status: 'open' | 'closed' | 'hidden';
   seatsUnconfirmed?: boolean | null;
   /**
-   * Tick it to email every student of this date that their pieces are ready
+   * Tick it to email every confirmed student of this date that their pieces are ready. Each student gets it once; the time is recorded below. If some letters failed, untick and tick again: only the students who did not get it are emailed
    */
   piecesReady?: boolean | null;
   piecesReadySentAt?: string | null;
@@ -705,6 +705,7 @@ export interface Registration {
   status: 'confirmed' | 'refunded' | 'imported';
   reminderSentAt?: string | null;
   followupSentAt?: string | null;
+  piecesReadySentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1345,6 +1346,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
   status?: T;
   reminderSentAt?: T;
   followupSentAt?: T;
+  piecesReadySentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -5,7 +5,7 @@
  * Placeholders are replaced by lib/mail: {{name}}, {{order_number}}, {{items}},
  * {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}.
  */
-import type { TemplateKey } from "../../lib/mail";
+import type { TemplateKey } from "../../lib/mail/keys";
 
 export type EmailTemplateSeed = { key: TemplateKey; subject: string; body: string };
 
@@ -34,13 +34,15 @@ export const EMAIL_TEMPLATES: EmailTemplateSeed[] = [
   },
   {
     key: "class-reminder",
-    subject: "Your class {{class}} starts tomorrow",
+    subject: "Your class {{class}} starts in two days",
     body: [
       "Hi {{name}},",
       "",
-      "A quick reminder: {{class}} ({{dates}}) starts tomorrow at {{studio_name}}, {{studio_address}}.",
+      "A quick reminder: {{class}} ({{dates}}) starts in two days at {{studio_name}}, {{studio_address}}.",
       "",
-      "The door code is {{door_code}}. Please come a few minutes early, wear clothes that can get clay on them and bring a towel.",
+      "The door code is {{door_code}}.",
+      "",
+      "Before you come: [TBD]",
       "",
       "See you soon,",
       "Hand Eye Ceramics",
