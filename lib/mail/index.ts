@@ -14,6 +14,7 @@ import type { Payload } from "payload";
 import type { EmailTemplate, Order, Registration, Session, Studio } from "../../payload-types";
 import { formatPrice } from "../cms/text";
 import { cms } from "./cms";
+import { SEATED_STATUSES } from "../booking/availability";
 import { EMAIL_TEMPLATE_KEYS, type TemplateKey } from "./keys";
 
 export { EMAIL_TEMPLATE_KEYS, type TemplateKey };
@@ -154,7 +155,7 @@ export async function sendOrderConfirmation(orderId: number, payload?: Payload):
 // ---- Letters to a registered student --------------------------------------------
 
 /**
- * "Your pieces are ready" to every confirmed student of a date, each once:
+ * "Your pieces are ready" to every student with a seat on a date (paid or added by hand), each once:
  * every student's registration is marked (`piecesReadySentAt`) as the letter
  * goes out, and the date is marked when every student with an email has one.
  * A student whose send failed stays unmarked; the owner unticks and ticks the
@@ -167,7 +168,7 @@ export async function sendPiecesReady(sessionId: number, payload?: Payload): Pro
   if (!session || session.piecesReadySentAt) return;
   const { docs } = await p.find({
     collection: "registrations",
-    where: { and: [{ session: { equals: sessionId } }, { status: { equals: "confirmed" } }, { piecesReadySentAt: { exists: false } }] },
+    where: { and: [{ session: { equals: sessionId } }, { status: { in: [...SEATED_STATUSES] } }, { piecesReadySentAt: { exists: false } }] },
     pagination: false,
     depth: 0,
     overrideAccess: true,
@@ -231,13 +232,13 @@ class StudentVars {
   }
 }
 
-/** Confirmed registrations whose date has `field` within [from, to) and `mark` not set yet. */
+/** Registrations with a seat (paid or added by hand) whose date has `field` within [from, to) and `mark` not set yet. */
 async function dueRegistrations(payload: Payload, field: "startsAt" | "endsAt", mark: "reminderSentAt" | "followupSentAt", from: Date, to: Date): Promise<Registration[]> {
   const { docs } = await payload.find({
     collection: "registrations",
     where: {
       and: [
-        { status: { equals: "confirmed" } },
+        { status: { in: [...SEATED_STATUSES] } },
         { [mark]: { exists: false } },
         { [`session.${field}`]: { greater_than_equal: from.toISOString() } },
         { [`session.${field}`]: { less_than: to.toISOString() } },

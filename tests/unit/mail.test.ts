@@ -116,17 +116,29 @@ describe("runDailyMail", () => {
   const now = new Date("2026-10-14T15:00:00.000Z");
   const at = (ms: number) => new Date(now.getTime() + ms).toISOString();
 
-  async function dateWithStudent(suffix: string, dates: { startsAt?: string; endsAt?: string }, email: string, name: string) {
+  async function dateWithStudent(suffix: string, dates: { startsAt?: string; endsAt?: string }, email: string, name: string, status: "confirmed" | "imported" | "refunded" = "confirmed") {
     const { sessionId, productId, studioId } = await seedClassDate(cms.payload, 5, suffix);
     await cms.payload.update({ collection: "sessions", id: sessionId, data: dates, overrideAccess: true, depth: 0, context: { skipAvailability: true } });
     const reg = await cms.payload.create({
       collection: "registrations",
-      data: { session: sessionId, product: productId, studio: studioId, name, email, status: "confirmed" },
+      data: { session: sessionId, product: productId, studio: studioId, name, email, status },
       overrideAccess: true,
       depth: 0,
     });
     return reg.id;
   }
+
+  it("a student the editor added by hand (imported) is reminded like a paid one; a refunded one is not", async () => {
+    const { runDailyMail } = await import("../../lib/mail");
+    const imported = await dateWithStudent("-imported", { startsAt: at(2 * DAY + HOUR), endsAt: at(44 * DAY) }, "walk-in@example.com", "Walk In", "imported");
+    await dateWithStudent("-refunded", { startsAt: at(2 * DAY + HOUR), endsAt: at(44 * DAY) }, "refunded@example.com", "Got Money Back", "refunded");
+    const before = sent.length;
+    await runDailyMail(now, cms.payload);
+    expect(newSent(before).map((m) => m.to)).toContain("walk-in@example.com");
+    expect(newSent(before).map((m) => m.to)).not.toContain("refunded@example.com");
+    const reg = await cms.payload.findByID({ collection: "registrations", id: imported, depth: 0, overrideAccess: true });
+    expect(reg.reminderSentAt).toBeTruthy();
+  }, 60_000);
 
   it("reminds two days before the first class, invites a day after the last one, and never twice", async () => {
     const { runDailyMail } = await import("../../lib/mail");

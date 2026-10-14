@@ -590,7 +590,13 @@ export interface Session {
    */
   time?: string | null;
   seats: number;
+  /**
+   * Seats taken: paid students and those added by hand
+   */
   sold?: number | null;
+  /**
+   * Seats minus sold minus held while a checkout is open
+   */
   left?: number | null;
   /**
    * In dollars. Empty — the product's current price
@@ -604,7 +610,7 @@ export interface Session {
   status: 'open' | 'closed' | 'hidden';
   seatsUnconfirmed?: boolean | null;
   /**
-   * Tick it to email every confirmed student of this date that their pieces are ready. Each student gets it once; the time is recorded below. If some letters failed, untick and tick again: only the students who did not get it are emailed
+   * Tick it to email every student with a seat on this date (paid or added by hand) that their pieces are ready. Each student gets it once; the time is recorded below. If some letters failed, untick and tick again: only the students who did not get it are emailed
    */
   piecesReady?: boolean | null;
   piecesReadySentAt?: string | null;
@@ -620,9 +626,11 @@ export interface Session {
 export interface Order {
   id: number;
   number?: string | null;
-  status: 'pending' | 'paid' | 'expired' | 'canceled' | 'refunded' | 'partially_refunded';
+  status: 'pending' | 'finalizing' | 'paid' | 'expired' | 'canceled' | 'refunded' | 'partially_refunded';
   note?: string | null;
   paidAt?: string | null;
+  totalDisplay?: string | null;
+  stripeUrl?: string | null;
   customer?: {
     name?: string | null;
     email?: string | null;
@@ -1286,6 +1294,8 @@ export interface OrdersSelect<T extends boolean = true> {
   status?: T;
   note?: T;
   paidAt?: T;
+  totalDisplay?: T;
+  stripeUrl?: T;
   customer?:
     | T
     | {

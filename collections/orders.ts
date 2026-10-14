@@ -8,8 +8,10 @@
  * (checkout, webhook, booking) through the Local API with `overrideAccess`;
  * the API lets nobody create an order or a hold, and nobody deletes a sale.
  */
-import type { Access, CollectionConfig, Field, FieldHook, Where } from "payload";
-import { availability } from "../lib/booking/availability";
+import type { Access, CollectionAfterOperationHook, CollectionConfig, Field, Where } from "payload";
+import { availabilityOf } from "../lib/booking/availability";
+import { formatPrice } from "../lib/cms/text";
+import { stripeDashboardUrl } from "../lib/payments/gateway";
 import { EMAIL_TEMPLATE_KEYS, EMAIL_TEMPLATE_LABELS } from "../lib/mail/keys";
 import { signedIn } from "./fields/common";
 import { piecesReadyMail } from "./hooks/piecesReady";
@@ -27,15 +29,26 @@ const fixedAfterCreate = { update: () => false };
 const publicSession: Where = { and: [{ status: { not_equals: "hidden" } }, { "product.visible": { equals: true } }] };
 const readPublicSession: Access = ({ req }) => (req.user ? true : publicSession);
 
-/** The seats of a date, computed on read; availability() itself reads the date with the flag set, so the count does not recurse. */
-const countHook =
-  (key: "sold" | "left"): FieldHook =>
-  async ({ data, req, context }) => {
-    if (!data?.id || context?.skipAvailability || req.context?.skipAvailability) return null;
-    return (await availability(data.id as number, req.payload))[key];
-  };
-const soldHook = countHook("sold");
-const leftHook = countHook("left");
+/**
+ * The seats of the dates just read (R01.1): `sold` and `left` are counted for
+ * the whole result at once — two queries for a page of dates, not three per
+ * date. A caller that does not need the counts (the cart, the mail, the
+ * booking code, which reads the date inside availability() itself) passes
+ * `context: { skipAvailability: true }` and gets null in both fields.
+ */
+const countSeats: CollectionAfterOperationHook<"sessions"> = async (arg) => {
+  const { operation, result, req, args } = arg;
+  if (operation !== "find" && operation !== "findByID") return result;
+  if (req.context?.skipAvailability || (args as { context?: { skipAvailability?: boolean } }).context?.skipAvailability) return result;
+  const docs = (operation === "find" ? result.docs : [result]).filter((d) => d && typeof d.id === "number" && typeof d.seats === "number");
+  if (!docs.length) return result;
+  const counts = await availabilityOf(docs, req.payload, new Date(), req);
+  for (const d of docs) {
+    const c = counts.get(d.id);
+    if (c) Object.assign(d, { sold: c.sold, left: c.left });
+  }
+  return result;
+};
 
 export const Sessions: CollectionConfig = {
   slug: "sessions",
@@ -48,7 +61,7 @@ export const Sessions: CollectionConfig = {
     description: "The dates a class runs on. Each date has its own seats; the shop sells a seat on a date.",
   },
   defaultSort: "startsAt",
-  hooks: { afterChange: [piecesReadyMail] },
+  hooks: { afterChange: [piecesReadyMail], afterOperation: [countSeats] },
   fields: [
     {
       name: "label",
@@ -78,8 +91,8 @@ export const Sessions: CollectionConfig = {
       type: "row",
       fields: [
         { name: "seats", type: "number", required: true, min: 0, defaultValue: 10, label: "Seats" },
-        { name: "sold", type: "number", virtual: true, label: "Sold", admin: { readOnly: true }, hooks: { afterRead: [soldHook] } },
-        { name: "left", type: "number", virtual: true, label: "Left", admin: { readOnly: true }, hooks: { afterRead: [leftHook] } },
+        { name: "sold", type: "number", virtual: true, label: "Sold", admin: { readOnly: true, description: "Seats taken: paid students and those added by hand" } },
+        { name: "left", type: "number", virtual: true, label: "Left", admin: { readOnly: true, description: "Seats minus sold minus held while a checkout is open" } },
       ],
     },
     {
@@ -115,7 +128,7 @@ export const Sessions: CollectionConfig = {
       type: "checkbox",
       defaultValue: false,
       label: "Pieces are ready for pickup",
-      admin: { position: "sidebar", description: "Tick it to email every confirmed student of this date that their pieces are ready. Each student gets it once; the time is recorded below. If some letters failed, untick and tick again: only the students who did not get it are emailed" },
+      admin: { position: "sidebar", description: "Tick it to email every student with a seat on this date (paid or added by hand) that their pieces are ready. Each student gets it once; the time is recorded below. If some letters failed, untick and tick again: only the students who did not get it are emailed" },
     },
     {
       name: "piecesReadySentAt",
@@ -150,7 +163,7 @@ export const Orders: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: GROUP,
-    defaultColumns: ["number", "createdAt", "customer", "total", "status"],
+    defaultColumns: ["number", "createdAt", "customer.email", "totalDisplay", "status"],
     description: "What was bought and paid. The server writes orders; here you follow them and add notes.",
   },
   defaultSort: "-createdAt",
@@ -182,6 +195,7 @@ export const Orders: CollectionConfig = {
       label: "Status",
       options: [
         { label: "Pending payment", value: "pending" },
+        { label: "Finalizing (paid, writing the students)", value: "finalizing" },
         { label: "Paid", value: "paid" },
         { label: "Expired (not paid)", value: "expired" },
         { label: "Canceled", value: "canceled" },
@@ -193,18 +207,35 @@ export const Orders: CollectionConfig = {
     { name: "note", type: "textarea", label: "Internal note", admin: { position: "sidebar" } },
     { name: "paidAt", type: "date", label: "Paid at", access: fixedAfterCreate, admin: { readOnly: true, position: "sidebar" } },
     {
+      name: "totalDisplay",
+      type: "text",
+      virtual: true,
+      label: "Total",
+      admin: { readOnly: true, position: "sidebar" },
+      hooks: { afterRead: [({ data }) => (typeof data?.total === "number" ? formatPrice(data.total / 100) : null)] },
+    },
+    {
+      name: "stripeUrl",
+      type: "text",
+      virtual: true,
+      label: "Open in Stripe",
+      admin: { readOnly: true, position: "sidebar", components: { Field: "/components/admin/StripeLink#StripeLink" } },
+      hooks: { afterRead: [({ data }) => (data?.stripePaymentIntentId ? stripeDashboardUrl("payment", data.stripePaymentIntentId) : null)] },
+    },
+    {
       name: "customer",
       type: "group",
       label: "Customer",
       access: fixedAfterCreate,
+      admin: { readOnly: true },
       fields: [
         { name: "name", type: "text", label: "Name" },
         { name: "email", type: "email", label: "Email" },
         { name: "phone", type: "text", label: "Phone" },
       ],
     },
-    { name: "attendee", type: "text", label: "Who is attending", access: fixedAfterCreate },
-    { name: "pickupStudio", type: "relationship", relationTo: "studios", label: "Pickup studio", access: fixedAfterCreate },
+    { name: "attendee", type: "text", label: "Who is attending", access: fixedAfterCreate, admin: { readOnly: true } },
+    { name: "pickupStudio", type: "relationship", relationTo: "studios", label: "Pickup studio", access: fixedAfterCreate, admin: { readOnly: true } },
     {
       name: "lines",
       type: "array",
@@ -270,7 +301,8 @@ export const Orders: CollectionConfig = {
       type: "array",
       label: "History",
       labels: { singular: "Event", plural: "Events" },
-      admin: { initCollapsed: true },
+      access: serverSet,
+      admin: { initCollapsed: true, readOnly: true },
       fields: [
         { name: "at", type: "date", required: true, label: "When" },
         { name: "type", type: "text", required: true, label: "Event" },
@@ -287,12 +319,12 @@ export function orderNumber(id: number): string {
 export const Registrations: CollectionConfig = {
   slug: "registrations",
   labels: { singular: "Student", plural: "Students" },
-  // Paid seats are written by the server; an editor may add a student by hand (imported).
+  // Paid seats are written by the server; an editor may add a student by hand: such a student is "imported" and holds a seat too.
   access: { ...saleAccess, create: signedIn },
   admin: {
     useAsTitle: "name",
     group: GROUP,
-    defaultColumns: ["name", "email", "session", "studio", "status", "createdAt"],
+    defaultColumns: ["session", "name", "email", "phone", "status", "createdAt"],
     description: "Who took a seat on which date. Filter by class date to see the list of a class.",
     listSearchableFields: ["name", "email", "phone"],
   },
@@ -304,23 +336,23 @@ export const Registrations: CollectionConfig = {
     { name: "session", type: "relationship", relationTo: "sessions", required: true, index: true, label: "Class date" },
     { name: "product", type: "relationship", relationTo: "products", label: "Product" },
     { name: "studio", type: "relationship", relationTo: "studios", label: "Studio" },
-    { name: "order", type: "relationship", relationTo: "orders", label: "Order", admin: { position: "sidebar" } },
+    { name: "order", type: "relationship", relationTo: "orders", label: "Order", access: serverSet, admin: { position: "sidebar", readOnly: true } },
     {
       name: "status",
       type: "select",
       required: true,
-      defaultValue: "confirmed",
+      defaultValue: "imported",
       label: "Status",
       options: [
-        { label: "Confirmed", value: "confirmed" },
+        { label: "Confirmed (paid)", value: "confirmed" },
         { label: "Refunded", value: "refunded" },
         { label: "Added by hand", value: "imported" },
       ],
       admin: { position: "sidebar" },
     },
-    { name: "reminderSentAt", type: "date", label: "Reminder sent", admin: { position: "sidebar", readOnly: true } },
-    { name: "followupSentAt", type: "date", label: "Next-course email sent", admin: { position: "sidebar", readOnly: true } },
-    { name: "piecesReadySentAt", type: "date", label: "“Pieces ready” email sent", admin: { position: "sidebar", readOnly: true } },
+    { name: "reminderSentAt", type: "date", label: "Reminder sent", access: serverSet, admin: { position: "sidebar", readOnly: true } },
+    { name: "followupSentAt", type: "date", label: "Next-course email sent", access: serverSet, admin: { position: "sidebar", readOnly: true } },
+    { name: "piecesReadySentAt", type: "date", label: "“Pieces ready” email sent", access: serverSet, admin: { position: "sidebar", readOnly: true } },
   ],
 };
 
@@ -350,11 +382,13 @@ export const Subscriptions: CollectionConfig = {
   },
   defaultSort: "-createdAt",
   fields: [
-    { name: "plan", type: "relationship", relationTo: "plans", label: "Plan" },
+    { name: "plan", type: "relationship", relationTo: "plans", label: "Plan", access: serverSet, admin: { readOnly: true } },
     {
       name: "customer",
       type: "group",
       label: "Customer",
+      access: serverSet,
+      admin: { readOnly: true },
       fields: [
         { name: "name", type: "text", label: "Name" },
         { name: "email", type: "email", label: "Email" },
@@ -373,11 +407,12 @@ export const Subscriptions: CollectionConfig = {
         { label: "Trialing", value: "trialing" },
         { label: "Unpaid", value: "unpaid" },
       ],
+      access: serverSet,
       admin: { position: "sidebar", readOnly: true },
     },
-    { name: "currentPeriodEnd", type: "date", label: "Paid until", admin: { readOnly: true } },
-    { name: "stripeSubscriptionId", type: "text", unique: true, index: true, label: "Stripe subscription", admin: { readOnly: true } },
-    { name: "stripeCustomerId", type: "text", label: "Stripe customer", admin: { readOnly: true } },
+    { name: "currentPeriodEnd", type: "date", label: "Paid until", access: serverSet, admin: { readOnly: true } },
+    { name: "stripeSubscriptionId", type: "text", unique: true, index: true, label: "Stripe subscription", access: serverSet, admin: { readOnly: true } },
+    { name: "stripeCustomerId", type: "text", label: "Stripe customer", access: serverSet, admin: { readOnly: true } },
   ],
 };
 
