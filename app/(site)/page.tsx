@@ -8,6 +8,7 @@ import { Reviews } from "@/components/Reviews";
 import { LocationsSection } from "@/components/LocationsSection";
 import { Membership } from "@/components/Membership";
 import { Footer, MobileCallBar } from "@/components/Footer";
+import { CartProvider } from "@/components/cart/CartProvider";
 import { SiteDataProvider } from "@/components/site/SiteData";
 import { Blocks } from "@/components/blocks/Blocks";
 import { metadataFor } from "@/lib/cms/seo";
@@ -40,6 +41,7 @@ export default async function Home() {
   const [data, home, tabs, page] = await Promise.all([getSiteData(), getHome(), classTabs(), homePage()]);
   return (
     <SiteDataProvider value={data}>
+      <CartProvider>
       <Header />
       <main id="main">
         <HeroStage hero={home.hero} chapters={home.list("stage")} h1={page ? page.h1 || page.title : undefined} />
@@ -57,6 +59,7 @@ export default async function Home() {
       </main>
       <Footer />
       <MobileCallBar hideDuringHero />
+      </CartProvider>
     </SiteDataProvider>
   );
 }

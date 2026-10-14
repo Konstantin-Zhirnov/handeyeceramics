@@ -8,9 +8,10 @@ import { splitCategories, storefronts, studioPhone } from "./data";
 /** Shown wherever the admin holds no fact yet. */
 const TBD = "[TBD]";
 
-export const BUY_LABEL = "Online checkout coming soon — call the studio";
-
 export { mediaSrc };
+
+/** Where a plan's Subscribe form posts (the checkout routes). */
+export const SUBSCRIBE_PATH = "/checkout/subscribe";
 
 export const productImages = (p: Product): Media[] =>
   (p.images || [])
@@ -37,28 +38,34 @@ export function Price({ product }: { product: Pick<Product, "price" | "salePrice
   );
 }
 
-/** Checkout is not built yet (stage 3): a disabled button and the phone to call. */
-export async function BuyNotice() {
+/** The studio's phone next to the buying buttons (R32i): a question is one tap away. */
+export async function CallStudio() {
   const phone = await studioPhone();
+  if (!phone.href) return null;
   return (
-    <div data-buy className="flex flex-col items-start gap-3">
+    <a
+      href={phone.href}
+      data-call-studio
+      className="flex h-12 items-center justify-center rounded-full bg-sky-brand px-7 text-copy font-semibold text-sky-ink transition-transform hover:-translate-y-0.5"
+    >
+      Call {phone.display}
+    </a>
+  );
+}
+
+/** A plan with a Stripe price gets a Subscribe button (R11); the form posts to the checkout routes. */
+export function SubscribeButton({ plan }: { plan: Pick<Plan, "id" | "stripePriceId"> }) {
+  if (!plan.stripePriceId?.trim()) return null;
+  return (
+    <form method="post" action={SUBSCRIBE_PATH} data-subscribe className="mt-5">
+      <input type="hidden" name="plan" value={plan.id} />
       <button
-        type="button"
-        disabled
-        aria-disabled="true"
-        className="cursor-not-allowed rounded-stage border border-clay-200 bg-clay-100 px-6 py-3 text-left text-copy font-semibold text-ink-soft"
+        type="submit"
+        className="flex h-12 w-full items-center justify-center rounded-full bg-terracotta px-7 text-copy font-semibold text-clay-50 transition-colors hover:bg-ink"
       >
-        {BUY_LABEL}
+        Subscribe
       </button>
-      {phone.href && (
-        <a
-          href={phone.href}
-          className="flex h-12 items-center justify-center rounded-full bg-sky-brand px-7 text-copy font-semibold text-sky-ink transition-transform hover:-translate-y-0.5"
-        >
-          Call {phone.display}
-        </a>
-      )}
-    </div>
+    </form>
   );
 }
 
@@ -125,39 +132,18 @@ export function ProductShelves({ products, lead = false }: { products: Product[]
   );
 }
 
-/** The variants the old store offered, in the same drop-downs. Choosing one buys nothing yet. */
-export function ProductOptions({ options }: { options: Product["options"] }) {
-  if (!options?.length) return null;
-  return (
-    <div className="flex flex-col gap-5">
-      {options.map((o, i) => {
-        const choices = o.choices
-          .split(/\r?\n/)
-          .map((c) => c.trim())
-          .filter(Boolean);
-        return (
-          <div key={o.id || i} data-product-option className="flex min-w-0 flex-col gap-2">
-            <label htmlFor={`option-${i}`} className="eyebrow text-clay-600">
-              <span data-option-title>{o.title}</span> *
-            </label>
-            <select
-              id={`option-${i}`}
-              defaultValue=""
-              className="w-full min-w-0 rounded-inset border border-clay-200 bg-clay-50 px-4 py-3 text-ink"
-            >
-              <option value="">Select</option>
-              {choices.map((c, j) => (
-                <option key={j} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+/** The variants the old store offered, as the Add to cart control lists them: a title and its choices. */
+export const optionChoices = (options: Product["options"]) =>
+  (options || [])
+    .filter((o) => o.title && o.choices)
+    .map((o) => ({
+      title: o.title,
+      choices: o.choices
+        .split(/\r?\n/)
+        .map((c) => c.trim())
+        .filter(Boolean),
+    }))
+    .filter((o) => o.choices.length);
 
 /** Links between the shop's sections; the current one is marked. */
 export async function StorefrontNav({ current }: { current: string }) {
@@ -218,6 +204,7 @@ export function PlanList({ plans, grouped = true }: { plans: Plan[]; grouped?: b
                 {p.description && (
                   <p className="mt-4 whitespace-pre-line leading-relaxed text-ink-soft [overflow-wrap:anywhere]">{p.description}</p>
                 )}
+                <SubscribeButton plan={p} />
               </li>
             ))}
           </ul>

@@ -2,8 +2,11 @@
  * The shop: product pages, storefronts and plans. Expected values are written
  * by hand from the old site (content/inventory.json), not computed by the code.
  */
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { load, type CheerioAPI } from "cheerio";
-import { describe, expect, inject, it } from "vitest";
+import { beforeAll, describe, expect, inject, it } from "vitest";
+import { parseSessionLabel } from "../../scripts/seed/sessions";
 
 const base = () => inject("baseURL");
 
@@ -23,9 +26,13 @@ function productJsonLd($: CheerioAPI): Record<string, any> | undefined {
 
 const POT = "/product-page/hanging-plant-pot";
 const CLASS = "/product-page/6-week-wheel-throwing-pottery-classes-in-vancouver";
-const BUY_LABEL = "Online checkout coming soon — call the studio";
 
 describe("product page", () => {
+  // A cold dev server compiles the product template for minutes when the machine is busy: let it, before the clock of a test runs.
+  beforeAll(async () => {
+    await (await fetch(`${base()}${POT}`)).arrayBuffer();
+  }, 600_000);
+
   it("shows the price, the description and the variants of the old page", async () => {
     const { status, $ } = await get(POT);
     expect(status).toBe(200);
@@ -54,13 +61,15 @@ describe("product page", () => {
     expect(ld!.offers.url).toMatch(/\/product-page\/hanging-plant-pot$/);
   });
 
-  it("offers no checkout: a disabled button and the studio's phone", async () => {
+  it("offers Add to cart with the studio's phone beside it; the old notice is gone", async () => {
     const { $ } = await get(POT);
-    const button = $("button").filter((_, el) => $(el).text().trim() === BUY_LABEL);
-    expect(button).toHaveLength(1);
-    expect(button.attr("disabled")).toBeDefined();
-    expect(button.closest("[data-buy]").find("a").attr("href")).toBe("tel:+17788983414");
-    expect($("main form")).toHaveLength(0);
+    const buy = $("main [data-buy]");
+    expect(buy).toHaveLength(1);
+    expect(buy.find("button[data-add]").text().trim()).toBe("Add to cart");
+    expect(buy.find("a[data-call-studio]").attr("href")).toBe("tel:+17788983414");
+    expect(text($)).not.toContain("Online checkout coming soon");
+    // A pot has no dates: variants and quantity only.
+    expect($("[data-product-sessions]")).toHaveLength(0);
   });
 
   it("shows the sale price next to the regular one", async () => {
@@ -69,8 +78,32 @@ describe("product page", () => {
     expect(price.find("[data-price-regular]").text().trim()).toBe("CA$371.00");
     expect(price.find("[data-price-current]").text().trim()).toBe("CA$296.80");
     expect(Number(productJsonLd($)!.offers.price)).toBe(296.8);
-    // 66 dates on the old page: all of them are listed.
-    expect($("[data-product-option] option[value!='']").length).toBe(66);
+  });
+
+  it("lists the dates of the old Date drop-down as sessions, the finished ones left out, each with its price", async () => {
+    const { $ } = await get(CLASS);
+    // The Date drop-down is a list of sessions now, not a product option.
+    expect($("[data-product-option]")).toHaveLength(0);
+    const dates = $("[data-product-sessions]");
+    expect(dates).toHaveLength(1);
+    expect(dates.find("[data-option-title]").text().trim()).toBe("Date");
+    // The 66 labels of the old drop-down (content/inventory.json), read by the seed's own parser:
+    // those not over by today are listed, word for word, with the class's sale price.
+    const inv = JSON.parse(readFileSync(path.join(import.meta.dirname, "../../content/inventory.json"), "utf8"));
+    const labels: string[] = inv.products.find((p: { path: string }) => p.path === CLASS).options.find((o: { title: string }) => o.title === "Date").choices;
+    expect(labels).toHaveLength(66);
+    const now = Date.now();
+    const expected = labels.filter((l) => {
+      const parsed = parseSessionLabel(l, new Date("2026-08-01T00:00:00Z"));
+      return parsed.endsAt && parsed.endsAt.getTime() >= now;
+    });
+    const shown = dates.find("option[value!='']").toArray().map((o) => $(o).text().trim());
+    expect(shown.length).toBeGreaterThan(0);
+    // The page orders them by date; the old drop-down did not.
+    expect(shown.map((s) => s.replace(/ — CA\$296\.80.*$/, "")).sort()).toEqual([...expected].sort());
+    expect(shown.every((s) => s.includes(" — CA$296.80"))).toBe(true);
+    // Nothing is sold yet: no date is marked sold out.
+    expect(dates.find("option[disabled]")).toHaveLength(0);
   });
 });
 
@@ -272,10 +305,35 @@ describe("plans", () => {
     expect(price((await get(MEMBERSHIPS)).$, "Option 2")).toBe("CA$175.00");
   });
 
-  it("offers no checkout for plans", async () => {
+  it("shows Subscribe only on a plan with a Stripe price; the phone stays", async () => {
     const { $ } = await get(PLANS);
-    const button = $("main button").filter((_, el) => $(el).text().trim() === BUY_LABEL);
-    expect(button.attr("disabled")).toBeDefined();
-    expect(button.closest("[data-buy]").find("a").attr("href")).toBe("tel:+17788983414");
+    expect($("main [data-subscribe]")).toHaveLength(0);
+    expect(text($)).not.toContain("Online checkout coming soon");
+    expect($("main [data-buy] a[data-call-studio]").attr("href")).toBe("tel:+17788983414");
+
+    const { editorToken } = await import("./editor");
+    const token = await editorToken(base());
+    const { docs } = await (await fetch(`${base()}/api/plans?limit=200&depth=0`)).json();
+    const tuesday = docs.find((d: { name: string }) => d.name === "Tuesday Evening");
+    const setPrice = async (stripePriceId: string | null) => {
+      const res = await fetch(`${base()}/api/plans/${tuesday.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `JWT ${token}` },
+        body: JSON.stringify({ stripePriceId }),
+      });
+      expect(res.status).toBe(200);
+    };
+    await setPrice("price_test_tuesday");
+    try {
+      const { $: withId } = await get(PLANS);
+      const form = plan(withId, "Tuesday Evening").find("form[data-subscribe]");
+      expect(form.attr("action")).toBe("/checkout/subscribe");
+      expect(form.attr("method")).toBe("post");
+      expect(form.find('input[name="plan"]').attr("value")).toBe(String(tuesday.id));
+      expect(form.find("button").text().trim()).toBe("Subscribe");
+    } finally {
+      await setPrice(null);
+    }
+    expect((await get(PLANS)).$("main [data-subscribe]")).toHaveLength(0);
   });
 });

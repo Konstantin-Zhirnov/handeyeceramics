@@ -1,9 +1,10 @@
 import Image from "next/image";
 import type { Product } from "@/payload-types";
+import { AddToCart } from "@/components/cart/AddToCart";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
 import { site } from "@/lib/site";
-import { splitCategories } from "./data";
-import { BuyNotice, Price, ProductOptions, currentPrice, productImages } from "./parts";
+import { sessionChoices, splitCategories } from "./data";
+import { CallStudio, Price, currentPrice, optionChoices, productImages } from "./parts";
 
 const absolute = (url: string) => (url.startsWith("/") ? `${site.url}${url}` : url);
 
@@ -24,9 +25,12 @@ function jsonLd(doc: Product) {
   };
 }
 
-/** Product page: photos, price, variants, description; no checkout yet. */
-export function ProductPage({ doc }: { doc: Product }) {
+/** Product page: photos, price, the dates of a class or the variants, Add to cart, description. */
+export async function ProductPage({ doc }: { doc: Product }) {
   const [first, ...rest] = productImages(doc);
+  const { choices: sessions, scheduled } = await sessionChoices(doc);
+  // A class whose dates are all over or hidden is not for sale until a date is added in the admin.
+  const noDates = scheduled && !sessions.length;
   return (
     <SiteShell>
       <script
@@ -71,8 +75,16 @@ export function ProductPage({ doc }: { doc: Product }) {
           )}
         </div>
         <div className="flex min-w-0 flex-col gap-8">
-          <ProductOptions options={doc.options} />
-          <BuyNotice />
+          <div data-buy className="flex flex-col gap-5">
+            {noDates ? (
+              <p data-no-dates className="rounded-inset border border-dashed border-clay-200 px-5 py-4 text-copy text-ink-soft">
+                No dates scheduled — call the studio to ask about the next one.
+              </p>
+            ) : (
+              <AddToCart productId={doc.id} price={currentPrice(doc) ?? null} options={optionChoices(doc.options)} sessions={sessions} />
+            )}
+            <CallStudio />
+          </div>
           {doc.description && (
             <div className="whitespace-pre-line leading-relaxed text-ink-soft [overflow-wrap:anywhere]">{doc.description}</div>
           )}

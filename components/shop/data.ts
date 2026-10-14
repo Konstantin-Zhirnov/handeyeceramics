@@ -1,8 +1,36 @@
 import "server-only";
 import { cache } from "react";
-import type { Page, Plan, Product } from "@/payload-types";
+import type { Page, Plan, Product, Session } from "@/payload-types";
+import type { SessionChoice } from "@/components/cart/AddToCart";
+import { isSellable } from "@/lib/booking/availability";
+import { scheduledProducts, sessionPrice } from "@/lib/cart/validate";
 import { getCMS } from "@/lib/cms/resolve";
 import { phoneHref } from "@/lib/cms/site";
+
+/**
+ * The dates of a class as its page lists them (R01.3, R02): the visitor's view
+ * of the sessions collection (hidden ones never arrive), without the dates
+ * that are over; a date that cannot be bought is listed and marked sold out.
+ */
+export async function sessionChoices(product: Product, now = new Date()): Promise<{ choices: SessionChoice[]; scheduled: boolean }> {
+  const payload = await getCMS();
+  // A class has dates of some status, even when none is open to buy: then it is not sold as a plain product.
+  const scheduled = (await scheduledProducts(payload, [product.id])).has(product.id);
+  if (!scheduled) return { choices: [], scheduled };
+  const res = await payload.find({
+    collection: "sessions",
+    where: { product: { equals: product.id } },
+    overrideAccess: false,
+    sort: "startsAt",
+    depth: 0,
+    limit: 500,
+    pagination: false,
+  });
+  const choices = (res.docs as Session[])
+    .filter((s) => !(s.endsAt && new Date(s.endsAt).getTime() < now.getTime()))
+    .map((s) => ({ id: s.id, label: s.label, price: sessionPrice(s, product), sellable: isSellable(s, now), left: s.left ?? 0 }));
+  return { choices, scheduled };
+}
 
 /** "Clay, Open Studio & Private Lessons" → ["Clay", "Open Studio & Private Lessons"]. */
 export const splitCategories = (category: string | null | undefined) =>

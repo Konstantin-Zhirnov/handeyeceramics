@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/Header";
 import { Footer, MobileCallBar } from "@/components/Footer";
+import { CartProvider } from "@/components/cart/CartProvider";
 import { getSiteData } from "@/lib/cms/site";
 import { SiteDataProvider } from "./SiteData";
 
@@ -22,10 +23,12 @@ export async function SiteShell({
   const data = await getSiteData();
   return (
     <SiteDataProvider value={data}>
-      <Header currentLocation={currentLocation} />
-      <main id="main" className={flush ? undefined : "bg-clay-50 pb-20 pt-[104px] lg:pt-[128px]"}>{children}</main>
-      <Footer />
-      <MobileCallBar />
+      <CartProvider>
+        <Header currentLocation={currentLocation} />
+        <main id="main" className={flush ? undefined : "bg-clay-50 pb-20 pt-[104px] lg:pt-[128px]"}>{children}</main>
+        <Footer />
+        <MobileCallBar />
+      </CartProvider>
     </SiteDataProvider>
   );
 }

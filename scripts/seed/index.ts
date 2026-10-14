@@ -475,8 +475,8 @@ async function seedProducts() {
       salePrice,
       images,
       description,
-      // The "Date" drop-down also becomes class dates (sessions) with seats; it stays an option until the product page lists the sessions.
-      options: options.map((o) => ({ title: o.title, choices: o.choices.join("\n") })),
+      // The "Date" drop-down becomes class dates (sessions) with seats, which the product page lists in its place.
+      options: options.filter((o) => !isDateOption(o)).map((o) => ({ title: o.title, choices: o.choices.join("\n") })),
       category: (r.categories?.length ? r.categories.join(", ") : r.category) || undefined,
       taxGroup: taxGroupOf(r),
       seo,

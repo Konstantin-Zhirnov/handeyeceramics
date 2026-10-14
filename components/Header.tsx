@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 import { LocationSwitcher } from "./LocationSwitcher";
 import { STAGE_EVENT, type StageState } from "./stage-event";
+import { CartLink } from "./cart/CartLink";
 import { useSiteData } from "./site/SiteData";
 
 /** The menu's anchor: `#site-menu` opens it where scripts do not run. */
@@ -172,6 +173,8 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
                 <span className="hidden xl:inline">{phone}</span>
                 <span className="sr-only xl:hidden">Call {phone}</span>
               </a>
+
+              <CartLink light={light} />
 
               {/* A link to the menu's anchor: without JavaScript the menu opens by :target. */}
               <a

@@ -112,9 +112,9 @@ describe("the seed's class dates", () => {
     expect(hand.find((d) => d.label === "Thurs 7pm–9:30pm Jul 8–Aug 12 (Mapi)")?.status).toBe("open");
   });
 
-  it("the Date drop-down stays on the product until the page lists the sessions; the other options stay", async () => {
+  it("the Date drop-down is gone from the product — its dates are sessions; the other options stay", async () => {
     const [hand] = await list(`/products?${where("path", HAND_BUILDING)}&depth=0`);
-    expect((hand.options || []).map((o: Doc) => o.title)).toEqual(["Date"]);
+    expect((hand.options || []).map((o: Doc) => o.title)).toEqual([]);
     const [pot] = await list(`/products?${where("path", "/product-page/hanging-plant-pot")}&depth=0`);
     expect(pot.options.map((o: Doc) => o.title)).toEqual(["Glaze Colour"]);
   });

@@ -2,11 +2,12 @@ import type { Page } from "@/payload-types";
 import { Blocks } from "@/components/blocks/Blocks";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
 import { allPlans } from "./data";
-import { BuyNotice, PlanList } from "./parts";
+import { CallStudio, PlanList } from "./parts";
 
 /**
  * Plans & pricing: the plans without a group — those of the old Wix plans page.
  * Memberships and the wheel rental have a group and are listed on their own pages.
+ * A plan with a Stripe price carries its Subscribe button; the phone stays for the rest.
  */
 export async function PlansPage({ doc }: { doc: Page }) {
   const plans = (await allPlans()).filter((p) => !(p.group || "").trim());
@@ -15,8 +16,8 @@ export async function PlansPage({ doc }: { doc: Page }) {
       <PageHeading title={doc.h1 || doc.title} />
       <div className="mx-auto mt-10 max-w-[62rem] px-5 sm:px-8">
         <PlanList plans={plans} />
-        <div className="mt-12">
-          <BuyNotice />
+        <div data-buy className="mt-12 flex flex-col items-start gap-3">
+          <CallStudio />
         </div>
       </div>
       <Blocks blocks={doc.blocks} />

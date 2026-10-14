@@ -17,8 +17,9 @@ const fromInventory: string[] = [...inv.pages, ...inv.products, ...inv.pricing, 
 // Templates that have no address on the old site: the studio pages of the prototype and the shop.
 const everything = process.env.MOBILE_ALL === "1";
 // One page of every template: home, a studio from the old site and one from the prototype, a text page,
-// a page with a form, the shop, a product, the plans.
+// a page with a form, the shop, a product, the plans, the cart.
 const templates = [
+  "/cart",
   "/",
   "/nanaimo-pottery-classes",
   "/classes/vancouver-chinatown",
