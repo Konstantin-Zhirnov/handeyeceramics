@@ -13,7 +13,8 @@
 import type { Payload } from "payload";
 import type { EmailTemplate, Order, Registration, Session, Studio } from "../../payload-types";
 import { formatPrice } from "../cms/text";
-import { cms } from "./cms";
+import { getCMS } from "../cms/payload";
+import { relId } from "../cms/relations";
 import { SEATED_STATUSES } from "../booking/availability";
 import { EMAIL_TEMPLATE_KEYS, type TemplateKey } from "./keys";
 
@@ -30,7 +31,6 @@ export function renderTemplate(body: string, vars: Vars): string {
   return body.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (whole, key: string) => (key in vars ? vars[key] : whole));
 }
 
-const relId = (v: number | { id: number } | null | undefined): number | undefined => (typeof v === "object" && v ? v.id : (v ?? undefined));
 const lines = (text: string | null | undefined) =>
   String(text ?? "")
     .split(/\r\n|\r|\n/)
@@ -66,7 +66,7 @@ async function deliver(payload: Payload, key: TemplateKey, to: string, vars: Var
 }
 
 export async function sendTemplate(key: TemplateKey, to: string, vars: Vars, payload?: Payload): Promise<void> {
-  await deliver(payload || (await cms()), key, to, vars);
+  await deliver(payload || (await getCMS()), key, to, vars);
 }
 
 /**
@@ -138,7 +138,7 @@ async function orderVars(payload: Payload, order: Order): Promise<Vars> {
  * that finished the order does not wait for the mail adapter.
  */
 export async function sendOrderConfirmation(orderId: number, payload?: Payload): Promise<void> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const order = (await p.findByID({ collection: "orders", id: orderId, depth: 0, overrideAccess: true })) as Order;
   const to = order.customer?.email?.trim();
   if (!to) {
@@ -163,7 +163,7 @@ export async function sendOrderConfirmation(orderId: number, payload?: Payload):
  * a second call, sends nothing.
  */
 export async function sendPiecesReady(sessionId: number, payload?: Payload): Promise<void> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const session = await readSession(p, sessionId);
   if (!session || session.piecesReadySentAt) return;
   const { docs } = await p.find({
@@ -287,7 +287,7 @@ async function deliverTo(payload: Payload, key: TemplateKey, to: string, vars: V
  * (`reminderSentAt`, `followupSentAt`), so a second run the same day sends nothing.
  */
 export async function runDailyMail(now: Date = new Date(), payload?: Payload): Promise<{ reminders: number; followups: number }> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const t = now.getTime();
   const reminders = await mailDue(p, "class-reminder", await dueRegistrations(p, "startsAt", "reminderSentAt", new Date(t + 2 * DAY), new Date(t + 3 * DAY)), "reminderSentAt", now);
   const followups = await mailDue(p, "next-course", await dueRegistrations(p, "endsAt", "followupSentAt", new Date(t - 2 * DAY), new Date(t - DAY)), "followupSentAt", now);

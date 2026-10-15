@@ -8,16 +8,11 @@
 import type { Payload } from "payload";
 import type { Order, Plan, Product, Studio } from "../../payload-types";
 import { addressParts } from "../cms/address";
+import { getCMS } from "../cms/payload";
+import { relId } from "../cms/relations";
 import { CHECKOUT_TTL_MS, PAYMENT_UNAVAILABLE, gateway } from "./gateway";
 import { ratesFor } from "./tax";
 import type { CheckoutInput } from "./types";
-
-async function cms(): Promise<Payload> {
-  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("../../payload.config")]);
-  return getPayload({ config });
-}
-
-export const relId = (v: number | { id: number } | null | undefined): number | undefined => (typeof v === "object" && v ? v.id : v ?? undefined);
 
 /**
  * The two-letter province of a studio: from the last address line
@@ -34,7 +29,7 @@ export async function createCheckoutForOrder(order: Order, origin: string, paylo
   const gw = gateway();
   if (!gw) throw new Error(PAYMENT_UNAVAILABLE);
   if (order.status !== "pending") throw new Error(`Order ${order.number || order.id} is ${order.status}, not pending`);
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
 
   const studioId = relId(order.pickupStudio);
   const studio = studioId

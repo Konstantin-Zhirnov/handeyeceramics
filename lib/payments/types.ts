@@ -17,6 +17,13 @@ export type PricedLine = CartLineInput & {
   error?: string;
 };
 
+/**
+ * What a Stripe Product stands for: a class date, a product or a membership
+ * plan of the CMS. The gateway finds the Product by `cms_kind` / `cms_id`
+ * metadata; `path` and `group` are written as metadata too, for the Dashboard.
+ */
+export type ProductRef = { kind: "session" | "product" | "plan"; id: number; name: string; path?: string; group?: string };
+
 export type CheckoutInput = {
   orderId: number;
   orderNumber: string;
@@ -26,7 +33,7 @@ export type CheckoutInput = {
   expiresAt: Date;
   lines: {
     name: string;
-    productRef: { kind: "session" | "product"; id: number; name: string; path?: string };
+    productRef: ProductRef;
     unitAmount: number;
     quantity: number;
     taxLines: TaxLine[];
@@ -42,7 +49,8 @@ export interface PaymentGateway {
   retrieveSession(id: string): Promise<GatewaySession | null>;
   constructEvent(rawBody: string, signature: string): GatewayEvent; // throws on a bad signature
   ensureTaxRate(line: TaxLine): Promise<string>; // id of a Stripe tax_rate
-  ensureProduct(ref: { kind: "session" | "product"; id: number; name: string; path?: string }): Promise<string>;
+  findProduct(ref: ProductRef): Promise<string | undefined>; // id of the Product that stands for `ref`, when the account has one
+  ensureProduct(ref: ProductRef): Promise<string>; // the same id, created when missing
 }
 
 export type GatewaySession = {

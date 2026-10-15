@@ -12,16 +12,12 @@
 import type { Payload } from "payload";
 import type { Order, Subscription } from "../../payload-types";
 import { confirmSeats, releaseHolds } from "../booking/holds";
+import { getCMS } from "../cms/payload";
+import { relId } from "../cms/relations";
 import { sendOrderConfirmation } from "../mail";
-import { relId } from "./checkout";
 import { gateway } from "./gateway";
 import { trackPurchase } from "./track";
 import type { GatewayEvent, GatewaySession } from "./types";
-
-async function cms(): Promise<Payload> {
-  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("../../payload.config")]);
-  return getPayload({ config });
-}
 
 // ---- The order as the lock: compare-and-set in the database ----------------
 
@@ -160,7 +156,7 @@ async function payOrder(p: Payload, order: Order, session: GatewaySession): Prom
  * session → null.
  */
 export async function finalizeOrder(stripeSessionId: string, payload?: Payload): Promise<Order | null> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const found = await orderBy(p, "stripeSessionId", stripeSessionId);
   if (!found) return null;
   if (found.status === "finalizing") return settled(p, found.id);
@@ -277,10 +273,25 @@ async function refund(p: Payload, obj: Record<string, unknown>): Promise<void> {
   }
 }
 
+/**
+ * The events the webhook route handles — the cases of `handleWebhookEvent`
+ * below. `npm run stripe:setup` subscribes the Stripe endpoint to exactly
+ * these; `stripe listen --events` takes the same list.
+ */
+export const WEBHOOK_EVENTS = [
+  "checkout.session.completed",
+  "checkout.session.expired",
+  "charge.refunded",
+  "customer.subscription.created",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+  "invoice.payment_failed",
+] as const;
+
 /** Applies one verified event from the gateway; `{handled: false}` for a type the site does not listen to. */
 export async function handleWebhookEvent(event: GatewayEvent, payload?: Payload): Promise<{ handled: boolean }> {
   if (handled.has(event.id)) return { handled: true };
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const obj = event.data.object || {};
   switch (event.type) {
     case "checkout.session.completed": {

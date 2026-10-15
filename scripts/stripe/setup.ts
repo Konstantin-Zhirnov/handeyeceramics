@@ -5,22 +5,23 @@
  * same command runs on the client's account after the move (R14).
  *
  *   --webhook <url>       create the webhook endpoint for <url> with the site's events
- *                         (an existing endpoint for the url is reused; its secret is
- *                         never shown again by Stripe)
+ *                         (an existing endpoint for the url is reused and brought up
+ *                         to date; its secret is never shown again by Stripe)
  *   --secret-file <path>  write the new endpoint's signing secret (whsec_…) into <path>
+ *                         — outside the working copy, or into a file git ignores
  *   --write-env           put it as STRIPE_WEBHOOK_SECRET into .env.development.local
  *   --dry-run             report what would change; nothing is created or written
  *
  * The secret itself is never printed: only its first characters, plus where it went.
- * The database is the one of DATABASE_URI (.env = staging; pass DATABASE_URI in the
- * process environment for the local SQLite file).
+ * The environment is the one `next dev` sees: .env, then .env.development.local over
+ * it (the npm script passes both), and the process environment over both — so the
+ * key and DATABASE_URI are the local ones unless given on the command line.
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import Stripe from "stripe";
-import { getPayload } from "payload";
-import config from "../../payload.config";
-import { ensureWebhookEndpoint, subscriptionPlans, syncPlan, type SyncResult } from "./plans";
+import { getCMS } from "../../lib/cms/payload";
 import { formatPrice } from "../../lib/cms/text";
+import { endpointMessage, ensureWebhookEndpoint, secretFileAllowed, setupFor, subscriptionPlans, syncPlan, type SyncResult } from "./plans";
 
 type Args = { webhook?: string; dryRun: boolean; secretFile?: string; writeEnv: boolean };
 
@@ -37,7 +38,15 @@ function parseArgs(argv: string[]): Args {
     else throw new Error(`Unknown argument: ${a}`);
   }
   if (args.webhook && !/^https?:\/\//.test(args.webhook)) throw new Error("--webhook needs a full URL, e.g. https://example.com/stripe/webhook");
+  if (args.secretFile && !secretFileAllowed(args.secretFile, process.cwd(), gitIgnores)) {
+    throw new Error(`--secret-file ${args.secretFile} is inside the working copy and git does not ignore it; choose a path outside the repository or one in .gitignore`);
+  }
   return args;
+}
+
+/** Whether git ignores the path (exit 0 of `git check-ignore`); a path git does not know, or no git at all, counts as not ignored. */
+function gitIgnores(absolute: string): boolean {
+  return spawnSync("git", ["check-ignore", "-q", "--", absolute], { cwd: process.cwd(), stdio: "ignore" }).status === 0;
 }
 
 const ENV_FILE = ".env.development.local";
@@ -77,15 +86,15 @@ async function main() {
   const mode = key.startsWith("sk_test_") || key.startsWith("rk_test_") ? "test" : "live";
   console.log(`stripe:setup — Stripe account in ${mode} mode${args.dryRun ? " (dry run)" : ""}`);
 
-  const client = new Stripe(key);
-  const payload = await getPayload({ config });
+  const setup = setupFor(key);
+  const payload = await getCMS();
 
   const all = await payload.find({ collection: "plans", limit: 500, sort: "order", depth: 0 });
   const plans = subscriptionPlans(all.docs);
   const rows: SyncResult[] = [];
   let written = 0;
   for (const plan of plans) {
-    const row = await syncPlan(client, plan, { dryRun: args.dryRun });
+    const row = await syncPlan(setup, plan, { dryRun: args.dryRun });
     rows.push(row);
     if (!args.dryRun && plan.stripePriceId !== row.priceId) {
       await payload.update({ collection: "plans", id: plan.id, data: { stripePriceId: row.priceId }, depth: 0 });
@@ -96,10 +105,8 @@ async function main() {
   console.log(`${rows.length} subscription plans of ${all.docs.length}; stripePriceId written for ${written}${args.dryRun ? " (dry run: none written)" : ""}`);
 
   if (args.webhook) {
-    const ep = await ensureWebhookEndpoint(client, args.webhook, { dryRun: args.dryRun });
-    if (ep.created && args.dryRun) console.log(`webhook: would create an endpoint for ${ep.url}`);
-    else if (ep.created) console.log(`webhook: created endpoint ${ep.id} for ${ep.url}`);
-    else console.log(`webhook: endpoint ${ep.id} for ${ep.url} already exists${ep.eventsUpdated ? "; missing events added" : ""} — Stripe shows its secret only once; roll it in the Dashboard if it was lost`);
+    const ep = await ensureWebhookEndpoint(setup.client, args.webhook, { dryRun: args.dryRun });
+    console.log(endpointMessage(ep, args.dryRun));
     if (ep.secret) {
       console.log(`webhook: signing secret ${mask(ep.secret)} — set it as STRIPE_WEBHOOK_SECRET where the site runs (Vercel env, .env.development.local)`);
       if (args.secretFile) {

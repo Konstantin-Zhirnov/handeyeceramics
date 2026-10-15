@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
+import { MAX_QUANTITY } from "@/lib/cart/pricing";
 import { formatPrice } from "@/lib/cms/text";
 import { CART_PATH } from "./CartLink";
 import { useCart } from "./CartProvider";
@@ -104,7 +105,7 @@ export function AddToCart({ productId, price, options, sessions }: Props) {
           <span data-quantity className="min-w-[2ch] text-center text-lg font-semibold text-ink" aria-live="polite">
             {quantity}
           </span>
-          <button type="button" aria-label="More" onClick={() => setQuantity((q) => Math.min(20, q + 1))} disabled={quantity >= 20} className={stepper}>
+          <button type="button" aria-label="More" onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))} disabled={quantity >= MAX_QUANTITY} className={stepper}>
             +
           </button>
         </div>

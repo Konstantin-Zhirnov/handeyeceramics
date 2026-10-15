@@ -7,6 +7,8 @@
  * British Columbia. A label the parser cannot read gives no dates.
  */
 
+import { offsetMinutes } from "../../lib/time";
+
 export type ParsedLabel = {
   startsAt?: Date;
   endsAt?: Date;
@@ -27,9 +29,6 @@ const WEEKDAY_PREFIX: Record<string, Weekday> = {
   sun: "sunday",
 };
 const MONTH_PREFIX = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-
-/** The studios' time zone; the labels are their wall clock. */
-export const STUDIO_TIME_ZONE = "America/Vancouver";
 
 const WEEKDAY_RE = /\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b\.?/i;
 /** "Nov 5", "Oct13", "July 8", "Sept 24" — a month name followed by a day. */
@@ -63,21 +62,11 @@ function timeOf(label: string): { text: string; start: Clock; end: Clock } | und
   return undefined;
 }
 
-/** The offset of the studios' time zone at an instant, in minutes east of UTC. */
-function offsetAt(instant: number): number {
-  const part = new Intl.DateTimeFormat("en-US", { timeZone: STUDIO_TIME_ZONE, timeZoneName: "longOffset" })
-    .formatToParts(new Date(instant))
-    .find((p) => p.type === "timeZoneName")?.value; // "GMT-07:00"
-  const m = /GMT([+-])(\d{2}):(\d{2})/.exec(part || "");
-  if (!m) return 0;
-  return (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3]));
-}
-
 /** A wall-clock moment in the studios' time zone, as an instant. */
 export function studioTime(year: number, month: number, day: number, c: Clock): Date {
   const wall = Date.UTC(year, month, day, c.hour, c.minute);
-  let instant = wall - offsetAt(wall) * 60_000;
-  instant = wall - offsetAt(instant) * 60_000; // settle across a daylight-saving change
+  let instant = wall - offsetMinutes(new Date(wall)) * 60_000;
+  instant = wall - offsetMinutes(new Date(instant)) * 60_000; // settle across a daylight-saving change
   return new Date(instant);
 }
 

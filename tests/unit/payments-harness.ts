@@ -9,6 +9,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Payload } from "payload";
+import { getCMS } from "../../lib/cms/resolve";
 
 export type TempCMS = { payload: Payload; stop: () => Promise<void> };
 
@@ -26,8 +27,7 @@ export async function tempCMS(): Promise<TempCMS> {
     SITE_ENV: "",
     NODE_ENV: "test",
   });
-  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("../../payload.config")]);
-  const payload = await getPayload({ config });
+  const payload = await getCMS();
   return {
     payload,
     stop: async () => {

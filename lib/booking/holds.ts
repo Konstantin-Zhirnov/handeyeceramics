@@ -9,15 +9,12 @@
  */
 import type { Payload, PayloadRequest } from "payload";
 import type { Order, Session } from "../../payload-types";
+import { getCMS } from "../cms/payload";
+import { relId } from "../cms/relations";
 import { availability } from "./availability";
 
 export type HoldItem = { sessionId: number; qty: number };
 export type HoldResult = { ok: true } | { ok: false; short: { sessionId: number; left: number }[] };
-
-async function cms(): Promise<Payload> {
-  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("../../payload.config")]);
-  return getPayload({ config });
-}
 
 /** One promise chain: the next critical section starts when the previous one has finished, whatever its outcome. */
 let queue: Promise<unknown> = Promise.resolve();
@@ -65,7 +62,7 @@ function merged(items: HoldItem[]): HoldItem[] {
 
 /** Holds the seats for `ttlMs` under `ref` (the pending order's id), or holds nothing and says which dates are short. */
 export async function holdSeats(items: HoldItem[], ref: string, ttlMs: number, payload?: Payload, now = new Date()): Promise<HoldResult> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const wanted = merged(items).filter((i) => i.qty > 0);
   if (!wanted.length) return { ok: true };
   return serialized(async () => {
@@ -102,11 +99,9 @@ export async function holdSeats(items: HoldItem[], ref: string, ttlMs: number, p
 
 /** Removes every hold of an order: it expired, it was paid (the seats are registrations now) or it was abandoned. */
 export async function releaseHolds(ref: string, payload?: Payload): Promise<void> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   await p.delete({ collection: "holds", where: { ref: { equals: ref } }, depth: 0, overrideAccess: true });
 }
-
-const relId = (v: number | { id: number } | null | undefined): number | undefined => (typeof v === "object" && v ? v.id : v ?? undefined);
 
 /**
  * Registrations for the seats of a paid order — one per seat, named after the
@@ -114,7 +109,7 @@ const relId = (v: number | { id: number } | null | undefined): number | undefine
  * registrations the order already has, so a second call writes nothing.
  */
 export async function confirmSeats(orderId: number, payload?: Payload): Promise<void> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   await serialized(async () => {
     const order = (await p.findByID({ collection: "orders", id: orderId, depth: 0, overrideAccess: true })) as Order;
     const lines = (order.lines || []).filter((l) => l.kind === "session" && relId(l.session));

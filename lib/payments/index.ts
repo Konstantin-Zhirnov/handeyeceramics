@@ -5,9 +5,9 @@
  */
 export { CHECKOUT_TTL_MS, PAYMENT_UNAVAILABLE, gateway, stripeDashboardUrl } from "./gateway";
 export { createCheckoutForOrder, createSubscriptionCheckout, studioProvince } from "./checkout";
-export { finalizeOrder, handleWebhookEvent } from "./orders";
+export { WEBHOOK_EVENTS, finalizeOrder, handleWebhookEvent } from "./orders";
 export { fakeGateway, type FakeCompletion, type FakeGateway } from "./fake";
-export { stripeGateway, type StripeClient } from "./stripe";
+export { CURRENCY, stripeGateway, type StripeClient } from "./stripe";
 export { ratesFor } from "./tax";
 export { trackPurchase } from "./track";
 export type * from "./types";

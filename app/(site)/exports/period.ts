@@ -1,24 +1,15 @@
 /**
  * The period of an export: `from` and `to` are calendar days (YYYY-MM-DD) in
  * the studios' time zone, both inclusive. The instant a local day starts is
- * found through Intl, so daylight-saving changes need no table.
+ * found through the zone's offset (lib/time), so daylight-saving changes need
+ * no table.
  */
+import { STUDIO_TIME_ZONE, offsetMinutes } from "@/lib/time";
 
-/** Where the studios keep their clocks; the class dates of the seed use the same zone. */
-export const STUDIO_TIME_ZONE = "America/Vancouver";
+/** Re-exported for the export routes, which take the zone from here. */
+export { STUDIO_TIME_ZONE };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-/** The UTC offset of a zone at an instant, in minutes (Vancouver in summer: -420). */
-function offsetMinutes(at: Date, timeZone: string): number {
-  const part = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" })
-    .formatToParts(at)
-    .find((p) => p.type === "timeZoneName")?.value;
-  const m = part?.match(/GMT([+-])(\d{2}):?(\d{2})?/);
-  if (!m) return 0;
-  const sign = m[1] === "-" ? -1 : 1;
-  return sign * (Number(m[2]) * 60 + Number(m[3] || 0));
-}
 
 /** The instant a calendar day starts in the zone; undefined when the text is not a real date. */
 export function startOfDay(day: string, timeZone: string): Date | undefined {

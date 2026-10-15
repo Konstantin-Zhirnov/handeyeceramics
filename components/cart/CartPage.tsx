@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ValidatedCart } from "@/lib/cart/validate";
 import { formatPrice } from "@/lib/cms/text";
-import type { CartPricedLine } from "@/lib/cart/pricing";
+import { type CartPricedLine, MAX_QUANTITY } from "@/lib/cart/pricing";
 import type { CartLineInput } from "@/lib/payments/types";
 import { useSiteData } from "@/components/site/SiteData";
 import { type CartLine, useCart } from "./CartProvider";
@@ -239,7 +239,7 @@ function CartRow({ line, priced, onQuantity, onRemove }: { line: CartLine; price
         <span data-line-quantity className="min-w-[2ch] text-center font-semibold text-ink">
           {line.quantity}
         </span>
-        <button type="button" aria-label={`More: ${name}`} onClick={() => onQuantity(Math.min(20, line.quantity + 1))} disabled={line.quantity >= 20} className={stepper}>
+        <button type="button" aria-label={`More: ${name}`} onClick={() => onQuantity(Math.min(MAX_QUANTITY, line.quantity + 1))} disabled={line.quantity >= MAX_QUANTITY} className={stepper}>
           +
         </button>
         <span data-line-total className="min-w-[6ch] text-right font-semibold text-ink">

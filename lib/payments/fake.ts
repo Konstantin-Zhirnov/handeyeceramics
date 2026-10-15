@@ -95,6 +95,10 @@ const gateway: FakeGateway = {
     return `txr_fake_${line.code}_${line.province}_${line.percentage}`;
   },
 
+  async findProduct(ref) {
+    return `prod_fake_${ref.kind}_${ref.id}`;
+  },
+
   async ensureProduct(ref) {
     return `prod_fake_${ref.kind}_${ref.id}`;
   },

@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { ClearCart } from "@/components/cart/ClearCart";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
 import { addressParts } from "@/lib/cms/address";
+import { relId } from "@/lib/cms/relations";
 import { getCMS } from "@/lib/cms/resolve";
 import { SITE_SUFFIX, formatPrice } from "@/lib/cms/text";
 import { finalizeOrder, gateway } from "@/lib/payments";
-import { relId } from "@/lib/payments/checkout";
 import type { Order, Studio } from "@/payload-types";
 
 /**

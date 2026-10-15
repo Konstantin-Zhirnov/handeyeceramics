@@ -9,20 +9,13 @@
  */
 import type { Payload, PayloadRequest } from "payload";
 import type { Session } from "../../payload-types";
+import { getCMS } from "../cms/payload";
+import { relId } from "../cms/relations";
 
 export type Availability = { seats: number; sold: number; held: number; left: number };
 
 /** The students who hold a seat: a paid one, or one the editor added by hand. A refunded student holds none. */
 export const SEATED_STATUSES = ["confirmed", "imported"] as const;
-
-/** The CMS, when the caller has none at hand: loaded lazily so that the collections may import this module. */
-async function cms(): Promise<Payload> {
-  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("../../payload.config")]);
-  return getPayload({ config });
-}
-
-const relId = (v: number | { id: number } | null | undefined): number | undefined =>
-  typeof v === "object" && v ? v.id : (v ?? undefined);
 
 /**
  * The seats of every date in the set, by id. `req` — a request carrying a
@@ -37,7 +30,7 @@ export async function availabilityOf(
 ): Promise<Map<number, Availability>> {
   const out = new Map<number, Availability>();
   if (!sessions.length) return out;
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const ids = sessions.map((s) => s.id);
   const common = { limit: 0, pagination: false, depth: 0, overrideAccess: true, req: req as PayloadRequest | undefined } as const;
   const [registrations, holds] = await Promise.all([
@@ -80,7 +73,7 @@ export async function availability(
   now = new Date(),
   req?: Partial<PayloadRequest>,
 ): Promise<Availability> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   // The sessions collection counts its own `sold` / `left` on read: the flag stops it here, so the read does not recurse.
   const session = (await p.findByID({
     collection: "sessions",

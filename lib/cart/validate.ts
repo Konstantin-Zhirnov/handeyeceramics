@@ -8,6 +8,8 @@
 import type { Payload } from "payload";
 import type { Product, Session, Studio } from "../../payload-types";
 import { isSellable } from "../booking/availability";
+import { getCMS } from "../cms/payload";
+import { relId } from "../cms/relations";
 import { studioProvince } from "../payments/checkout";
 import type { CartLineInput } from "../payments/types";
 import { type CartLineSeen, type CartPricedLine, type CatalogItem, cents, priceLine, totals } from "./pricing";
@@ -27,11 +29,6 @@ export type ValidatedCart = {
 
 /** The most lines a cart may carry. */
 const MAX_LINES = 50;
-
-async function cms(): Promise<Payload> {
-  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("../../payload.config")]);
-  return getPayload({ config });
-}
 
 /** A line as it came from the client, or null when it is not a cart line at all. */
 export function parseLine(input: unknown): CartLineSeen | null {
@@ -85,7 +82,7 @@ export async function scheduledProducts(p: Payload, ids: number[]): Promise<Set<
     select: { product: true },
     context: { skipAvailability: true },
   });
-  return new Set((res.docs as Session[]).map((s) => (typeof s.product === "object" ? s.product.id : s.product)));
+  return new Set((res.docs as Session[]).map((s) => relId(s.product)!));
 }
 
 /** Class dates the visitor may see, by id; the price is the date's own, else its product's. */
@@ -104,7 +101,7 @@ async function sessions(p: Payload, ids: number[], now: Date): Promise<Map<numbe
       unitAmount: cents(price),
       taxGroup: "service",
       optionTitles: [],
-      studio: typeof d.studio === "object" ? d.studio.id : d.studio,
+      studio: relId(d.studio),
       left: d.left ?? 0,
       sellable: isSellable(d, now),
     });
@@ -138,7 +135,7 @@ export async function validateCart(
   payload?: Payload,
   now = new Date(),
 ): Promise<ValidatedCart> {
-  const p = payload || (await cms());
+  const p = payload || (await getCMS());
   const errors: string[] = [];
   const parsed = input.slice(0, MAX_LINES).map(parseLine);
   if (input.length > MAX_LINES) errors.push(`A cart holds at most ${MAX_LINES} lines`);

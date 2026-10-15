@@ -1,12 +1,13 @@
 import "server-only";
 import { cache } from "react";
-import { getPayload, type Payload } from "payload";
-import config from "@payload-config";
+import type { Payload } from "payload";
 import { normalizePath } from "@/collections/fields/path";
+import { getCMS } from "@/lib/cms/payload";
 import { withoutLoops } from "@/lib/redirect-loops";
 import type { Page, Product, Redirect, Studio } from "@/payload-types";
 
-export const getCMS = cache((): Promise<Payload> => getPayload({ config }));
+/** The Payload instance — the one loader of lib/cms/payload, for the page code. */
+export { getCMS };
 
 /** Pages with this path are the plans page (story 13a). */
 export const PLANS_PATH = "/pricing-plans/plans-pricing";

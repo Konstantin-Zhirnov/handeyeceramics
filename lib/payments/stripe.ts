@@ -11,7 +11,7 @@ import type { CheckoutInput, GatewayEvent, GatewaySession, PaymentGateway, Subsc
 /** What the gateway uses of the SDK; a test hands in a stand-in with these members. */
 export type StripeClient = Pick<Stripe, "checkout" | "taxRates" | "products" | "webhooks">;
 
-const CURRENCY = "cad";
+export const CURRENCY = "cad";
 const ATTENDEE_FIELD = { key: "attendee", label: { type: "custom" as const, custom: "Who is attending" }, type: "text" as const, optional: true };
 
 const urls = (origin: string) => ({
@@ -83,7 +83,7 @@ export function stripeGateway(secretKey: string, client: StripeClient = new Stri
       return id;
     },
 
-    async ensureProduct(ref): Promise<string> {
+    async findProduct(ref): Promise<string | undefined> {
       const key = `${ref.kind}:${ref.id}`;
       const cached = products.get(key);
       if (cached) return cached;
@@ -91,10 +91,19 @@ export function stripeGateway(secretKey: string, client: StripeClient = new Stri
         query: `active:'true' AND metadata['cms_kind']:'${ref.kind}' AND metadata['cms_id']:'${ref.id}'`,
         limit: 1,
       });
+      const id = found.data[0]?.id;
+      if (id) products.set(key, id);
+      return id;
+    },
+
+    async ensureProduct(ref): Promise<string> {
+      const found = await gateway.findProduct(ref);
+      if (found) return found;
       const metadata: Record<string, string> = { cms_kind: ref.kind, cms_id: String(ref.id) };
       if (ref.path) metadata.path = ref.path;
-      const id = found.data[0]?.id || (await client.products.create({ name: ref.name, metadata })).id;
-      products.set(key, id);
+      if (ref.group) metadata.group = ref.group;
+      const id = (await client.products.create({ name: ref.name, metadata })).id;
+      products.set(`${ref.kind}:${ref.id}`, id);
       return id;
     },
 
