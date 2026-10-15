@@ -164,7 +164,7 @@ grep "^## \[" wiki/log.md | tail -5
 | `npm run start` | прод-сервер на 3210; в `.env` нужны `NEXT_PUBLIC_SERVER_URL` и `PAYLOAD_SECRET` |
 | `npm run generate:types` | пересобрать `payload-types.ts` после правки коллекций и глобалов |
 | `npm run generate:importmap` | пересобрать `app/(payload)/admin/importMap.js` после правки конфига, плагинов или admin-компонентов (`components/admin/`) |
-| `npm run stripe:setup` | **запланировано (таск 07 этапа 3), пока нет в `package.json`:** в аккаунте Stripe по ключу из окружения создаёт продукты и месячные цены тарифов-абонементов и пишет их id в `plans.stripePriceId`; `-- --webhook <url>` заводит endpoint вебхука и печатает его signing secret |
+| `npm run stripe:setup` | в аккаунте Stripe по `STRIPE_SECRET_KEY` из окружения создаёт продукты и месячные цены тарифов-абонементов (`period` содержит «month», есть `price`) и пишет их id в `plans.stripePriceId`; идемпотентен (продукт — по `metadata.cms_kind=plan`/`cms_id`, цена — активная recurring cad/month той же суммы); `-- --webhook <url>` заводит endpoint вебхука с событиями сайта (существующий по тому же url переиспользует), секрет печатает только первыми символами — полный кладёт `--secret-file <path>` или `--write-env` (строка `STRIPE_WEBHOOK_SECRET` в `.env.development.local`); `--dry-run` — только отчёт. База — `DATABASE_URI` из `.env` (staging); локально — `DATABASE_URI=file:./handeye.db BLOB_READ_WRITE_TOKEN=` в окружении процесса. В PowerShell `--` берётся в кавычки: `npm run stripe:setup '--' --dry-run` |
 | `npm run howto` | 7 роликов-инструкций по админке в `handover/videos/` и `handover/README.md`; часть — `npm run howto -- --only 03,05` |
 | `node scripts/lighthouse.mjs http://localhost:3210 3` | Lighthouse (mobile, Performance), медиана прогонов; сервер — `npm run build` + `npm run start` на базе с картинками; цифры — `content/lighthouse.md` |
 | `python -m unittest discover -s scripts/crawl -p "test_*.py"` | тесты обходчика старого сайта |
@@ -282,6 +282,8 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 - `npm run lint` не работает: `next lint` в Next 16 нет, конфига ESLint в репозитории тоже.
 - `next dev` с другим `NEXT_DIST_DIR` переписывает `tsconfig.json` и `next-env.d.ts` — не коммитить эти правки (`npm run howto` возвращает файлы сам).
 - Лимит заявок (5 за 10 минут на отправителя) живёт в памяти процесса и обнуляется с рестартом сервера.
+- Push схемы на staging Postgres (`npm run stripe:setup`, `npm run seed` с `DATABASE_URI` из `.env`) запускать с `BLOB_READ_WRITE_TOKEN` из того же `.env`: с пустым токеном плагин Vercel Blob выключен, и Payload предлагает удалить колонку `media._objectkey` — на вопрос отвечать «нет». Production-переменные Vercel помечены sensitive, `vercel env pull` их не возвращает.
+- Stripe CLI 1.53 требует список событий: `stripe listen --events checkout.session.completed,checkout.session.expired,charge.refunded,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_failed --forward-to localhost:3210/stripe/webhook`; без `--events` выходит с ошибкой. Секрет печатает `--print-secret`.
 - `lib/site.ts` страницы не читают: правка там меняет сайт только после `npm run seed`.
 
 ### Переезд на Stripe клиента
@@ -289,7 +291,7 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 Сайт привязан к аккаунту Stripe только переменными окружения; в коде и в базе нет id объектов Stripe, кроме `plans.stripePriceId` (цены абонементов) и ссылок на уже созданные платежи в заказах. Порядок:
 
 1. Сменить три переменные — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET` (последний — свой, не из Stripe) — в `.env.development.local` и в проекте Vercel.
-2. Выполнить `npm run stripe:setup` (таск 07; `-- --webhook https://<домен>/stripe/webhook` заводит endpoint и даёт `STRIPE_WEBHOOK_SECRET`): продукты и месячные цены тарифов создаются в новом аккаунте, `plans.stripePriceId` перезаписываются. Продукты товаров и сессий и `tax_rates` создаются лениво при первой покупке по метаданным `cms_kind` / `cms_id` и `code` / `province`.
+2. Выполнить `npm run stripe:setup -- --webhook https://<домен>/stripe/webhook --secret-file <путь вне репозитория>`: продукты и месячные цены тарифов создаются в новом аккаунте, `plans.stripePriceId` перезаписываются, endpoint вебхука заводится, его signing secret попадает в файл — это и есть `STRIPE_WEBHOOK_SECRET` (Stripe показывает его один раз; потерян — перевыпустить в панели). Продукты товаров и сессий и `tax_rates` создаются лениво при первой покупке по метаданным `cms_kind` / `cms_id` и `code` / `province`.
 3. В Site settings вставить ссылку портала покупателя (`stripePortalUrl`) нового аккаунта; пустое поле — кнопки нет.
 4. Проверить: покупка тестовой картой, заказ `paid` в админке со ссылкой «Open in Stripe», событие в панели Stripe. Старые заказы остаются с id платежей прежнего аккаунта — их ссылки откроются только под старым ключом.
 

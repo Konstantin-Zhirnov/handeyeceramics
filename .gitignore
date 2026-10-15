@@ -31,3 +31,6 @@ out
 
 # One-off backups taken by scripts/dedupe-media.mts before writing to a database
 /backups/
+
+# Vercel CLI link (project and org ids): local, not for the public repo
+.vercel
