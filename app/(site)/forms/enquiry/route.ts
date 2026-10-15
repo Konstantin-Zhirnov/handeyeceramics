@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { normalizePath } from "@/collections/fields/path";
 import { answersOf, FORMS, isEnquiryType, validate } from "@/components/forms/definitions";
 import { getCMS } from "@/lib/cms/resolve";
+import { addressOf, rateLimiter, SENDER_LIMIT } from "@/lib/rate-limit";
 
 /**
  * Receives the enquiry forms — the only way an enquiry gets in: the collection
@@ -15,49 +16,8 @@ export const dynamic = "force-dynamic";
 /** The hidden field of the form; a person never fills it. */
 const TRAP = "company_url";
 
-/**
- * At most LIMIT saved enquiries per sender within WINDOW.
- *
- * The counts live in the memory of this server process only: every process (or
- * serverless instance) counts on its own and starts from zero when it restarts.
- * It is a simple brake on one sender, not protection against a distributed flood.
- */
-const LIMIT = 5;
-const WINDOW = 10 * 60_000;
-const recent = new Map<string, number[]>();
-
-/**
- * The client address as the hosting platform reports it — never the first
- * entries of `x-forwarded-for`, which the client writes itself. In order: the
- * platform's own header, `x-real-ip` set by the proxy, then the last hop of
- * `x-forwarded-for` (the one the nearest proxy appended). Undefined when there
- * is none, or when it is only this machine's own loopback address (no proxy in
- * front, as in local development, where the server fills in the socket address).
- */
-const LOOPBACK = /^(::1|(::ffff:)?127\.\d+\.\d+\.\d+|localhost)$/i;
-
-function addressOf(headers: Headers): string | undefined {
-  const last = (value: string | null) => value?.split(",").map((s) => s.trim()).filter(Boolean).at(-1);
-  const address =
-    (process.env.VERCEL ? last(headers.get("x-vercel-forwarded-for")) : undefined) ||
-    last(headers.get("x-real-ip")) ||
-    last(headers.get("x-forwarded-for"));
-  return address && !LOOPBACK.test(address) ? address : undefined;
-}
-
-/** Counts this enquiry against the sender; false when the sender is over the limit. */
-function allow(key: string, now = Date.now()) {
-  if (recent.size > 5000) {
-    for (const [k, times] of recent) if (times.every((t) => now - t >= WINDOW)) recent.delete(k);
-  }
-  const times = (recent.get(key) || []).filter((t) => now - t < WINDOW);
-  if (times.length >= LIMIT) {
-    recent.set(key, times);
-    return false;
-  }
-  recent.set(key, [...times, now]);
-  return true;
-}
+/** At most 5 saved enquiries per sender within 10 minutes (see lib/rate-limit). */
+const limiter = rateLimiter(SENDER_LIMIT);
 
 /** The page the form was sent from: a path of this site, normalised; anything else is dropped. */
 function pageOf(value: unknown): string | undefined {
@@ -107,7 +67,7 @@ export async function POST(request: Request) {
   // A request without an address is counted by its sender email instead, so
   // that visitors without one do not all land in the same bucket.
   const address = addressOf(request.headers);
-  if (!allow(address ? `address:${address}` : `email:${email.toLowerCase()}`)) {
+  if (!limiter.allow(address ? `address:${address}` : `email:${email.toLowerCase()}`)) {
     return fail(429, "You've sent several messages in a row. Please try again in a few minutes.");
   }
 

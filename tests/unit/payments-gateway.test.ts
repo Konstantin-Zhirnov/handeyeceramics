@@ -6,7 +6,7 @@
  * through a stand-in client; the dashboard links by key prefix.
  */
 import Stripe from "stripe";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CheckoutInput } from "../../lib/payments/types";
 
 const ORIGIN = "https://example.test";
@@ -65,6 +65,21 @@ describe("gateway()", () => {
   it("no key and no fake: null", async () => {
     const { gateway } = await import("../../lib/payments");
     expect(gateway()).toBeNull();
+  });
+  it("in production the fake gateway is refused: Stripe with a key, null without, and a warning either way", async () => {
+    process.env.SITE_ENV = "production";
+    process.env.PAYMENT_GATEWAY = "fake";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { gateway } = await import("../../lib/payments");
+    try {
+      expect(gateway()).toBeNull();
+      process.env.STRIPE_SECRET_KEY = "sk_test_whatever";
+      expect(gateway()?.name).toBe("stripe");
+      expect(warn).toHaveBeenCalled();
+      expect(String(warn.mock.calls[0][0])).toMatch(/PAYMENT_GATEWAY=fake/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

@@ -12,9 +12,17 @@ import type { PaymentGateway } from "./types";
 export const CHECKOUT_TTL_MS = 30 * 60 * 1000;
 
 let stripe: { key: string; gateway: PaymentGateway } | undefined;
+let warnedFake = false;
 
 export function gateway(): PaymentGateway | null {
-  if (process.env.PAYMENT_GATEWAY === "fake") return fakeGateway();
+  if (process.env.PAYMENT_GATEWAY === "fake") {
+    // The fake gateway takes money from nobody: a production site never pays through it, whatever the variable says.
+    if (process.env.SITE_ENV !== "production") return fakeGateway();
+    if (!warnedFake) {
+      warnedFake = true;
+      console.warn("PAYMENT_GATEWAY=fake is ignored in production: paying through Stripe when STRIPE_SECRET_KEY is set, otherwise online payment is off");
+    }
+  }
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
   if (stripe?.key !== key) stripe = { key, gateway: stripeGateway(key) };

@@ -5,7 +5,7 @@
  * expires, refunds and subscription events from the webhook, a repeated event
  * changing nothing. Runs on a throw-away SQLite database.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Order } from "../../payload-types";
 import { seedClassDate, tempCMS, type TempCMS } from "./payments-harness";
 
@@ -85,6 +85,54 @@ describe("finalizeOrder", () => {
     expect(regs.totalDocs).toBe(2);
     expect(regs.docs.map((r) => r.name)).toEqual(["Ada's friend", "Ada's friend"]);
     expect(await availability(sessionId, cms.payload)).toEqual({ seats: 5, sold: 2, held: 0, left: 3 });
+  }, 60_000);
+
+  it("two calls at once on a pending order: one payment, the students once", async () => {
+    const { createCheckoutForOrder, fakeGateway, finalizeOrder } = await import("../../lib/payments");
+    const { order } = await pendingOrder("-race");
+    const { id } = await createCheckoutForOrder(order, ORIGIN);
+    fakeGateway().complete(id, { name: "Ada", email: "ada@example.com" });
+
+    const [a, b] = await Promise.all([finalizeOrder(id), finalizeOrder(id)]);
+
+    expect(a?.status).toBe("paid");
+    expect(b?.status).toBe("paid");
+    expect(a?.paidAt).toBe(b?.paidAt);
+    const after = await read(order.id);
+    expect(after.events?.filter((e) => e.type === "paid")).toHaveLength(1);
+    const regs = await cms.payload.find({ collection: "registrations", where: { order: { equals: order.id } }, depth: 0, overrideAccess: true });
+    expect(regs.totalDocs).toBe(2);
+  }, 60_000);
+
+  it("a failure while the students are written leaves the order unpaid; the next call finishes it without doubling anyone", async () => {
+    const { createCheckoutForOrder, fakeGateway, finalizeOrder } = await import("../../lib/payments");
+    const { order } = await pendingOrder("-midway");
+    const { id } = await createCheckoutForOrder(order, ORIGIN);
+    fakeGateway().complete(id, { name: "Ada", email: "ada@example.com" });
+    const create = cms.payload.create.bind(cms.payload);
+    let registrations = 0;
+    // The second of the two registrations fails to write: the database went away for a moment.
+    cms.payload.create = (async (args: { collection: string }) => {
+      if (args.collection === "registrations" && ++registrations === 2) throw new Error("database went away");
+      return create(args as never);
+    }) as typeof cms.payload.create;
+    try {
+      await expect(finalizeOrder(id, cms.payload)).rejects.toThrow("database went away");
+    } finally {
+      cms.payload.create = create;
+    }
+    const broken = await read(order.id);
+    expect(broken.status).not.toBe("paid");
+    const regsBefore = await cms.payload.find({ collection: "registrations", where: { order: { equals: order.id } }, depth: 0, overrideAccess: true });
+    expect(regsBefore.totalDocs).toBe(1);
+
+    expect((await finalizeOrder(id, cms.payload))?.status).toBe("paid");
+
+    const after = await read(order.id);
+    expect(after.events?.filter((e) => e.type === "paid")).toHaveLength(1);
+    const regs = await cms.payload.find({ collection: "registrations", where: { order: { equals: order.id } }, depth: 0, overrideAccess: true });
+    expect(regs.totalDocs).toBe(2);
+    expect(regs.docs.map((r) => r.name)).toEqual(["Ada", "Ada"]);
   }, 60_000);
 
   it("an open, unpaid session leaves the order pending", async () => {
@@ -211,4 +259,27 @@ describe("handleWebhookEvent", () => {
     const { handleWebhookEvent } = await import("../../lib/payments");
     expect(await handleWebhookEvent({ id: "evt_other", type: "payment_method.attached", data: { object: {} } })).toEqual({ handled: false });
   });
+});
+
+// Last in the file: `vi.resetModules()` leaves fresh module instances behind for anything imported after it.
+describe("finalizeOrder from two module graphs (the success page and the webhook are compiled apart)", () => {
+  it("one payment, the students once, both callers see the paid order", async () => {
+    const page = await import("../../lib/payments");
+    const { order } = await pendingOrder("-two-graphs");
+    const { id } = await page.createCheckoutForOrder(order, ORIGIN, cms.payload);
+    page.fakeGateway().complete(id, { name: "Ada", email: "ada@example.com" });
+    vi.resetModules();
+    const webhook = await import("../../lib/payments");
+    expect(webhook.finalizeOrder).not.toBe(page.finalizeOrder);
+
+    const [a, b] = await Promise.all([page.finalizeOrder(id, cms.payload), webhook.finalizeOrder(id, cms.payload)]);
+
+    expect(a?.status).toBe("paid");
+    expect(b?.status).toBe("paid");
+    expect(a?.paidAt).toBe(b?.paidAt);
+    const after = await read(order.id);
+    expect(after.events?.filter((e) => e.type === "paid")).toHaveLength(1);
+    const regs = await cms.payload.find({ collection: "registrations", where: { order: { equals: order.id } }, depth: 0, overrideAccess: true });
+    expect(regs.totalDocs).toBe(2);
+  }, 60_000);
 });

@@ -7,6 +7,7 @@
  */
 import type { Payload } from "payload";
 import type { Order, Plan, Product, Studio } from "../../payload-types";
+import { addressParts } from "../cms/address";
 import { CHECKOUT_TTL_MS, PAYMENT_UNAVAILABLE, gateway } from "./gateway";
 import { ratesFor } from "./tax";
 import type { CheckoutInput } from "./types";
@@ -20,17 +21,12 @@ export const relId = (v: number | { id: number } | null | undefined): number | u
 
 /**
  * The two-letter province of a studio: from the last address line
- * ("Vancouver, BC V6A 2Z9" — the shape `addressParts` of lib/cms/site reads,
- * parsed here again because that module is server-only and this one also runs
- * in plain Node), else from its region text ("Vancouver, BC").
+ * ("Vancouver, BC V6A 2Z9", read by `addressParts`), else from its region text
+ * ("Vancouver, BC").
  */
 export function studioProvince(studio: Pick<Studio, "address" | "region"> | null | undefined): string {
   if (!studio) return "";
-  const lines = (studio.address || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const last = lines.length > 1 ? lines[lines.length - 1] : "";
-  const fromAddress = last.match(/^.+?,\s*([A-Z]{2})(?:\s+\S.*)?$/)?.[1];
-  if (fromAddress) return fromAddress;
-  return studio.region?.trim().match(/\b([A-Z]{2})$/)?.[1] || "";
+  return addressParts(studio.address).regionCode || studio.region?.trim().match(/\b([A-Z]{2})$/)?.[1] || "";
 }
 
 /** A Checkout session for the order: the buyer is sent to its URL; the order remembers the session. */

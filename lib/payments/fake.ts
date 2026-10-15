@@ -21,7 +21,12 @@ export type FakeGateway = PaymentGateway & {
   reset(): void;
 };
 
-const sessions = new Map<string, GatewaySession>();
+// On the process object, not in this module: Next compiles pages (the React
+// server layer) and route handlers into separate module graphs, each with its
+// own copy of this module, and the success page must find the session the
+// checkout route created.
+const registry = globalThis as typeof globalThis & { __handeyeFakeSessions?: Map<string, GatewaySession> };
+const sessions = (registry.__handeyeFakeSessions ??= new Map<string, GatewaySession>());
 const randomId = (prefix: string) => `${prefix}_${randomBytes(12).toString("hex")}`;
 
 function must(id: string): GatewaySession {

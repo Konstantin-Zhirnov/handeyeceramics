@@ -1,10 +1,13 @@
 /**
  * Finishing an order and the webhook events. `finalizeOrder` is called by the
- * success page and by the webhook alike and turns a pending order into a paid
- * one exactly once: a lock per order in this process, and the status checked
- * again under it. The webhook handler remembers the ids of the events it has
- * handled and checks the state before every write, so a repeated event
- * changes nothing.
+ * success page and by the webhook alike — in Next those are separate module
+ * graphs, on Vercel separate processes — so nothing in this module's memory
+ * can order them. The order itself is the lock: one conditional UPDATE in the
+ * database moves it `pending → finalizing`, and only the caller whose UPDATE
+ * changed a row goes on; the other waits for the status to settle. A refund is
+ * applied the same way, by growing `refundedAmount` conditionally. The webhook
+ * handler also remembers the ids of the events it has handled, so a repeated
+ * event changes nothing.
  */
 import type { Payload } from "payload";
 import type { Order, Subscription } from "../../payload-types";
@@ -20,16 +23,61 @@ async function cms(): Promise<Payload> {
   return getPayload({ config });
 }
 
-// ---- A lock per key: the success page and the webhook may finish the same order at the same moment ----
-const locks = new Map<string, Promise<unknown>>();
-function withLock<T>(key: string, work: () => Promise<T>): Promise<T> {
-  const previous = locks.get(key) || Promise.resolve();
-  const run = previous.then(work, work);
-  const settled = run.catch(() => undefined).then(() => {
-    if (locks.get(key) === settled) locks.delete(key);
-  });
-  locks.set(key, settled);
-  return run;
+// ---- The order as the lock: compare-and-set in the database ----------------
+
+type Db = Payload["db"] & { tableNameMap?: Map<string, string>; execute?: (args: { drizzle: unknown; raw: string }) => unknown };
+
+/** Runs one statement and tells how many rows it changed (Postgres `rowCount`, SQLite `rowsAffected`). */
+async function affected(p: Payload, raw: string): Promise<number> {
+  const db = p.db as Db;
+  if (!db.execute) throw new Error("the database adapter cannot run a statement");
+  // The adapter's execute() is a plain function: it runs on the drizzle instance it is handed.
+  const result = (await db.execute({ drizzle: db.drizzle, raw })) as { rowCount?: number | null; rowsAffected?: number } | undefined;
+  return result?.rowCount ?? result?.rowsAffected ?? 0;
+}
+const table = (p: Payload, slug: string) => `"${(p.db as Db).tableNameMap?.get(slug) || slug}"`;
+const literal = (v: string) => `'${v.replace(/'/g, "''")}'`;
+
+/** A finalizing order older than this was left by a process that died: it may be claimed again. */
+const CLAIM_STALE_MS = 60_000;
+
+/** Takes the order for finishing — `pending → finalizing` by one conditional UPDATE; true for the one caller that won. */
+async function claim(p: Payload, orderId: number, at = new Date()): Promise<boolean> {
+  const stale = new Date(at.getTime() - CLAIM_STALE_MS).toISOString();
+  const changed = await affected(
+    p,
+    `UPDATE ${table(p, "orders")} SET status = 'finalizing', updated_at = ${literal(at.toISOString())} ` +
+      `WHERE id = ${Math.trunc(orderId)} AND (status = 'pending' OR (status = 'finalizing' AND updated_at < ${literal(stale)}))`,
+  );
+  return changed === 1;
+}
+
+/** Gives a claimed order back (the work failed): `finalizing → pending`, so the next call tries again at once. */
+async function unclaim(p: Payload, orderId: number): Promise<void> {
+  await affected(p, `UPDATE ${table(p, "orders")} SET status = 'pending', updated_at = ${literal(now())} WHERE id = ${Math.trunc(orderId)} AND status = 'finalizing'`);
+}
+
+const fresh = async (p: Payload, id: number) => (await p.findByID({ collection: "orders", id, depth: 0, overrideAccess: true })) as Order;
+
+/** The order once whoever claimed it is done: polled for a few seconds, then returned as it is. */
+async function settled(p: Payload, id: number): Promise<Order> {
+  for (let i = 0; i < 20; i++) {
+    const order = await fresh(p, id);
+    if (order.status !== "finalizing") return order;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return fresh(p, id);
+}
+
+/** Claims the order and runs `work` on it; on a failure the claim is given back and the error goes on. Null when somebody else holds it. */
+async function claimed(p: Payload, id: number, work: (order: Order) => Promise<Order>): Promise<Order | null> {
+  if (!(await claim(p, id))) return null;
+  try {
+    return await work(await fresh(p, id));
+  } catch (err) {
+    await unclaim(p, id).catch((e) => p.logger.error({ err: e, msg: `order ${id} could not be given back` }));
+    throw err;
+  }
 }
 
 const now = () => new Date().toISOString();
@@ -46,7 +94,7 @@ const withEvent = (order: Order, type: string, note?: string) => [...(order.even
 
 /** The pending order expires: its seats go back on sale. */
 async function expireOrder(p: Payload, order: Order): Promise<Order> {
-  if (order.status !== "pending") return order;
+  if (order.status !== "pending" && order.status !== "finalizing") return order;
   const updated = (await p.update({
     collection: "orders",
     id: order.id,
@@ -58,13 +106,17 @@ async function expireOrder(p: Payload, order: Order): Promise<Order> {
   return updated;
 }
 
+/**
+ * The order is paid: first the buyer's details from Checkout, then the
+ * registrations (the holds become seats), and only then the status — so a
+ * failure in the middle leaves a pending order that the next call finishes,
+ * and `confirmSeats` writes only the registrations still missing.
+ */
 async function payOrder(p: Payload, order: Order, session: GatewaySession): Promise<Order> {
-  const updated = (await p.update({
+  const detailed = (await p.update({
     collection: "orders",
     id: order.id,
     data: {
-      status: "paid",
-      paidAt: now(),
       stripePaymentIntentId: session.paymentIntentId,
       stripeCustomerId: session.customerId,
       customer: {
@@ -73,12 +125,18 @@ async function payOrder(p: Payload, order: Order, session: GatewaySession): Prom
         phone: session.customer.phone ?? order.customer?.phone,
       },
       attendee: session.customFields.attendee?.trim() || order.attendee,
-      events: withEvent(order, "paid", session.paymentIntentId),
     },
     depth: 0,
     overrideAccess: true,
   })) as Order;
   await confirmSeats(order.id, p);
+  const updated = (await p.update({
+    collection: "orders",
+    id: order.id,
+    data: { status: "paid", paidAt: now(), events: withEvent(detailed, "paid", session.paymentIntentId) },
+    depth: 0,
+    overrideAccess: true,
+  })) as Order;
   for (const [name, after] of [
     ["sendOrderConfirmation", () => sendOrderConfirmation(order.id)],
     ["trackPurchase", () => trackPurchase(order.id)],
@@ -95,24 +153,26 @@ async function payOrder(p: Payload, order: Order, session: GatewaySession): Prom
 /**
  * Reads the Checkout session and brings the order in line with it: paid → the
  * order is paid, its seats registered, the confirmation sent; expired → the
- * order expired and its holds released; still open → nothing. An order that
- * is not pending any more is returned as it is; an unknown session → null.
+ * order expired and its holds released; still open → nothing. The success
+ * page and the webhook may ask at the same moment: the one that claims the
+ * order does the work, the other waits for it and returns the same order. An
+ * order that is not pending any more is returned as it is; an unknown
+ * session → null.
  */
 export async function finalizeOrder(stripeSessionId: string, payload?: Payload): Promise<Order | null> {
   const p = payload || (await cms());
   const found = await orderBy(p, "stripeSessionId", stripeSessionId);
   if (!found) return null;
-  return withLock(`order:${found.id}`, async () => {
-    const order = (await p.findByID({ collection: "orders", id: found.id, depth: 0, overrideAccess: true })) as Order;
-    if (order.status !== "pending") return order;
-    const gw = gateway();
-    if (!gw) return order;
-    const session = await gw.retrieveSession(stripeSessionId);
-    if (!session) return order;
-    if (session.paymentStatus === "paid" || session.paymentStatus === "no_payment_required") return payOrder(p, order, session);
-    if (session.status === "expired") return expireOrder(p, order);
-    return order;
-  });
+  if (found.status === "finalizing") return settled(p, found.id);
+  if (found.status !== "pending") return found;
+  const gw = gateway();
+  if (!gw) return found;
+  const session = await gw.retrieveSession(stripeSessionId);
+  if (!session) return found;
+  const paid = session.paymentStatus === "paid" || session.paymentStatus === "no_payment_required";
+  if (!paid && session.status !== "expired") return found;
+  const done = await claimed(p, found.id, (order) => (paid ? payOrder(p, order, session) : expireOrder(p, order)));
+  return done ?? settled(p, found.id);
 }
 
 // ---- Subscriptions -------------------------------------------------------------
@@ -181,34 +241,40 @@ function remember(id: string) {
 async function refund(p: Payload, obj: Record<string, unknown>): Promise<void> {
   const pi = idOf(obj.payment_intent);
   if (!pi) return;
-  const order = await orderBy(p, "stripePaymentIntentId", pi);
-  if (!order) {
+  const found = await orderBy(p, "stripePaymentIntentId", pi);
+  if (!found) {
     p.logger.warn({ msg: "charge.refunded for a payment the site does not know", paymentIntent: pi });
     return;
   }
-  await withLock(`order:${order.id}`, async () => {
-    const amount = num(obj.amount_refunded) ?? 0;
-    const charged = order.total ?? num(obj.amount) ?? 0;
-    const full = obj.refunded === true || (charged > 0 && amount >= charged);
-    const status: Order["status"] = full ? "refunded" : amount > 0 ? "partially_refunded" : order.status;
-    if (order.status === status && (order.refundedAmount ?? 0) === amount) return;
+  const amount = num(obj.amount_refunded) ?? 0;
+  const charged = found.total ?? num(obj.amount) ?? 0;
+  const full = obj.refunded === true || (charged > 0 && amount >= charged);
+  if (amount <= 0) return;
+  // The refunded amount only grows, in one conditional UPDATE: a repeated or an older event changes nothing.
+  const changed = await affected(
+    p,
+    `UPDATE ${table(p, "orders")} SET refunded_amount = ${Math.trunc(amount)}, updated_at = ${literal(now())} ` +
+      `WHERE id = ${found.id} AND status IN ('paid', 'partially_refunded') AND COALESCE(refunded_amount, 0) < ${Math.trunc(amount)}`,
+  );
+  if (changed !== 1) return;
+  const order = await fresh(p, found.id);
+  const status: Order["status"] = full ? "refunded" : "partially_refunded";
+  await p.update({
+    collection: "orders",
+    id: order.id,
+    data: { status, events: withEvent(order, status, `${amount} of ${charged}`) },
+    depth: 0,
+    overrideAccess: true,
+  });
+  if (full) {
     await p.update({
-      collection: "orders",
-      id: order.id,
-      data: { status, refundedAmount: amount, events: withEvent(order, status, `${amount} of ${charged}`) },
+      collection: "registrations",
+      where: { and: [{ order: { equals: order.id } }, { status: { equals: "confirmed" } }] },
+      data: { status: "refunded" },
       depth: 0,
       overrideAccess: true,
     });
-    if (full) {
-      await p.update({
-        collection: "registrations",
-        where: { and: [{ order: { equals: order.id } }, { status: { equals: "confirmed" } }] },
-        data: { status: "refunded" },
-        depth: 0,
-        overrideAccess: true,
-      });
-    }
-  });
+  }
 }
 
 /** Applies one verified event from the gateway; `{handled: false}` for a type the site does not listen to. */
@@ -239,7 +305,8 @@ export async function handleWebhookEvent(event: GatewayEvent, payload?: Payload)
     case "checkout.session.expired": {
       const id = str(obj.id);
       const order = id ? await orderBy(p, "stripeSessionId", id) : null;
-      if (order) await withLock(`order:${order.id}`, async () => expireOrder(p, (await p.findByID({ collection: "orders", id: order.id, depth: 0, overrideAccess: true })) as Order));
+      // Stripe says the session is over: the order is claimed and expired; a claim held elsewhere is left to finish on its own.
+      if (order?.status === "pending") await claimed(p, order.id, (o) => expireOrder(p, o));
       break;
     }
     case "charge.refunded":

@@ -10,7 +10,10 @@ import type {
   StudioCard,
   StudioView,
 } from "@/components/site/SiteData";
+import { addressParts } from "./address";
 import { mediaSrc } from "./media";
+
+export { addressParts };
 import { getCMS, resolvePath } from "./resolve";
 
 export const MEMBERSHIP_PATH = "/membership-rentals";
@@ -28,17 +31,6 @@ const photo = (m: unknown): Photo | null => {
 };
 
 /** The address field: street lines, then "City, BC V6A 2Z9". */
-export function addressParts(address: string | null | undefined) {
-  const lines = (address || "")
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const last = lines.length > 1 ? lines[lines.length - 1] : "";
-  const m = last.match(/^(.+?),\s*([A-Z]{2})(?:\s+(\S.*))?$/);
-  if (!m) return { street: lines.join(", "), locality: "", regionCode: "", postalCode: "" };
-  return { street: lines.slice(0, -1).join(", "), locality: m[1], regionCode: m[2], postalCode: m[3] || "" };
-}
-
 /** Published studios only: an unpublished studio is nowhere on the site. */
 const publishedStudios = cache(async (): Promise<Studio[]> => {
   const payload = await getCMS();

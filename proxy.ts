@@ -65,6 +65,8 @@ export async function proxy(request: NextRequest) {
       headers: { "content-type": page?.headers.get("content-type") || "text/plain; charset=utf-8" },
     });
   }
+  // A redirect rule moves a page, and a page is fetched: a POST (the checkout, the forms) goes to its route untouched.
+  if (request.method !== "GET" && request.method !== "HEAD") return NextResponse.next();
   const path = request.nextUrl.pathname.replace(/\/+$/, "") || "/";
   const to = (await rules()).get(path);
   if (!to || to === path) return NextResponse.next();

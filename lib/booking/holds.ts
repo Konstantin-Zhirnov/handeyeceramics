@@ -38,6 +38,25 @@ async function begin(payload: Payload): Promise<{ req?: PayloadRequest; commit: 
   };
 }
 
+/**
+ * On Postgres, locks the rows of the dates for the rest of the transaction
+ * (`SELECT … FOR UPDATE`): two server instances holding the same seat then
+ * count one after the other, not together. SQLite has no row locks — and no
+ * second instance: the mutex above is the guard there.
+ */
+async function lockSessions(payload: Payload, ids: number[], transactionID: string | number | undefined): Promise<void> {
+  const db = payload.db as Payload["db"] & {
+    name?: string;
+    sessions?: Record<string, { db: unknown }>;
+    tableNameMap?: Map<string, string>;
+    execute?: (args: { db?: unknown; drizzle?: unknown; raw?: string }) => Promise<unknown>;
+  };
+  if (db.name !== "postgres" || transactionID === undefined || !db.execute || !ids.length) return;
+  const table = db.tableNameMap?.get("sessions") || "sessions";
+  const list = ids.map((id) => Math.trunc(Number(id))).filter(Number.isFinite).join(", ");
+  await db.execute({ db: db.sessions?.[String(transactionID)]?.db, drizzle: db.drizzle, raw: `SELECT id FROM "${table}" WHERE id IN (${list}) FOR UPDATE` });
+}
+
 function merged(items: HoldItem[]): HoldItem[] {
   const byId = new Map<number, number>();
   for (const { sessionId, qty } of items) byId.set(sessionId, (byId.get(sessionId) || 0) + qty);
@@ -52,6 +71,7 @@ export async function holdSeats(items: HoldItem[], ref: string, ttlMs: number, p
   return serialized(async () => {
     const tx = await begin(p);
     try {
+      await lockSessions(p, wanted.map((i) => i.sessionId), await tx.req?.transactionID);
       const short: { sessionId: number; left: number }[] = [];
       for (const { sessionId, qty } of wanted) {
         const { left } = await availability(sessionId, p, now, tx.req);

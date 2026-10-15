@@ -23,6 +23,8 @@ declare module "vitest" {
     databaseURI: string;
     /** The bearer secret of GET /cron/daily on the site under test; "" when none is set (TEST_BASE_URL without CRON_SECRET). */
     cronSecret: string;
+    /** The webhook secret the fake gateway checks signatures with; "" when unknown (TEST_BASE_URL without STRIPE_WEBHOOK_SECRET) — then the literal "fake" signs. */
+    webhookSecret: string;
   }
 }
 
@@ -45,6 +47,7 @@ export default async function setup(project: TestProject) {
     project.provide("baseURL", process.env.TEST_BASE_URL.replace(/\/$/, ""));
     project.provide("databaseURI", process.env.DATABASE_URI || "");
     project.provide("cronSecret", process.env.CRON_SECRET || "");
+    project.provide("webhookSecret", process.env.STRIPE_WEBHOOK_SECRET || "");
     const target = process.env.TEST_BASE_URL.replace(/\/$/, "");
     return () => forgetEditor(target);
   }
@@ -63,6 +66,10 @@ export default async function setup(project: TestProject) {
     SMTP_HOST: "",
     // The daily mail job needs a bearer secret: a one-off one for this run unless the environment names one.
     CRON_SECRET: process.env.CRON_SECRET || randomBytes(18).toString("base64url"),
+    // Payments go through the in-process fake gateway: no keys, no network; the webhook is signed with a one-off secret.
+    PAYMENT_GATEWAY: "fake",
+    STRIPE_SECRET_KEY: "",
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || `whsec_${randomBytes(18).toString("hex")}`,
     NEXT_DIST_DIR: process.env.NEXT_DIST_DIR || ".next/test",
     NODE_ENV: "development",
   } as NodeJS.ProcessEnv;
@@ -76,6 +83,7 @@ export default async function setup(project: TestProject) {
   project.provide("baseURL", baseURL);
   project.provide("databaseURI", env.DATABASE_URI!);
   project.provide("cronSecret", env.CRON_SECRET!);
+  project.provide("webhookSecret", env.STRIPE_WEBHOOK_SECRET!);
   return stop;
 }
 
