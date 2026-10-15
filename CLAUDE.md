@@ -154,17 +154,17 @@ grep "^## \[" wiki/log.md | tail -5
 | Команда | Что делает |
 |---|---|
 | `npm install` | зависимости |
-| `npm run dev` | сайт и админка на http://localhost:3210 (тот же запуск — `.claude/launch.json`) |
-| `npm run seed` | наполняет базу из `DATABASE_URI` описью `content/inventory.json` и данными `lib/site.ts`; идемпотентно |
+| `npm run dev` | сайт и админка на http://localhost:3210 (тот же запуск — `.claude/launch.json`); окружение — `.env`, поверх него `.env.development.local` |
+| `npm run seed` | наполняет базу из `DATABASE_URI` описью `content/inventory.json` и данными `lib/site.ts`; идемпотентно. Читает **только `.env`** — локальная база задаётся в окружении: `npx cross-env DATABASE_URI=file:./handeye.db BLOB_READ_WRITE_TOKEN= SEED_FIXES=0 npm run seed` |
 | `npx cross-env SEED_IMAGES=0 npm run seed` | сид без картинок; `SEED_IMAGES="/a,/b"` — картинки только этих страниц |
 | `npm test` | все тесты (unit + site), ~23 мин |
 | `npx vitest run --project unit` | только юниты, секунды |
 | `npm run test:mobile` | браузерный обход всех адресов описи на 390px (`MOBILE_ALL=1`) |
-| `npm run build` | продакшен-сборка |
+| `npm run build` | продакшен-сборка; с Postgres в `.env` без `PAYLOAD_SECRET` падает — локально собирать с `DATABASE_URI=file:./handeye.db` в окружении |
 | `npm run start` | прод-сервер на 3210; в `.env` нужны `NEXT_PUBLIC_SERVER_URL` и `PAYLOAD_SECRET` |
 | `npm run generate:types` | пересобрать `payload-types.ts` после правки коллекций и глобалов |
-| `npm run generate:importmap` | пересобрать `app/(payload)/admin/importMap.js` после правки конфига, плагинов или admin-компонентов (`components/admin/`) |
-| `npm run stripe:setup` | в аккаунте Stripe по `STRIPE_SECRET_KEY` создаёт продукты и месячные цены тарифов-абонементов (`period` содержит «month», есть `price`) и пишет их id в `plans.stripePriceId`; идемпотентен (продукт — через `findProduct`/`ensureProduct` шлюза по `metadata.cms_kind=plan`/`cms_id`, цена — активная recurring cad/month той же суммы); `-- --webhook <url>` заводит endpoint вебхука с событиями `WEBHOOK_EVENTS` из `lib/payments/orders.ts` (существующий по тому же url переиспользует и дописывает недостающие события), секрет печатает только первыми символами — полный кладёт `--secret-file <path>` (внутри рабочей копии — только путь, который `git check-ignore` игнорирует) или `--write-env` (строка `STRIPE_WEBHOOK_SECRET` в `.env.development.local`); `--dry-run` — только отчёт («would create …», «would add N events»). Окружение — как у `next dev`: `.env`, поверх него `.env.development.local`, поверх обоих переменные процесса — ключ и `DATABASE_URI` по умолчанию локальные; для staging задай `DATABASE_URI` (и `BLOB_READ_WRITE_TOKEN`) из `.env` в окружении процесса. В PowerShell `--` берётся в кавычки: `npm run stripe:setup '--' --dry-run` |
+| `npm run generate:importmap` | пересобрать `app/(payload)/admin/importMap.js` после правки конфига, плагинов или admin-компонентов (`components/admin/`); компоненты Mux попадают в карту через заглушки `MUX_TOKEN_*` в скрипте |
+| `npm run stripe:setup` | в аккаунте Stripe по `STRIPE_SECRET_KEY` создаёт продукты и месячные цены тарифов-абонементов (`period` содержит «month», есть `price`) и пишет их id в `plans.stripePriceId`; идемпотентен (продукт — по `metadata.cms_kind=plan`/`cms_id`, цена — активная recurring cad/month той же суммы); `-- --webhook <url>` заводит endpoint вебхука с событиями `WEBHOOK_EVENTS` (существующий по тому же url переиспользует и дописывает события), секрет печатает только первыми символами — полный кладёт `--secret-file <path>` (внутри рабочей копии — только путь под `.gitignore`) или `--write-env` (строка `STRIPE_WEBHOOK_SECRET` в `.env.development.local`); `--dry-run` — только отчёт. Окружение — как у `next dev`: `.env`, поверх `.env.development.local`, поверх обоих переменные процесса; для staging задай `DATABASE_URI` (и `BLOB_READ_WRITE_TOKEN`) из `.env` в окружении процесса. В PowerShell `--` берётся в кавычки: `npm run stripe:setup '--' --dry-run` |
 | `npm run howto` | 7 роликов-инструкций по админке в `handover/videos/` и `handover/README.md`; часть — `npm run howto -- --only 03,05` |
 | `node scripts/lighthouse.mjs http://localhost:3210 3` | Lighthouse (mobile, Performance), медиана прогонов; сервер — `npm run build` + `npm run start` на базе с картинками; цифры — `content/lighthouse.md` |
 | `python -m unittest discover -s scripts/crawl -p "test_*.py"` | тесты обходчика старого сайта |
@@ -173,68 +173,75 @@ grep "^## \[" wiki/log.md | tail -5
 
 ```
 app/(site)/        публичный сайт: page.tsx (главная), [...path]/ (диспетчер + render*), forms/enquiry/route.ts;
-                   продажи: cart/ (страница и POST validate), checkout*/ (заказ, success, fake, subscribe), stripe/webhook/, cron/daily/, exports/ (CSV)
+                   продажи: cart/ (страница и POST validate), checkout*/ (заказ, success, fake + fake/pay, subscribe), stripe/webhook/, cron/daily/, exports/ (CSV)
 app/(payload)/     обвязка Payload: /admin, /api, /api/graphql; importMap.js генерируется
 app/robots.ts, app/sitemap.ts   robots по SITE_ENV; sitemap из CMS на каждый запрос
 collections/       index.ts — коллекции контента; orders.ts — продажи (sessions, orders, registrations, holds, subscriptions, email-templates); blocks.ts — блоки страниц; fields/ — path, доступ, seo; hooks/ — письмо о заявке, «работы готовы»
 globals/           index.ts — глобалы settings и home
-lib/cms/           чтение CMS для сайта: resolve, site, seo, text, media; payload — единственный ленивый загрузчик Payload, relations — relId
+lib/cms/           чтение CMS для сайта: resolve, site, seo, text, media, address; payload — единственный ленивый загрузчик Payload, relations — relId
 lib/booking/       места: availability (остаток, батч), holds (удержания, подтверждение мест)
 lib/payments/      шлюз (Stripe / поддельный), Checkout, завершение заказа, вебхуки, ставки налога
 lib/cart/          проверка состава корзины и цены строк
-lib/mail/          шаблоны писем, подтверждение заказа, напоминания, «работы готовы»
+lib/mail/          шаблоны писем (keys — ключи), подтверждение заказа, напоминания, «работы готовы»
 lib/site.ts        данные прототипа: вход сида, страницы их не читают
-lib/time.ts        часовой пояс студий и разбор смещения (экспорты, сид)
-components/        дизайн-система прототипа (корень) + blocks/, forms/, shop/, location/, site/, cart/ (корзина), admin/ (компоненты админки)
+lib/time.ts        часовой пояс студий и смещение в минутах (экспорты, сид)
+components/        дизайн-система прототипа (корень) + blocks/, forms/, shop/, location/, site/, cart/ (корзина, storage — localStorage), admin/ (компоненты админки)
 content/           опись старого сайта и отчёты по ней; images/ — вне git
-scripts/           seed/ (опись → CMS), howto/ (запись роликов), crawl/ (Python, обход), lighthouse.mjs
-tests/             unit/ — без сервера; site/ — HTTP по поднятому сайту
+docs/adr/          ADR 0001–0006 — решения этапа продаж
+scripts/           seed/ (опись → CMS), stripe/ (setup и чистые plans), howto/ (запись роликов), crawl/ (Python, обход), lighthouse.mjs
+tests/             unit/ — без сервера (stubs/ — заглушка `server-only`); site/ — HTTP по поднятому сайту
 proxy.ts           301 из коллекции redirects до рендера
 payload.config.ts  конфиг CMS; адаптеры БД, файлов, видео и почты выбираются по env
-media/, handeye.db, handover/, .next/   локальные данные и сборка — вне git
+media/, handeye.db, handover/, .next/, .vercel/   локальные данные, сборка и линк Vercel — вне git
 ```
 
 ### Ключевые файлы
 
-- `lib/cms/resolve.ts` — `resolvePath(path): Promise<Resolved | { redirect: string } | null>`, `getCMS(): Promise<Payload>`, `redirectTarget(rule)`, `PLANS_PATH`, `SHOP_PATH`. `Resolved` = `{kind:'studio', doc: Studio, page?: Page}` | `{kind:'product', doc: Product}` | `{kind:'plans'|'shop'|'page', doc: Page}`.
-- `lib/cms/site.ts` — `getSiteData()`, `studioView(doc, site)`, `studioSchedule(doc)`, `classTabs(studioId?)`, `getHome()` → `{ hero, seo, gallery, text(key), list(prefix) }`, `homePage()`, `sitePaths()`, `phoneHref(display)`, `addressParts(address)`, `MEMBERSHIP_PATH`.
+- `lib/cms/payload.ts` — `getCMS(): Promise<Payload>`: единственный ленивый загрузчик Payload (без `server-only`, конфиг импортируется при первом вызове); `lib/cms/resolve.ts` реэкспортирует его для страниц. `lib/cms/relations.ts` — `relId(v)` (id связи при любой глубине). `lib/time.ts` — `STUDIO_TIME_ZONE`, `offsetMinutes(at, timeZone?)`.
+- `lib/cms/resolve.ts` — `resolvePath(path): Promise<Resolved | { redirect: string } | null>`, `getCMS`, `redirectTarget(rule)`, `PLANS_PATH`, `SHOP_PATH`. `Resolved` = `{kind:'studio', doc: Studio, page?: Page}` | `{kind:'product', doc: Product}` | `{kind:'plans'|'shop'|'page', doc: Page}`.
+- `lib/cms/site.ts` — `getSiteData()`, `studioView(doc, site)`, `studioSchedule(doc)`, `classTabs(studioId?)`, `getHome()` → `{ hero, seo, gallery, text(key), list(prefix) }`, `homePage()`, `sitePaths()`, `phoneHref(display)`, `addressParts(address)` (из `lib/cms/address.ts`), `MEMBERSHIP_PATH`.
 - `lib/cms/seo.ts` — `metadataFor(r: Resolved)`, `pageText(page)`; `lib/cms/text.ts` — `excerpt(text, max=155)`, `formatPrice(n)`, `lexicalText(v)`, `SITE_NAME`, `SITE_SUFFIX`, `SITE_URL`; `lib/cms/media.ts` — `mediaSrc(url)`.
 - `lib/server-url.ts` — `serverURL(env?)`: единственный источник адреса сайта (canonical, sitemap, JSON-LD, таблица редиректов); `instrumentation.ts` вызывает его при старте.
+- `lib/rate-limit.ts` — `rateLimiter({limit, windowMs}) → {allow(key, now?)}`, `SENDER_LIMIT` (5 за 10 мин), `addressOf(headers)` (loopback → `undefined`, лимит не применяется).
 - `collections/fields/path.ts` — `normalizePath(input)`, `pathField()`; `collections/fields/common.ts` — `contentAccess`, `readWhenFlagged(flag)`, `flaggedContentAccess(flag)`, `readClassOfPublishedStudio`, `seoField`, `publishedField`, `photosField()`.
 - `components/blocks/Blocks.tsx` — `<Blocks blocks />`; слаги блоков: `text, image, gallery, video, cta, form, classList, productList, planList`.
 - `components/site/SiteShell.tsx` — `<SiteShell currentLocation? flush?>` (async; шапка и подвал всех шаблонов), `<PageHeading eyebrow? title>`; `components/site/SiteData.tsx` — `<SiteDataProvider value>`, `useSiteData()`, типы `SiteData`, `StudioCard`, `StudioView`, `ClassTab`.
 - `components/forms/definitions.ts` — `FORMS: Record<EnquiryType, FieldDef[]>`, `validate(type, input) → {errors, values}`, `answersOf(type, values)`, `isVisible(field, values)`, `isEnquiryType(v)`; `components/forms/EnquiryForm.tsx` — `<EnquiryForm type studio? />`.
 - `components/shop/data.ts` — `allProducts()`, `productsOfList({category, all})`, `allPlans()`, `plansIn(group?)`, `storefronts()`, `studioPhone()`, `splitCategories()`, `sessionChoices(product, now?)` (даты товара глазами посетителя); `components/shop/parts.tsx` — `<Price>`, `<ProductGrid>`, `<ProductShelves>`, `<PlanList plans grouped?>`, `<StorefrontNav current>`, `<SubscribeButton plan>`, `<CallStudio>`, `optionChoices(options)`, `SUBSCRIBE_PATH`.
-- `scripts/seed/index.ts` — сид; ключи идемпотентности: `path` / `title` (classes) / `name` (plans) / `filename` (media) / `from` (redirects); заодно пишет `content/seo-fixes.md`.
-- `lib/cms/payload.ts` — `getCMS()`: единственный ленивый загрузчик Payload для серверного кода вне рендера, скриптов и юнит-тестов (`lib/cms/resolve.ts` реэкспортирует его для страниц); `lib/cms/relations.ts` — `relId(v)` (id связи при любой глубине); `lib/time.ts` — `STUDIO_TIME_ZONE`, `offsetMinutes(at, timeZone?)`.
-- `lib/booking/availability.ts` — `availability(sessionId, payload?, now?, req?) → {seats, sold, held, left}`, `availabilityOf(sessions: {id, seats}[], payload?, now?, req?) → Map<id, Availability>` (два запроса на весь набор), `isSellable(session, now?)`, `SEATED_STATUSES` (`confirmed`, `imported` — оба занимают место). `lib/payments/index.ts` — `gateway()`, `stripeDashboardUrl(kind, id)`, `createCheckoutForOrder`, `finalizeOrder`, `handleWebhookEvent`, `WEBHOOK_EVENTS`, `CURRENCY`, `ratesFor(province, taxGroup)`, `studioProvince(studio)`; `collections/orders.ts` — `orderNumber(id)` → `HE-000123`.
-- `app/(site)/exports/csv.ts` — чистые `csvCell`, `toCSV(rows)` (BOM, CRLF, RFC 4180), `orderRows(orders)`, `registrationRows(registrations)`, `ORDER_COLUMNS`, `REGISTRATION_COLUMNS`; `app/(site)/exports/period.ts` — `dayRange(from?, to?, tz) → {from, to} | null`, `startOfDay(day, tz)`, `STUDIO_TIME_ZONE`.
-- `tests/site/global-setup.ts` — поднимает тестовый сайт; `tests/site/editor.ts` — `editorToken(base)`; `tests/site/cms-update.ts` — правка CMS из теста через Local API (переменная `CMS_UPDATE`).
+- `components/cart/` — `<CartProvider>`, `useCart() → {lines, count, ready, add, setQuantity, remove, seen, clear}`, `<AddToCart productId price options sessions />`, `<CartLink light?>`, `<CartPage>`, `<ClearCart order>`; `storage.ts` — `CART_KEY`, `createCartSync(storage)`.
+- `scripts/seed/index.ts` — сид; ключи идемпотентности: `path` / `title` (classes) / `name` (plans) / `filename` (media) / `from` (redirects); заодно пишет `content/seo-fixes.md`; `scripts/seed/sessions.ts` — `parseSessionLabel(label, floor)`.
+- `scripts/stripe/plans.ts` (чистое) — `subscriptionPlans(plans)`, `syncPlan(setup, plan, {dryRun?})`, `ensureWebhookEndpoint(client, url, {dryRun?})`; `scripts/stripe/setup.ts` — CLI `npm run stripe:setup`.
+- `lib/booking/availability.ts` — `availability(sessionId, payload?, now?, req?) → {seats, sold, held, left}`, `availabilityOf(sessions: {id, seats}[], payload?, now?, req?) → Map<id, Availability>` (два запроса на весь набор), `isSellable(session, now?)`, `SEATED_STATUSES` (`confirmed`, `imported` — оба занимают место); `lib/booking/holds.ts` — `holdSeats(items: {sessionId, qty}[], ref, ttlMs, payload?, now?) → {ok:true} | {ok:false, short}`, `releaseHolds(ref, payload?)`, `confirmSeats(orderId, payload?)`.
+- `lib/payments/index.ts` — `gateway(): PaymentGateway | null`, `CHECKOUT_TTL_MS` (30 мин — сессия Checkout и удержания), `PAYMENT_UNAVAILABLE`, `stripeDashboardUrl(kind, id)`, `createCheckoutForOrder(order, origin, payload?)`, `createSubscriptionCheckout(plan, origin)`, `studioProvince(studio)`, `finalizeOrder(stripeSessionId, payload?)`, `handleWebhookEvent(event, payload?)`, `WEBHOOK_EVENTS`, `fakeGateway()`, `stripeGateway(secretKey, client?)`, `CURRENCY`, `ratesFor(province, taxGroup)`, `trackPurchase(orderId)` (заглушка); типы — `lib/payments/types.ts`; `collections/orders.ts` — `orderNumber(id)` → `HE-000123`.
+- `lib/cart/validate.ts` — `validateCart(input: unknown[], pickupStudioId?, payload?, now?) → {lines: CartPricedLine[], errors, subtotal, tax, total, studio}`, `parseLine(input)`, `sessionPrice(session, product)`; `lib/cart/pricing.ts` (чистое) — `priceLine(line, item, province)`, `totals(lines)`, `cents(dollars)`, `MAX_QUANTITY`.
+- `lib/mail/index.ts` — `renderTemplate(body, vars)`, `sendTemplate(key, to, vars, payload?)`, `sendOrderConfirmation(orderId, payload?)`, `sendPiecesReady(sessionId, payload?)`, `runDailyMail(now?, payload?) → {reminders, followups}`, `inBackground(work)`; `lib/mail/keys.ts` — `EMAIL_TEMPLATE_KEYS`, `TemplateKey`, `EMAIL_TEMPLATE_LABELS` (select коллекции и сид выводятся из них).
+- `app/(site)/exports/csv.ts` — чистые `csvCell`, `toCSV(rows)` (BOM, CRLF, RFC 4180, защита от формул), `orderRows(orders)`, `registrationRows(registrations)`, `ORDER_COLUMNS`, `REGISTRATION_COLUMNS`; `app/(site)/exports/period.ts` — `dayRange(from?, to?, tz) → {from, to} | null`, `startOfDay(day, tz)`, реэкспорт `STUDIO_TIME_ZONE`; `shared.ts` — `editorOf(request)`, `csvFile(rows, filename)`.
+- `tests/site/global-setup.ts` — поднимает тестовый сайт (`PAYMENT_GATEWAY=fake`; одноразовые секреты cron и вебхука — тестам через `inject("cronSecret")`, `inject("webhookSecret")`); `tests/site/editor.ts` — `editorToken(base)`; `tests/site/cms-update.ts` — правка CMS из теста через Local API (переменная `CMS_UPDATE`); `tests/unit/payments-harness.ts` — `tempCMS()`, `seedClassDate(payload, seats, suffix?)`.
 
 ### Архитектура
 
 Путь запроса:
-1. `proxy.ts` (proxy в Next 16 — бывший middleware) ловит всё, кроме `api|admin|_next|media|images|assets`: читает таблицу из `GET /api/redirects` (кэш 10 с) и отвечает 301.
-2. `/` → `app/(site)/page.tsx`; любой другой адрес → `app/(site)/[...path]/page.tsx`, который только диспетчеризует.
+1. `proxy.ts` (proxy в Next 16 — бывший middleware) ловит GET/HEAD ко всему, кроме `api|admin|_next|media|images|assets|favicon|robots.txt|sitemap.xml`: читает таблицу из `GET /api/redirects` (кэш 10 с) и отвечает 301; POST не редиректит (иначе `POST /checkout` уезжал бы на `/cart`).
+2. `/` → `app/(site)/page.tsx`; любой другой адрес → `app/(site)/[...path]/page.tsx`, который только диспетчеризует; статические маршруты сайта — `app/(site)/<name>/route.ts|page.tsx`, вне catch-all.
 3. `resolvePath` ищет по `path` в порядке: redirects → studios (плюс документ pages с тем же `path` — приходит как `page`) → products → pages. `plans` — страница с `PLANS_PATH`; `shop` — `SHOP_PATH` или любая страница с блоком `productList`; `null` → 404.
 4. По `kind` — `renderStudio(doc, page?)`, `renderProduct(doc)`, `renderShop(doc)`, `renderPlans(doc)`, `renderPage(doc)` в `app/(site)/[...path]/`; метаданные — `metadataFor`.
 
 - Данные — только из CMS через Payload Local API (`getCMS()`); по HTTP к себе ходит один `proxy.ts` — за таблицей редиректов.
-- Коллекции: users, media (alt обязателен), videos, studios, classes, pages, products, plans, enquiries, redirects (плагин; цели — pages, studios, products); продажи (группа Sales, `collections/orders.ts`): sessions (даты занятия с местами; виртуальные `sold`/`left` считаются хуком `afterOperation` на весь результат `find`/`findByID`, `context.skipAvailability` отключает), orders (пишет только сервер; редактор правит `status` и `note`, удаление запрещено; виртуальные `totalDisplay`, `stripeUrl`), registrations (ученики; редактор может добавить руками — статус `imported`, место занимает), holds (скрыта), subscriptions (только чтение, обновляет Stripe), email-templates. Глобалы: `settings` (телефон, почта, instagram, меню, подвал) и `home` (hero, seo, gallery, `sections` по ключам: `classes`, `gallery`, `reviews`, `locations`, `other-studios`, `membership`, `feature-N`, `perk-N`, `review-N`, `step-N`, `stage-N`).
-- Продажи: `GET /cart`, `POST /cart/validate`, `POST /checkout` (заказ `pending` + удержания + Checkout), `GET /checkout/success`, `GET /checkout/fake` (только поддельный шлюз), `POST /checkout/subscribe`, `POST /stripe/webhook` (подпись Stripe), `GET /cron/daily` (`Authorization: Bearer $CRON_SECRET`, `vercel.json`), `GET /exports/orders.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` и `GET /exports/registrations.csv?session=ID` (CSV для вошедшего редактора: cookie админки или `Authorization: JWT`; 401 без входа, 404 без даты, 400 при кривом периоде; период — календарные дни America/Vancouver по `paidAt`, неоплаченные заказы не выгружаются). Деньги в заказах и Stripe — целые центы, `cad`; в CMS цены — доллары. В коде нет id объектов Stripe: продукты и ставки ищутся по метаданным.
+- Коллекции: users, media (alt обязателен), videos, studios, classes, pages, products, plans, enquiries, redirects (плагин; цели — pages, studios, products); продажи (группа Sales, `collections/orders.ts`): sessions (даты занятия с местами; виртуальные `sold`/`left` считаются хуком `afterOperation` на весь результат `find`/`findByID`, `context.skipAvailability` отключает), orders (пишет только сервер; редактор правит `status` и `note`, удаление запрещено; статусы `pending, finalizing, paid, expired, canceled, refunded, partially_refunded`; виртуальные `totalDisplay`, `stripeUrl`), registrations (ученики; редактор может добавить руками — статус `imported`, место занимает), holds (скрыта), subscriptions (только чтение, обновляет Stripe), email-templates. Глобалы: `settings` (телефон, почта, instagram, меню, подвал, `stripePortalUrl`) и `home` (hero, seo, gallery, `sections` по ключам: `classes`, `gallery`, `reviews`, `locations`, `other-studios`, `membership`, `feature-N`, `perk-N`, `review-N`, `step-N`, `stage-N`).
+- Продажи: `GET /cart`, `POST /cart/validate`, `POST /checkout` (лимит → `validateCart` → заказ `pending` → `holdSeats` → Checkout; 409 с `errors`/`short`, 503 без шлюза), `GET /checkout/success?session_id=` (сам зовёт `finalizeOrder`), `GET /checkout/fake` + `POST /checkout/fake/pay` (только поддельный шлюз), `POST /checkout/subscribe`, `POST /stripe/webhook` (подпись Stripe, `WEBHOOK_EVENTS`), `GET /cron/daily` (`Authorization: Bearer $CRON_SECRET`, `vercel.json`), `GET /exports/orders.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` и `GET /exports/registrations.csv?session=ID` (CSV для вошедшего редактора: cookie админки или `Authorization: JWT`; 401 без входа, 404 без даты, 400 при кривом периоде; период — календарные дни `STUDIO_TIME_ZONE` по `paidAt`, неоплаченные заказы не выгружаются). Деньги в заказах и Stripe — целые центы, `cad`; в CMS цены — доллары. В коде нет id объектов Stripe: продукты и ставки ищутся по метаданным.
 - Правка в админке видна на следующем запросе: все публичные маршруты и sitemap — `force-dynamic`, кэша и revalidate нет; новое правило редиректа — в пределах 10 с.
 - Заявки: `<EnquiryForm>` → `POST /forms/enquiry`, JSON `{ type, values: {<field>: string}, page?, studio?, company_url? }` → 201 `{ok:true}` | 400 `{ok:false, message, errors}` | 429 / 500 `{ok:false, message}`; `company_url` — ловушка для ботов. Маршрут валидирует и пишет Local API; хук `collections/hooks/notifyOwner.ts` шлёт письмо. Анонимный REST к enquiries закрыт; в админке правится только `status`, удаление запрещено всем.
 
 | Модуль | Владеет | Выставляет |
 |---|---|---|
 | cms — `payload.config.ts`, `collections/`, `globals/` | схема, доступ, адаптеры | Local API, `payload-types.ts` |
-| site — `app/(site)/`, `lib/cms/`, `components/` | маршруты, шаблоны, SEO, JSON-LD | `resolvePath`, рендереры по `kind` |
+| site — `app/(site)/`, `lib/cms/`, `components/` | маршруты, шаблоны, SEO, JSON-LD | `resolvePath`, рендереры по `kind`, `getCMS` |
 | forms — `components/forms/`, `app/(site)/forms/` | поля, валидация, ловушка, лимит | `POST /forms/enquiry`, `<EnquiryForm>` |
 | seed — `scripts/seed/` | перенос описи в коллекции, даты → sessions, шаблоны писем | `npm run seed` |
-| payments — `lib/payments/` | шлюз, налоги, Checkout, завершение заказа, вебхуки | `gateway()`, `createCheckoutForOrder`, `finalizeOrder`, `handleWebhookEvent`, `ratesFor`, `stripeDashboardUrl` |
+| payments — `lib/payments/`, `scripts/stripe/` | шлюз, налоги, Checkout, завершение заказа, вебхуки, настройка аккаунта | `gateway()`, `createCheckoutForOrder`, `createSubscriptionCheckout`, `finalizeOrder`, `handleWebhookEvent`, `WEBHOOK_EVENTS`, `ratesFor`, `stripeDashboardUrl`, `npm run stripe:setup` |
 | booking — `lib/booking/` | места и удержания | `availability`, `availabilityOf`, `holdSeats`, `releaseHolds`, `confirmSeats`, `isSellable` |
 | cart — `lib/cart/`, `components/cart/` | состав корзины и его проверка | `validateCart`, `<CartProvider>`, `useCart()`, `<AddToCart>`, `<CartLink>` |
-| mail — `lib/mail/` | шаблоны и отправка | `renderTemplate`, `sendTemplate`, `sendOrderConfirmation`, `sendPiecesReady`, `runDailyMail` |
+| mail — `lib/mail/` | шаблоны и отправка | `renderTemplate`, `sendTemplate`, `sendOrderConfirmation`, `sendPiecesReady`, `runDailyMail`, `inBackground` |
 | exports — `app/(site)/exports/` | CSV для бухгалтера и списки учеников | `GET /exports/orders.csv`, `GET /exports/registrations.csv` |
 | crawl — `scripts/crawl/` | обход старого сайта, вырезание секретов | `content/inventory.json`, `content/crawl-issues.json` |
 
@@ -242,12 +249,15 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 
 - `path` — ключ документа у pages, studios, products: уникален, нормализуется хуком поля; свою нормализацию не писать — `normalizePath()`.
 - Картинка из media в `next/image` — только через `mediaSrc(url)`.
-- Публичные чтения идут через доступ: Local API с `overrideAccess: false` либо явный фильтр по `published` / `visible`, как в `resolvePath`. Аноним видит studios и pages только `published`, products — только `visible`, classes — только опубликованных студий.
+- Публичные чтения идут через доступ: Local API с `overrideAccess: false` либо явный фильтр по `published` / `visible`, как в `resolvePath`. Аноним видит studios и pages только `published`, products — только `visible`, classes — только опубликованных студий. Запись из маршрута — Local API с `overrideAccess: true` после своей проверки (образец — `app/(site)/forms/enquiry/route.ts`).
+- Payload вне рендера страницы — только `getCMS()` из `lib/cms/payload.ts`; свой `getPayload` не заводить. Функции booking/payments/mail принимают необязательный `payload?` — так их гоняют юнит-тесты на временной базе.
+- Id связи при любой глубине — `relId(v)`; часовой пояс — `STUDIO_TIME_ZONE` из `lib/time.ts`, не литерал.
 - Всё, что видит редактор в админке (подписи, описания, группы, сообщения валидации), — на английском; в `app/`, `collections/`, `globals/`, `components/`, `lib/`, `scripts/seed/`, `scripts/howto/`, `tests/` кириллицы нет вообще (`tests/unit/admin-english.test.ts`).
 - Факты о бизнесе (цены, адреса, тексты, расписание) — только из описи и сида, в код шаблонов не вписываются; нет факта — видимая заглушка `[TBD]`.
 - H1 один на страницу и берётся из поля (`pages.h1`, `studios.h1`), не из блоков. Цена занятия — свободный текст; цена товара и тарифа — число.
 - `Header`, `Footer`, `MobileCallBar` работают только внутри `SiteDataProvider`; новый шаблон оборачивается в `<SiteShell>`.
-- Алиасы: `@/*` — корень, `@payload-config` — `payload.config.ts`. Не дублировать `excerpt`, `formatPrice`, `lexicalText`, `phoneHref`, `metadataFor`.
+- Алиасы: `@/*` — корень, `@payload-config` — `payload.config.ts`; vitest их знает. Не дублировать `excerpt`, `formatPrice`, `lexicalText`, `phoneHref`, `metadataFor`, `normalizePath`, `mediaSrc`, `relId`.
+- `/api` и `/admin` принадлежат Payload — туда ничего не добавлять.
 
 ### Окружение
 
@@ -256,7 +266,7 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 - `DATABASE_URI` — `postgres://…` → Postgres, иначе файл SQLite (по умолчанию `handeye.db`).
 - `PAYLOAD_SECRET` — обязателен с Postgres и в production; локальный SQLite без него берёт запасной.
 - `NEXT_PUBLIC_SERVER_URL` — публичный адрес: canonical, sitemap, редиректы, CORS загрузки в Mux; в production сервер без него не стартует; локально — `http://localhost:${PORT||3210}`.
-- `SITE_ENV` — только `production` снимает `X-Robots-Tag: noindex` и robots `Disallow: /`.
+- `SITE_ENV` — только `production` снимает `X-Robots-Tag: noindex` и robots `Disallow: /`; в production `PAYMENT_GATEWAY=fake` игнорируется.
 - `BLOB_READ_WRITE_TOKEN` — задан → файлы в Vercel Blob, иначе папка `media/`.
 - `MUX_TOKEN_ID` + `MUX_TOKEN_SECRET` (+ `MUX_WEBHOOK_SIGNING_SECRET`) — оба заданы → videos расширяется плагином Mux, иначе обычная upload-коллекция с постером.
 - `SMTP_HOST` (+ `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, `EMAIL_FROM_NAME`) — задан → письма через SMTP, иначе пишутся в лог сервера.
@@ -266,11 +276,11 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 
 ### Тесты
 
-- Vitest, два проекта (`vitest.config.ts`): `unit` — `tests/unit/`; `site` — `tests/site/`, HTTP + cheerio, в `mobile.test.ts` — Playwright.
+- Vitest, два проекта (`vitest.config.ts`): `unit` — `tests/unit/`; `site` — `tests/site/`, HTTP + cheerio, в `mobile.test.ts` — Playwright. Оба знают алиасы `@/`, `@payload-config` и подменяют `server-only` заглушкой `tests/unit/stubs/server-only.ts`.
 - `site` сам сидит временную SQLite, поднимает `next dev` на порту 3311 в `.next/test` и идёт по всем адресам описи: статус 200/301, title, один H1, description, уникальность title.
 - Один файл: `npx vitest run tests/site/http.test.ts`. По уже запущенному серверу: `npx cross-env TEST_BASE_URL=http://localhost:3210 vitest run tests/site/http.test.ts`.
-- Тесты, пишущие в CMS (`shop`, `studios`, `forms`, `sessions`, `cart`, `mail`, `exports`), идут только на localhost и по `TEST_BASE_URL` требуют `TEST_TEMP_DB=1`.
-- Юниты по Local API на временной SQLite (booking, payments, mail, availability) берут `tempCMS()` и `seedClassDate()` из `tests/unit/payments-harness.ts`.
+- Тесты, пишущие в CMS (`shop`, `studios`, `forms`, `sessions`, `cart`, `checkout`, `mail`, `exports`), идут только на localhost и по `TEST_BASE_URL` требуют `TEST_TEMP_DB=1`; секреты cron и вебхука там берутся из `process.env`.
+- Юниты по Local API на временной SQLite (booking, payments, mail, availability) берут `tempCMS()` и `seedClassDate()` из `tests/unit/payments-harness.ts`; переменные окружения — до первого `getCMS()`.
 - Долго: полный `npm test` — около 23 минут, из них `tests/site/studios.test.ts` — около 10. Фоновая команда в среде агента живёт не больше 10 минут — полный прогон запускать отдельным процессом с логом в файл.
 
 ### Подводные камни
@@ -283,9 +293,11 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 - `content/images/` вне git: на свежем клоне сид идёт без картинок и `tests/site/images.test.ts` падает, пока картинки не перекачаны `scripts/crawl/crawl.py`.
 - `npm run lint` не работает: `next lint` в Next 16 нет, конфига ESLint в репозитории тоже.
 - `next dev` с другим `NEXT_DIST_DIR` переписывает `tsconfig.json` и `next-env.d.ts` — не коммитить эти правки (`npm run howto` возвращает файлы сам).
-- Лимит заявок (5 за 10 минут на отправителя) живёт в памяти процесса и обнуляется с рестартом сервера.
+- `next dev` без переменных Mux перегенерирует `app/(payload)/admin/importMap.js` без компонентов Mux (`MuxUploaderField`, `MuxVideoGifCell`) — коммитить только результат `npm run generate:importmap`, правку dev-сервера откатывать.
+- Лимит заявок и checkout (5 за 10 минут на адрес) живёт в памяти процесса и обнуляется с рестартом сервера.
 - Push схемы на staging Postgres (`npm run seed` с `DATABASE_URI` из `.env`; `npm run stripe:setup` — с `DATABASE_URI` staging в окружении процесса) запускать с `BLOB_READ_WRITE_TOKEN` из того же `.env`: с пустым токеном плагин Vercel Blob выключен, и Payload предлагает удалить колонку `media._objectkey` — на вопрос отвечать «нет». Production-переменные Vercel помечены sensitive, `vercel env pull` их не возвращает.
 - Stripe CLI 1.53 требует список событий: `stripe listen --events checkout.session.completed,checkout.session.expired,charge.refunded,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_failed --forward-to localhost:3210/stripe/webhook`; без `--events` выходит с ошибкой; список — `WEBHOOK_EVENTS` из `lib/payments/orders.ts`, тот же, что ставит `stripe:setup`. Секрет печатает `--print-secret`.
+- Изменил `WEBHOOK_EVENTS` → endpoint на staging обновляется повторным `npm run stripe:setup -- --webhook https://<домен>/stripe/webhook` (дописывает события, секрет не меняет); локально — новый список в `stripe listen --events`.
 - `lib/site.ts` страницы не читают: правка там меняет сайт только после `npm run seed`.
 
 ### Переезд на Stripe клиента
@@ -293,7 +305,7 @@ media/, handeye.db, handover/, .next/   локальные данные и сб�
 Сайт привязан к аккаунту Stripe только переменными окружения; в коде и в базе нет id объектов Stripe, кроме `plans.stripePriceId` (цены абонементов) и ссылок на уже созданные платежи в заказах. Порядок:
 
 1. Сменить три переменные — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET` (последний — свой, не из Stripe) — в `.env.development.local` и в проекте Vercel.
-2. Выполнить `npm run stripe:setup -- --webhook https://<домен>/stripe/webhook --secret-file <путь вне репозитория>`: продукты и месячные цены тарифов создаются в новом аккаунте, `plans.stripePriceId` перезаписываются, endpoint вебхука заводится, его signing secret попадает в файл — это и есть `STRIPE_WEBHOOK_SECRET` (Stripe показывает его один раз; потерян — перевыпустить в панели). Продукты товаров и сессий и `tax_rates` создаются лениво при первой покупке по метаданным `cms_kind` / `cms_id` и `code` / `province`.
+2. Выполнить `npm run stripe:setup -- --webhook https://<домен>/stripe/webhook --secret-file <путь вне репозитория>` с `DATABASE_URI` боевой базы в окружении процесса: продукты и месячные цены тарифов создаются в новом аккаунте, `plans.stripePriceId` перезаписываются, endpoint вебхука заводится, его signing secret попадает в файл — это и есть `STRIPE_WEBHOOK_SECRET` (Stripe показывает его один раз; потерян — перевыпустить в панели). Продукты товаров и сессий и `tax_rates` создаются лениво при первой покупке по метаданным `cms_kind` / `cms_id` и `code` / `province`.
 3. В Site settings вставить ссылку портала покупателя (`stripePortalUrl`) нового аккаунта; пустое поле — кнопки нет.
 4. Проверить: покупка тестовой картой, заказ `paid` в админке со ссылкой «Open in Stripe», событие в панели Stripe. Старые заказы остаются с id платежей прежнего аккаунта — их ссылки откроются только под старым ключом.
 
