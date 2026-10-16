@@ -40,7 +40,8 @@ export type CheckoutInput = {
   }[];
 };
 
-export type SubscriptionInput = { planId: number; priceId: string; origin: string };
+/** `taxLines` are charged on every invoice of the subscription, the first month and each renewal. */
+export type SubscriptionInput = { planId: number; priceId: string; origin: string; taxLines: TaxLine[] };
 
 export interface PaymentGateway {
   name: "stripe" | "fake";

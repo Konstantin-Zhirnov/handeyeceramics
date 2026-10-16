@@ -22,6 +22,7 @@ import * as L from "./lexical";
 import * as homeText from "./home";
 import { parseSessionLabel } from "./sessions";
 import { EMAIL_TEMPLATES } from "./email-templates";
+import { taxGroupOf } from "./tax-groups";
 
 const root = process.cwd();
 const withImages = process.env.SEED_IMAGES !== "0";
@@ -478,16 +479,12 @@ async function seedProducts() {
       // The "Date" drop-down becomes class dates (sessions) with seats, which the product page lists in its place.
       options: options.filter((o) => !isDateOption(o)).map((o) => ({ title: o.title, choices: o.choices.join("\n") })),
       category: (r.categories?.length ? r.categories.join(", ") : r.category) || undefined,
-      taxGroup: taxGroupOf(r),
+      taxGroup: taxGroupOf(r.path),
       seo,
       visible: true,
     });
   }
 }
-
-/** Clay, tools and pieces are goods (GST and PST); everything else sold is a service (GST only). */
-const GOODS_CATEGORIES = new Set(["Clay", "Tools"]);
-const taxGroupOf = (r: Rec) => ((r.categories || []).some((c) => GOODS_CATEGORIES.has(c)) ? "goods" : "service");
 
 const isDateOption = (o: ProductOption) => o.title.trim().toLowerCase() === "date";
 

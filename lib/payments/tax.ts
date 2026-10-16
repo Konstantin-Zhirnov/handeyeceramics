@@ -13,6 +13,13 @@ const PROVINCES: Record<string, { GST: number; PST?: number }> = {
   AB: { GST },
 };
 
+/**
+ * Where memberships are taxed. A plan has no studio, and every studio that
+ * sells memberships today is in British Columbia, where Wix charges them GST
+ * 5% as a service; a plan sold elsewhere would need its own studio first.
+ */
+export const MEMBERSHIP_PROVINCE = "BC";
+
 export function ratesFor(province: string, taxGroup: TaxGroup): TaxLine[] {
   if (taxGroup === "exempt") return [];
   const code = province.trim().toUpperCase();

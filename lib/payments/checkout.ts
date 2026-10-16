@@ -11,7 +11,7 @@ import { addressParts } from "../cms/address";
 import { getCMS } from "../cms/payload";
 import { relId } from "../cms/relations";
 import { CHECKOUT_TTL_MS, PAYMENT_UNAVAILABLE, gateway } from "./gateway";
-import { ratesFor } from "./tax";
+import { MEMBERSHIP_PROVINCE, ratesFor } from "./tax";
 import type { CheckoutInput } from "./types";
 
 /**
@@ -80,10 +80,10 @@ export async function createCheckoutForOrder(order: Order, origin: string, paylo
   return session;
 }
 
-/** A subscription Checkout for a plan whose price lives in Stripe (R11); a plan without a price id cannot be subscribed to. */
+/** A subscription Checkout for a plan whose price lives in Stripe (R11), charged GST as a service; a plan without a price id cannot be subscribed to. */
 export async function createSubscriptionCheckout(plan: Pick<Plan, "id" | "stripePriceId">, origin: string): Promise<{ id: string; url: string }> {
   const gw = gateway();
   if (!gw) throw new Error(PAYMENT_UNAVAILABLE);
   if (!plan.stripePriceId) throw new Error(`Plan ${plan.id} has no Stripe price`);
-  return gw.createSubscriptionCheckout({ planId: plan.id, priceId: plan.stripePriceId, origin });
+  return gw.createSubscriptionCheckout({ planId: plan.id, priceId: plan.stripePriceId, origin, taxLines: ratesFor(MEMBERSHIP_PROVINCE, "service") });
 }

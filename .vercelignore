@@ -1,0 +1,22 @@
+# What `vercel deploy` must not upload. The CLI does not read .gitignore:
+# without this file it sends every local file except a short built-in list.
+# The site takes its settings from the Vercel project's environment variables.
+
+# Notes about the client project and the build records (outside git too)
+/raw
+/wiki
+/.autopilot
+/.claude
+/LLM wiki prompt.md
+
+# Local settings and secrets
+.env
+.env.*
+
+# Local databases, uploads, backups and handover recordings
+*.db
+/media
+/backups
+/handover
+/content/images
+/*.png

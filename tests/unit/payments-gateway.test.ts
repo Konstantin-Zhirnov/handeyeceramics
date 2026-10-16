@@ -117,12 +117,21 @@ describe("fake gateway", () => {
   it("a subscription session carries the plan", async () => {
     const { fakeGateway } = await import("../../lib/payments");
     const fake = fakeGateway();
-    const { id, url } = await fake.createSubscriptionCheckout({ planId: 5, priceId: "price_x", origin: ORIGIN });
+    const { id, url } = await fake.createSubscriptionCheckout({ planId: 5, priceId: "price_x", origin: ORIGIN, taxLines: [] });
     expect(url).toBe(`${ORIGIN}/checkout/fake?cs=${id}`);
     fake.complete(id, { name: "Ada", email: "ada@example.com" });
     const session = await fake.retrieveSession(id);
     expect(session).toMatchObject({ mode: "subscription", paymentStatus: "paid", metadata: { planId: "5" } });
     expect(session?.subscriptionId).toMatch(/^sub_fake_/);
+  });
+
+  it("a membership is charged GST, as on Wix: the plan's Checkout asks the gateway for the BC service rate", async () => {
+    process.env.PAYMENT_GATEWAY = "fake";
+    const { createSubscriptionCheckout, fakeGateway } = await import("../../lib/payments");
+    const spy = vi.spyOn(fakeGateway(), "createSubscriptionCheckout");
+    await createSubscriptionCheckout({ id: 5, stripePriceId: "price_x" }, ORIGIN);
+    expect(spy).toHaveBeenCalledWith({ planId: 5, priceId: "price_x", origin: ORIGIN, taxLines: [{ code: "GST", province: "BC", percentage: 5 }] });
+    spy.mockRestore();
   });
 
   it("constructEvent accepts the signature Stripe's SDK generates and rejects a wrong one", async () => {
@@ -206,7 +215,7 @@ describe("Stripe gateway", () => {
     const gw = stripeGateway("sk_test_x", client as never);
 
     await gw.createCheckout(input({ collectAttendee: false, customerEmail: "ada@example.com" }));
-    await gw.createSubscriptionCheckout({ planId: 5, priceId: "price_abc", origin: ORIGIN });
+    await gw.createSubscriptionCheckout({ planId: 5, priceId: "price_abc", origin: ORIGIN, taxLines: [] });
 
     expect(calls.sessions[0]).not.toHaveProperty("custom_fields");
     expect(calls.sessions[0]).toMatchObject({ customer_email: "ada@example.com" });
@@ -219,6 +228,19 @@ describe("Stripe gateway", () => {
       cancel_url: `${ORIGIN}/cart`,
     });
     expect(calls.sessions[1]).not.toHaveProperty("expires_at");
+  });
+
+  it("a subscription Checkout charges the membership's tax on every month", async () => {
+    const { stripeGateway } = await import("../../lib/payments");
+    const { client, calls } = stub();
+    const gw = stripeGateway("sk_test_x", client as never);
+
+    await gw.createSubscriptionCheckout({ planId: 5, priceId: "price_abc", origin: ORIGIN, taxLines: [{ code: "GST", province: "BC", percentage: 5 }] });
+
+    expect(calls.taxRates).toEqual([
+      { display_name: "GST", jurisdiction: "BC", percentage: 5, inclusive: false, country: "CA", metadata: { code: "GST", province: "BC" } },
+    ]);
+    expect(calls.sessions[0]).toMatchObject({ mode: "subscription", line_items: [{ price: "price_abc", quantity: 1, tax_rates: ["txr_1"] }] });
   });
 
   it("finds an existing Stripe Product by its CMS metadata instead of creating one, and remembers it", async () => {

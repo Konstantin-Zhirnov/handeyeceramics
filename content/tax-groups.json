@@ -1,0 +1,29 @@
+{
+  "source": "Wix dashboard, Settings > Tax > Tax groups, read 2026-10-15. Products of these groups are charged GST and PST in British Columbia; every other product GST only.",
+  "Clay": [
+    "/product-page/black-clay-4-lb",
+    "/product-page/calico-clay-3-lb",
+    "/product-page/coffee-clay",
+    "/product-page/coleman-s-porcelain-4-5-lb",
+    "/product-page/frost-translucent",
+    "/product-page/h550",
+    "/product-page/m332-clay-2-50-lb",
+    "/product-page/m350",
+    "/product-page/m370-porcelain-like-clay-3-00-lb",
+    "/product-page/m390-red-clay-2-50-lb",
+    "/product-page/non-speckled-clay-340-2-lb",
+    "/product-page/polar-ice",
+    "/product-page/raku-clay-cone-10",
+    "/product-page/recycled-clay",
+    "/product-page/speckled-clay-340gs-2-lb"
+  ],
+  "Tools": [
+    "/product-page/apron",
+    "/product-page/apron-trimming-tool-bundle",
+    "/product-page/canvas-apron-with-pockets",
+    "/product-page/extra-workshop-pots",
+    "/product-page/long-denim-apron",
+    "/product-page/split-leg-apron-with-pocket",
+    "/product-page/trimming-tools-small-medium"
+  ]
+}

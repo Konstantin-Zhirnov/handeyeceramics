@@ -137,9 +137,11 @@ export function stripeGateway(secretKey: string, client: StripeClient = new Stri
 
     async createSubscriptionCheckout(input: SubscriptionInput) {
       const planId = String(input.planId);
+      const tax_rates: string[] = [];
+      for (const t of input.taxLines) tax_rates.push(await gateway.ensureTaxRate(t));
       const session = await client.checkout.sessions.create({
         mode: "subscription",
-        line_items: [{ price: input.priceId, quantity: 1 }],
+        line_items: [{ price: input.priceId, quantity: 1, ...(tax_rates.length ? { tax_rates } : {}) }],
         metadata: { planId },
         subscription_data: { metadata: { planId } },
         ...urls(input.origin),
