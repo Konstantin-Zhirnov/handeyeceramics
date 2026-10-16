@@ -23,6 +23,7 @@ import * as homeText from "./home";
 import { parseSessionLabel } from "./sessions";
 import { EMAIL_TEMPLATES } from "./email-templates";
 import { taxGroupOf } from "./tax-groups";
+import { relId } from "../../lib/cms/relations";
 
 const root = process.cwd();
 const withImages = process.env.SEED_IMAGES !== "0";
@@ -382,12 +383,14 @@ const CLASS_ROWS = new Set([
   "Weekend course",
   "Date night",
   "Drop-in hand building",
+  "Hand building with Mapi",
   "Drop-in wheel",
 ]);
 /** Which schedule row says that a studio runs the class of a home-page tab. */
 const TAB_ROW: Record<string, string> = {
   wheel: "Six-week courses",
   handbuilding: "Drop-in hand building",
+  "handbuilding-mapi": "Hand building with Mapi",
   datenight: "Date night",
 };
 
@@ -654,7 +657,12 @@ async function seedClasses(studio: Record<string, number>) {
   const studiosWith = (label: string) =>
     locations.filter((l) => l.schedule.some((row) => row.label === label)).map((l) => studio[l.slug]);
   for (const tab of classTabs) {
-    const photo = await media(path.join("public", tab.image), tab.title);
+    // A class sold as a product books on the product's page and shows its first photo.
+    const product = tab.product
+      ? (await payload.find({ collection: "products", where: { path: { equals: tab.product } }, limit: 1, depth: 0 })).docs[0]
+      : undefined;
+    if (tab.product && !product) throw new Error(`seed: class "${tab.title}" names a product that is not in the inventory: ${tab.product}`);
+    const photo = tab.image ? await media(path.join("public", tab.image), tab.title) : relId(product?.images?.[0]);
     await upsert("classes", { title: { equals: tab.title } }, {
       title: tab.title,
       tab: tab.label,
@@ -662,6 +670,7 @@ async function seedClasses(studio: Record<string, number>) {
       description: [tab.body, ...tab.points.map((p) => `• ${p}`)].join("\n"),
       duration: tab.price,
       photos: photo ? [photo] : [],
+      product: product?.id ?? null,
       unconfirmed: true,
     });
   }

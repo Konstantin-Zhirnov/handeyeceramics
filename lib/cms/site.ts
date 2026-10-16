@@ -153,8 +153,9 @@ export async function studioSchedule(doc: Studio): Promise<ScheduleRow[]> {
 /** Classes shown as tabs: those with a tab name; of one studio, or of every published studio. */
 export async function classTabs(studioId?: number): Promise<ClassTab[]> {
   const studios = await publishedStudios();
-  /** "Book" leads to the page of the studio in view, else of the first studio the class runs at. */
+  /** "Book" leads to the class's product, if the visitor can see it; else to the page of the studio in view, else of the first studio the class runs at. */
   const bookHref = (c: Class) => {
+    if (c.product && typeof c.product === "object" && c.product.visible) return c.product.path;
     const ids = studioId === undefined ? studioIds(c) : [studioId];
     const studio = studios.find((s) => ids.includes(s.id));
     return studio ? studio.bookingPath || studio.path : "/#locations";

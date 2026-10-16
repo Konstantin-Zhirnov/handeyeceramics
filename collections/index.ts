@@ -217,6 +217,13 @@ export const Classes: CollectionConfig = {
     photosField(),
     { name: "bookingNote", type: "textarea", label: "How to book" },
     {
+      name: "product",
+      type: "relationship",
+      relationTo: "products",
+      label: "Product to book",
+      admin: { description: "Book now on the class tab opens this product. Empty: the booking page of the studio" },
+    },
+    {
       name: "unconfirmed",
       type: "checkbox",
       defaultValue: true,

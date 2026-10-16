@@ -58,7 +58,7 @@ export type ClassTab = {
   body: string;
   points: string[];
   photo: Photo | null;
-  /** The booking page of the studio the class runs at. */
+  /** The product the class is sold as, else the booking page of the studio the class runs at. */
   bookHref: string;
 };
 

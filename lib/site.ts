@@ -207,6 +207,7 @@ export const locations: Location[] = [
       { label: "Daytime classes", times: "12:30, 2:30 and 3 PM" },
       { label: "Date night", times: "Thu 7 PM · Fri 7 PM · Sat 1 & 7 PM · Sun 1 & 4 PM" },
       { label: "Drop-in hand building", times: "Fri 7 PM" },
+      { label: "Hand building with Mapi", times: "Thu 4–6:30 PM · Thu 7–9:30 PM" },
       { label: "Drop-in wheel", times: "All drop-in wheel classes run here" },
     ],
     highlights: [
@@ -352,6 +353,20 @@ export const classTabs = [
       "Open to all: lovers, friends and family",
       "No experience and no series to commit to",
       "Fridays 7 PM at the Gore Ave studio",
+    ],
+  },
+  {
+    // Sold as a shop product on the old site: "Book now" leads to it, and the tab takes its photo.
+    id: "handbuilding-mapi",
+    label: "Hand building with Mapi",
+    title: "Hand building with Mapi, beginner to intermediate",
+    price: "Thursdays · 6 weeks",
+    product: "/product-page/hand-building-beginner-to-intermediate",
+    body: "Learn the essentials of hand building with pinching, coiling and slab construction: mugs, vases, music whistles, sculptures. Choose sculptural or functional forms. Mapi teaches the class, with a background in figurative sculpture and functional ceramics.",
+    points: [
+      "Thursdays 4–6:30 PM or 7–9:30 PM at the Gore Ave studio",
+      "Decorative techniques such as coloured clay inlay and glazing",
+      "Glazes and 7 lbs of clay included",
     ],
   },
   {

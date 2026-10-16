@@ -357,7 +357,55 @@ export interface Class {
     | null;
   photos?: (number | Media)[] | null;
   bookingNote?: string | null;
+  /**
+   * Book now on the class tab opens this product. Empty: the booking page of the studio
+   */
+  product?: (number | null) | Product;
   unconfirmed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  /**
+   * The page address as on the old site, e.g. /pottery-classes-nanaimo
+   */
+  path: string;
+  price?: number | null;
+  /**
+   * Sale price. Empty — no discount
+   */
+  salePrice?: number | null;
+  images?: (number | Media)[] | null;
+  description?: string | null;
+  /**
+   * Product options (date, colour, size): a title and its values, one per line
+   */
+  options?:
+    | {
+        title: string;
+        choices: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Categories, separated by commas. The product is shown on the shop pages that list one of them
+   */
+  category?: string | null;
+  /**
+   * Goods — clay, tools, pieces: GST and the province's PST. Service — classes, drop-ins, rentals: GST only. Exempt — no tax
+   */
+  taxGroup: 'goods' | 'service' | 'exempt';
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+  };
+  visible?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -471,50 +519,6 @@ export interface Page {
       )[]
     | null;
   published?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "products".
- */
-export interface Product {
-  id: number;
-  name: string;
-  /**
-   * The page address as on the old site, e.g. /pottery-classes-nanaimo
-   */
-  path: string;
-  price?: number | null;
-  /**
-   * Sale price. Empty — no discount
-   */
-  salePrice?: number | null;
-  images?: (number | Media)[] | null;
-  description?: string | null;
-  /**
-   * Product options (date, colour, size): a title and its values, one per line
-   */
-  options?:
-    | {
-        title: string;
-        choices: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Categories, separated by commas. The product is shown on the shop pages that list one of them
-   */
-  category?: string | null;
-  /**
-   * Goods — clay, tools, pieces: GST and the province's PST. Service — classes, drop-ins, rentals: GST only. Exempt — no tax
-   */
-  taxGroup: 'goods' | 'service' | 'exempt';
-  seo?: {
-    title?: string | null;
-    description?: string | null;
-  };
-  visible?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1090,6 +1094,7 @@ export interface ClassesSelect<T extends boolean = true> {
       };
   photos?: T;
   bookingNote?: T;
+  product?: T;
   unconfirmed?: T;
   updatedAt?: T;
   createdAt?: T;
