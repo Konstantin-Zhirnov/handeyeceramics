@@ -156,7 +156,7 @@ grep "^## \[" wiki/log.md | tail -5
 | `npm install` | зависимости |
 | `npm run dev` | сайт и админка на http://localhost:3210 (тот же запуск — `.claude/launch.json`); окружение — `.env`, поверх него `.env.development.local` |
 | `npm run seed` | наполняет базу из `DATABASE_URI` описью `content/inventory.json` и данными `lib/site.ts`; группы налога товаров — из `content/tax-groups.json` (налоговые группы Wix); идемпотентно. Читает **только `.env`** — локальная база задаётся в окружении: `npx cross-env DATABASE_URI=file:./handeye.db BLOB_READ_WRITE_TOKEN= SEED_FIXES=0 npm run seed` |
-| `npx cross-env SEED_IMAGES=0 npm run seed` | сид без картинок; `SEED_IMAGES="/a,/b"` — картинки только этих страниц |
+| `npx cross-env SEED_IMAGES=0 npm run seed` | сид без загрузки картинок: уже лежащие в медиатеке остаются привязаны (так безопасно пересевать staging); `SEED_IMAGES="/a,/b"` — картинки только этих страниц |
 | `npm test` | все тесты (unit + site), ~23 мин |
 | `npx vitest run --project unit` | только юниты, секунды |
 | `npm run test:mobile` | браузерный обход всех адресов описи на 390px (`MOBILE_ALL=1`) |

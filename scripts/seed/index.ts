@@ -3,8 +3,9 @@
  * and the prototype data (lib/site.ts). Idempotent: every document is found by
  * its key (path, title, name, filename, from) and updated, never duplicated.
  *
- * SEED_IMAGES=0 skips uploading pictures; SEED_IMAGES="/about-us,/gift-card"
- * uploads only the pictures of these pages (the tests use it for speed).
+ * SEED_IMAGES=0 skips uploading pictures, those already in the library stay linked;
+ * SEED_IMAGES="/about-us,/gift-card" uploads only the pictures of these pages
+ * (the tests use it for speed).
  * Writes content/seo-fixes.md: every finding of content/crawl-issues.json and
  * what was done about it (not with SEED_FIXES=0: a seed of a throw-away database).
  */
@@ -147,15 +148,18 @@ async function mediaIndex(): Promise<Map<string, MediaDoc[]>> {
   return mediaBySource;
 }
 async function media(local: string | undefined, alt: string): Promise<number | undefined> {
-  if (!withImages || !local) return undefined;
+  if (!local) return undefined;
   if (onlyImages && !onlyImages.has(local)) return undefined;
   if (mediaByLocal.has(local)) return mediaByLocal.get(local);
-  const file = path.join(root, local);
-  if (!existsSync(file)) return undefined;
-  const filename = path.basename(file);
+  const filename = path.basename(local);
   // Storage may have renamed the file (`name-7.jpg`): match by source name, not the stored one.
   const index = await mediaIndex();
   const found = pickMedia(index.get(sourceName(filename)) ?? []);
+  // Without uploads a picture already in the library stays linked: a seed with SEED_IMAGES=0
+  // must not unlink the photos of a database that has them.
+  if (!withImages) return found?.id;
+  const file = path.join(root, local);
+  if (!existsSync(file)) return found?.id;
   const wanted = alt || filename;
   if (found && found.alt !== wanted) {
     await payload.update({ collection: "media", id: found.id, data: { alt: wanted }, depth: 0 }).catch((e) => {
