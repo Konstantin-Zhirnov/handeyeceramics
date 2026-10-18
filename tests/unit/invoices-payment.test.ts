@@ -100,6 +100,28 @@ describe("invoices", () => {
     expect((await fakeGateway().retrieveSession(second.id))?.amountTotal).toBe(6300);
   }, 60_000);
 
+  it("a refund in Stripe comes back as a negative payment, once per refunded total", async () => {
+    const { createInvoiceCheckout, fakeGateway, finalizeInvoicePayment, handleWebhookEvent, refundRef } = await import("../../lib/payments");
+    const invoice = await newInvoice();
+    const { id } = await createInvoiceCheckout(invoice, ORIGIN);
+    const pi = fakeGateway().complete(id, { email: "pat@example.com" }).paymentIntentId!;
+    await finalizeInvoicePayment(id);
+
+    const refunded = (n: number, total: number) =>
+      handleWebhookEvent({ id: `evt_refund_${pi}_${n}`, type: "charge.refunded", data: { object: { payment_intent: pi, amount: 63000, amount_refunded: total, refunded: total >= 63000 } } });
+    await refunded(1, 20000);
+    await refunded(2, 20000); // the same total again: nothing new
+    let after = await read(invoice.id);
+    expect(after.payments?.filter((p) => p.ref === refundRef(pi)).map((p) => p.amount)).toEqual([-200]);
+    expect(after).toMatchObject({ paid: 43000, due: 20000, status: "partially_paid" });
+
+    await refunded(3, 63000);
+    await refunded(4, 20000); // an older event arriving late
+    after = await read(invoice.id);
+    expect(after.payments?.filter((p) => p.ref === refundRef(pi)).map((p) => p.amount)).toEqual([-200, -430]);
+    expect(after).toMatchObject({ paid: 0, due: 63000, status: "open" });
+  }, 60_000);
+
   it("a void or paid invoice opens no Checkout", async () => {
     const { createInvoiceCheckout } = await import("../../lib/payments");
     const invoice = await newInvoice();

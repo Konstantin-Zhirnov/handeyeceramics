@@ -153,7 +153,7 @@ export default async function InvoicePage({
           {(invoice.payments || []).map((p, i) => (
             <div key={p.id || i} className="contents">
               <dt className="text-ink-soft">
-                {METHOD[p.method] || "Payment"} {day(p.at)}
+                {p.amount < 0 ? "Refund" : METHOD[p.method] || "Payment"} {day(p.at)}
               </dt>
               <dd className="text-right">{p.amount < 0 ? `+${formatPrice(-p.amount)}` : `−${formatPrice(p.amount)}`}</dd>
             </div>

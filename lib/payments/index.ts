@@ -7,7 +7,7 @@
 export { CHECKOUT_TTL_MS, PAYMENT_UNAVAILABLE, gateway, stripeDashboardUrl } from "./gateway";
 export { createCheckoutForOrder, createSubscriptionCheckout, studioProvince } from "./checkout";
 export { WEBHOOK_EVENTS, finalizeOrder, handleWebhookEvent } from "./orders";
-export { createInvoiceCheckout, finalizeInvoicePayment, invoiceByToken, invoicePaidLetter, invoiceUrl } from "./invoices";
+export { createInvoiceCheckout, finalizeInvoicePayment, invoiceByToken, invoicePaidLetter, invoiceUrl, recordInvoiceRefund, refundRef } from "./invoices";
 export { fakeGateway, type FakeCompletion, type FakeGateway } from "./fake";
 export { CURRENCY, stripeGateway, type StripeClient } from "./stripe";
 export { ratesFor } from "./tax";

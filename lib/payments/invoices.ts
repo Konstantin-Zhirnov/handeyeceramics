@@ -5,6 +5,7 @@
  * whichever is first. The invoice is the lock: one conditional UPDATE marks
  * the session being written, and a payment already carrying the session's
  * payment id is never written twice. The owner gets an email when it is paid.
+ * A refund made in Stripe comes back as a negative payment the same way.
  */
 import type { Payload } from "payload";
 import type { Invoice } from "../../payload-types";
@@ -121,6 +122,49 @@ export async function finalizeInvoicePayment(sessionId: string, payload?: Payloa
     return updated;
   } catch (err) {
     await unclaim(p, invoiceId, sessionId).catch((e) => p.logger.error({ err: e, msg: `invoice ${invoiceId}: the claim could not be given back` }));
+    throw err;
+  }
+}
+
+/** The ref of the refund rows of a card payment. */
+export const refundRef = (paymentIntentId: string) => `refund:${paymentIntentId}`;
+
+/** Cents already written back as refunds of the payment. */
+const refundedOn = (invoice: Invoice, paymentIntentId: string) =>
+  (invoice.payments || []).filter((p) => p.ref === refundRef(paymentIntentId)).reduce((s, p) => s - Math.round((p.amount || 0) * 100), 0);
+
+/**
+ * A refund in Stripe of a card payment on an invoice (`charge.refunded`):
+ * Stripe sends the refunded total so far, and what is new of it is written as
+ * a negative payment, so the link shows the balance again. A repeated or an
+ * older event writes nothing. Null when no invoice was paid with that payment.
+ */
+export async function recordInvoiceRefund(paymentIntentId: string, refundedTotal: number, payload?: Payload): Promise<Invoice | null> {
+  const p = payload || (await getCMS());
+  const { docs } = await p.find({ collection: "invoices", where: { "payments.ref": { equals: paymentIntentId } }, limit: 1, depth: 0, overrideAccess: true });
+  const found = docs[0] as Invoice | undefined;
+  if (!found) return null;
+  if (refundedTotal - refundedOn(found, paymentIntentId) <= 0) return found;
+  const key = `${refundRef(paymentIntentId)}:${Math.trunc(refundedTotal)}`;
+  if (!(await claim(p, found.id, key))) return read(p, found.id);
+  try {
+    const fresh = (await read(p, found.id))!;
+    const delta = refundedTotal - refundedOn(fresh, paymentIntentId);
+    if (delta <= 0) return fresh;
+    return (await p.update({
+      collection: "invoices",
+      id: fresh.id,
+      data: {
+        payments: [
+          ...(fresh.payments || []),
+          { at: new Date().toISOString(), amount: -delta / 100, method: "card", ref: refundRef(paymentIntentId), note: "Refunded in Stripe" },
+        ],
+      },
+      depth: 0,
+      overrideAccess: true,
+    })) as Invoice;
+  } catch (err) {
+    await unclaim(p, found.id, key).catch((e) => p.logger.error({ err: e, msg: `invoice ${found.id}: the claim could not be given back` }));
     throw err;
   }
 }

@@ -17,7 +17,7 @@ import { relId } from "../cms/relations";
 import { sendOrderConfirmation } from "../mail";
 import { affected, literal, table } from "./db";
 import { gateway } from "./gateway";
-import { finalizeInvoicePayment } from "./invoices";
+import { finalizeInvoicePayment, recordInvoiceRefund } from "./invoices";
 import { trackPurchase } from "./track";
 import type { GatewayEvent, GatewaySession } from "./types";
 
@@ -227,11 +227,13 @@ async function refund(p: Payload, obj: Record<string, unknown>): Promise<void> {
   const pi = idOf(obj.payment_intent);
   if (!pi) return;
   const found = await orderBy(p, "stripePaymentIntentId", pi);
+  const amount = num(obj.amount_refunded) ?? 0;
   if (!found) {
+    // Not an order: a card payment of an invoice, written back on the invoice as a negative payment.
+    if (amount > 0 && (await recordInvoiceRefund(pi, amount, p))) return;
     p.logger.warn({ msg: "charge.refunded for a payment the site does not know", paymentIntent: pi });
     return;
   }
-  const amount = num(obj.amount_refunded) ?? 0;
   const charged = found.total ?? num(obj.amount) ?? 0;
   const full = obj.refunded === true || (charged > 0 && amount >= charged);
   if (amount <= 0) return;
