@@ -122,6 +122,12 @@ export default buildConfig({
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
     meta: { titleSuffix: " — Hand Eye Ceramics admin" },
+    // The owner checks seats from the phone (R01.1): the coming week first on the dashboard, every upcoming date one tap away.
+    components: {
+      beforeDashboard: ["/components/admin/UpcomingDashboard#UpcomingDashboard"],
+      beforeNavLinks: ["/components/admin/UpcomingNavLink#UpcomingNavLink"],
+      views: { upcoming: { Component: "/components/admin/UpcomingView#UpcomingView", path: "/upcoming", exact: true, meta: { title: "Upcoming classes" } } },
+    },
   },
   collections: [
     Users,

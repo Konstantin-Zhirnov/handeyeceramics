@@ -4,26 +4,12 @@
  * found through the zone's offset (lib/time), so daylight-saving changes need
  * no table.
  */
-import { STUDIO_TIME_ZONE, offsetMinutes } from "@/lib/time";
+import { STUDIO_TIME_ZONE, startOfDay } from "@/lib/time";
 
 /** Re-exported for the export routes, which take the zone from here. */
-export { STUDIO_TIME_ZONE };
+export { STUDIO_TIME_ZONE, startOfDay };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-/** The instant a calendar day starts in the zone; undefined when the text is not a real date. */
-export function startOfDay(day: string, timeZone: string): Date | undefined {
-  const m = day.match(DAY);
-  if (!m) return undefined;
-  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const utcMidnight = Date.UTC(y, mo - 1, d);
-  const check = new Date(utcMidnight);
-  if (check.getUTCFullYear() !== y || check.getUTCMonth() !== mo - 1 || check.getUTCDate() !== d) return undefined;
-  // Local midnight is UTC midnight minus the offset; the offset is taken at the result itself, once more, for a day that starts in another offset.
-  let instant = utcMidnight - offsetMinutes(check, timeZone) * 60_000;
-  instant = utcMidnight - offsetMinutes(new Date(instant), timeZone) * 60_000;
-  return new Date(instant);
-}
 
 export type DayRange = { from: Date | undefined; to: Date | undefined };
 

@@ -21,9 +21,14 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { SessionStudents as SessionStudents_1e941ab6425ce37873fdb66737bad00d } from '../../../components/admin/SessionStudents'
+import { DateTabs as DateTabs_6843aee8c86b2d515e155231a19da69f } from '../../../components/admin/DateTabs'
 import { StripeLink as StripeLink_311c0b1ad9d8c3eed593eec2e2623abf } from '../../../components/admin/StripeLink'
 import { MuxUploaderField as MuxUploaderField_c369a797e256de625eba826a6acb8608 } from '@oversightstudio/mux-video/elements'
 import { MuxVideoGifCell as MuxVideoGifCell_c369a797e256de625eba826a6acb8608 } from '@oversightstudio/mux-video/elements'
+import { UpcomingDashboard as UpcomingDashboard_5e9c83608ab1ccb36bf4652bf590522d } from '../../../components/admin/UpcomingDashboard'
+import { UpcomingNavLink as UpcomingNavLink_fbd5d4a787eab00533cfebce445ffc04 } from '../../../components/admin/UpcomingNavLink'
+import { UpcomingView as UpcomingView_df178c8060df967c069764b43a2cbf93 } from '../../../components/admin/UpcomingView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 
@@ -52,9 +57,14 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/SessionStudents#SessionStudents": SessionStudents_1e941ab6425ce37873fdb66737bad00d,
+  "/components/admin/DateTabs#DateTabs": DateTabs_6843aee8c86b2d515e155231a19da69f,
   "/components/admin/StripeLink#StripeLink": StripeLink_311c0b1ad9d8c3eed593eec2e2623abf,
   "@oversightstudio/mux-video/elements#MuxUploaderField": MuxUploaderField_c369a797e256de625eba826a6acb8608,
   "@oversightstudio/mux-video/elements#MuxVideoGifCell": MuxVideoGifCell_c369a797e256de625eba826a6acb8608,
+  "/components/admin/UpcomingDashboard#UpcomingDashboard": UpcomingDashboard_5e9c83608ab1ccb36bf4652bf590522d,
+  "/components/admin/UpcomingNavLink#UpcomingNavLink": UpcomingNavLink_fbd5d4a787eab00533cfebce445ffc04,
+  "/components/admin/UpcomingView#UpcomingView": UpcomingView_df178c8060df967c069764b43a2cbf93,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e
 }

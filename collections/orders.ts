@@ -15,6 +15,7 @@ import { stripeDashboardUrl } from "../lib/payments/gateway";
 import { EMAIL_TEMPLATE_KEYS, EMAIL_TEMPLATE_LABELS } from "../lib/mail/keys";
 import { signedIn } from "./fields/common";
 import { piecesReadyMail } from "./hooks/piecesReady";
+import { upcomingWhere, upcomingWindow } from "../components/admin/upcoming";
 
 const GROUP = "Sales";
 
@@ -57,12 +58,18 @@ export const Sessions: CollectionConfig = {
   admin: {
     useAsTitle: "label",
     group: GROUP,
-    defaultColumns: ["label", "product", "studio", "startsAt", "seats", "sold", "left", "status"],
+    // Left and sold next to the label: on a phone the first columns are the ones on screen (R01.1).
+    defaultColumns: ["label", "left", "sold", "seats", "startsAt", "studio", "status", "product"],
     description: "The dates a class runs on. Each date has its own seats; the shop sells a seat on a date.",
+    // The list opens on the dates from today on, soonest first (R01.1); a filter of the editor's own, or a tab above the list, shows the past.
+    baseFilter: ({ req }) => (req.query?.where ? null : upcomingWhere(upcomingWindow(new Date()))),
+    components: { beforeListTable: ["/components/admin/DateTabs#DateTabs"] },
   },
   defaultSort: "startsAt",
   hooks: { afterChange: [piecesReadyMail], afterOperation: [countSeats] },
   fields: [
+    // First on the page: who is coming is what the owner opens a date for on the phone (R01.1).
+    { name: "students", type: "ui", label: "Students", admin: { components: { Field: "/components/admin/SessionStudents#SessionStudents" } } },
     {
       name: "label",
       type: "text",
