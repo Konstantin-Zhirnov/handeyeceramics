@@ -1,1 +1,48 @@
 /* Admin style overrides go here. */
+
+/*
+ * The owner edits from a phone (R01.1); two fixes for screens below 768px.
+ *
+ * The breadcrumbs of a document cannot shrink, so a long title pushes the account
+ * avatar past the right edge: they may shrink now, and the title ends in an ellipsis.
+ *
+ * Payload keeps "Last Modified" and "Created" on one line, about 450px wide, so the
+ * second date slides past the screen edge: they stack. On phones Payload hides these
+ * dates above the Save bar with a negative sticky top equal to their height (padding
+ * 2 x 16px plus a 24px line, -56px for one line), so each extra line adds 24px to it.
+ */
+@media (max-width: 768px) {
+  .app-header__step-nav-wrapper {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .app-header__step-nav {
+    min-width: 0;
+  }
+
+  .step-nav__last {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .doc-controls__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .doc-controls__meta::after {
+    display: none;
+  }
+
+  .doc-controls.gutter:has(.doc-controls__meta > li + li) {
+    top: -80px;
+  }
+
+  .doc-controls.gutter:has(.doc-controls__meta > li + li + li) {
+    top: -104px;
+  }
+}
