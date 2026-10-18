@@ -15,24 +15,13 @@ import { confirmSeats, releaseHolds } from "../booking/holds";
 import { getCMS } from "../cms/payload";
 import { relId } from "../cms/relations";
 import { sendOrderConfirmation } from "../mail";
+import { affected, literal, table } from "./db";
 import { gateway } from "./gateway";
+import { finalizeInvoicePayment } from "./invoices";
 import { trackPurchase } from "./track";
 import type { GatewayEvent, GatewaySession } from "./types";
 
 // ---- The order as the lock: compare-and-set in the database ----------------
-
-type Db = Payload["db"] & { tableNameMap?: Map<string, string>; execute?: (args: { drizzle: unknown; raw: string }) => unknown };
-
-/** Runs one statement and tells how many rows it changed (Postgres `rowCount`, SQLite `rowsAffected`). */
-async function affected(p: Payload, raw: string): Promise<number> {
-  const db = p.db as Db;
-  if (!db.execute) throw new Error("the database adapter cannot run a statement");
-  // The adapter's execute() is a plain function: it runs on the drizzle instance it is handed.
-  const result = (await db.execute({ drizzle: db.drizzle, raw })) as { rowCount?: number | null; rowsAffected?: number } | undefined;
-  return result?.rowCount ?? result?.rowsAffected ?? 0;
-}
-const table = (p: Payload, slug: string) => `"${(p.db as Db).tableNameMap?.get(slug) || slug}"`;
-const literal = (v: string) => `'${v.replace(/'/g, "''")}'`;
 
 /** A finalizing order older than this was left by a process that died: it may be claimed again. */
 const CLAIM_STALE_MS = 60_000;
@@ -308,6 +297,8 @@ export async function handleWebhookEvent(event: GatewayEvent, payload?: Payload)
             customer: { name: str(details?.name), email: str(details?.email) },
           });
         }
+      } else if ((obj.metadata as Record<string, unknown> | undefined)?.invoiceId) {
+        await finalizeInvoicePayment(id, p);
       } else {
         await finalizeOrder(id, p);
       }

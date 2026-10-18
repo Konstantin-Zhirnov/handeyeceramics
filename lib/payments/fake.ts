@@ -7,7 +7,7 @@
  * signs its events with the SDK's `generateTestHeaderString`.
  */
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import type { CheckoutInput, GatewayEvent, GatewaySession, PaymentGateway, SubscriptionInput } from "./types";
+import type { CheckoutInput, GatewayEvent, GatewaySession, InvoiceCheckoutInput, PaymentGateway, SubscriptionInput } from "./types";
 
 export type FakeCompletion = { name?: string; email?: string; phone?: string; attendee?: string };
 
@@ -17,6 +17,8 @@ export type FakeGateway = PaymentGateway & {
   complete(id: string, customer: FakeCompletion): GatewaySession;
   /** The buyer walked away and the session's 30 minutes ran out. */
   expire(id: string): GatewaySession;
+  /** Where the buyer goes after paying or walking away, when the session was opened with its own (an invoice); undefined — the order's pages. */
+  returnUrls(id: string): { success: string; cancel: string } | undefined;
   /** Drops every session: a fresh start between tests. */
   reset(): void;
 };
@@ -27,6 +29,7 @@ export type FakeGateway = PaymentGateway & {
 // checkout route created.
 const registry = globalThis as typeof globalThis & { __handeyeFakeSessions?: Map<string, GatewaySession> };
 const sessions = (registry.__handeyeFakeSessions ??= new Map<string, GatewaySession>());
+const returns = ((registry as typeof registry & { __handeyeFakeReturns?: Map<string, { success: string; cancel: string }> }).__handeyeFakeReturns ??= new Map());
 const randomId = (prefix: string) => `${prefix}_${randomBytes(12).toString("hex")}`;
 
 function must(id: string): GatewaySession {
@@ -76,6 +79,23 @@ const gateway: FakeGateway = {
     return { id, url: `${input.origin}/checkout/fake?cs=${id}` };
   },
 
+  async createInvoiceCheckout(input: InvoiceCheckoutInput) {
+    const id = randomId("cs_fake");
+    sessions.set(id, {
+      id,
+      mode: "payment",
+      paymentStatus: "unpaid",
+      status: "open",
+      amountTotal: input.amount,
+      customer: { email: input.customerEmail },
+      customFields: {},
+      metadata: { invoiceId: String(input.invoiceId), invoiceNumber: input.invoiceNumber },
+    });
+    const back = `${input.origin}/invoice/${encodeURIComponent(input.token)}`;
+    returns.set(id, { success: `${back}?session_id=${id}`, cancel: back });
+    return { id, url: `${input.origin}/checkout/fake?cs=${id}` };
+  },
+
   async retrieveSession(id: string) {
     const s = sessions.get(id);
     return s ? structuredClone(s) : null;
@@ -122,8 +142,13 @@ const gateway: FakeGateway = {
     return structuredClone(s);
   },
 
+  returnUrls(id) {
+    return returns.get(id);
+  },
+
   reset() {
     sessions.clear();
+    returns.clear();
   },
 };
 

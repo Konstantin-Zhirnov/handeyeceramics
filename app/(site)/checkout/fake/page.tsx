@@ -25,7 +25,7 @@ export default async function FakeCheckout({ searchParams }: { searchParams: Pro
   return (
     <main data-fake-checkout className="mx-auto max-w-md px-5 py-16 font-sans text-neutral-900">
       <p className="text-xs uppercase tracking-wide text-neutral-500">Fake payment gateway — no money moves</p>
-      <h1 className="mt-2 text-2xl font-semibold">{payment ? `Pay for order ${session.metadata.orderNumber || ""}` : "Start the subscription"}</h1>
+      <h1 className="mt-2 text-2xl font-semibold">{!payment ? "Start the subscription" : session.metadata.invoiceNumber ? `Pay invoice ${session.metadata.invoiceNumber}` : `Pay for order ${session.metadata.orderNumber || ""}`}</h1>
       <p className="mt-2 text-sm text-neutral-600">Session {session.id} is {session.status}.</p>
       <form method="post" action="/checkout/fake/pay" className="mt-8 flex flex-col gap-4">
         <input type="hidden" name="cs" value={session.id} />
@@ -41,7 +41,7 @@ export default async function FakeCheckout({ searchParams }: { searchParams: Pro
           Phone
           <input name="phone" className={field} />
         </label>
-        {payment && (
+        {payment && !session.metadata.invoiceNumber && (
           <label className="block text-sm">
             Who is attending
             <input name="attendee" className={field} />

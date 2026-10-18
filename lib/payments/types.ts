@@ -40,6 +40,23 @@ export type CheckoutInput = {
   }[];
 };
 
+/**
+ * Checkout for what is still due on an invoice of the admin: one line, the
+ * amount with its tax already in it (the invoice page shows the tax). The
+ * buyer comes back to the invoice's own link, `/invoice/<token>`.
+ */
+export type InvoiceCheckoutInput = {
+  invoiceId: number;
+  invoiceNumber: string;
+  token: string;
+  origin: string;
+  /** Cents, tax included. */
+  amount: number;
+  name: string;
+  customerEmail?: string;
+  expiresAt: Date;
+};
+
 /** `taxLines` are charged on every invoice of the subscription, the first month and each renewal. */
 export type SubscriptionInput = { planId: number; priceId: string; origin: string; taxLines: TaxLine[] };
 
@@ -47,6 +64,7 @@ export interface PaymentGateway {
   name: "stripe" | "fake";
   createCheckout(input: CheckoutInput): Promise<{ id: string; url: string }>;
   createSubscriptionCheckout(input: SubscriptionInput): Promise<{ id: string; url: string }>;
+  createInvoiceCheckout(input: InvoiceCheckoutInput): Promise<{ id: string; url: string }>;
   retrieveSession(id: string): Promise<GatewaySession | null>;
   constructEvent(rawBody: string, signature: string): GatewayEvent; // throws on a bad signature
   ensureTaxRate(line: TaxLine): Promise<string>; // id of a Stripe tax_rate
@@ -60,6 +78,8 @@ export type GatewaySession = {
   paymentStatus: "paid" | "unpaid" | "no_payment_required";
   status: "open" | "complete" | "expired";
   paymentIntentId?: string;
+  /** Cents charged, tax included. */
+  amountTotal?: number;
   subscriptionId?: string;
   customerId?: string;
   customer: { name?: string; email?: string; phone?: string };

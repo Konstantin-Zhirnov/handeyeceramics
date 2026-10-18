@@ -24,6 +24,7 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { SessionStudents as SessionStudents_1e941ab6425ce37873fdb66737bad00d } from '../../../components/admin/SessionStudents'
 import { DateTabs as DateTabs_6843aee8c86b2d515e155231a19da69f } from '../../../components/admin/DateTabs'
 import { StripeLink as StripeLink_311c0b1ad9d8c3eed593eec2e2623abf } from '../../../components/admin/StripeLink'
+import { InvoiceLink as InvoiceLink_6b1eea31a9e73e2426f332d25890c86b } from '../../../components/admin/InvoiceLink'
 import { MuxUploaderField as MuxUploaderField_c369a797e256de625eba826a6acb8608 } from '@oversightstudio/mux-video/elements'
 import { MuxVideoGifCell as MuxVideoGifCell_c369a797e256de625eba826a6acb8608 } from '@oversightstudio/mux-video/elements'
 import { UpcomingDashboard as UpcomingDashboard_5e9c83608ab1ccb36bf4652bf590522d } from '../../../components/admin/UpcomingDashboard'
@@ -60,6 +61,7 @@ export const importMap = {
   "/components/admin/SessionStudents#SessionStudents": SessionStudents_1e941ab6425ce37873fdb66737bad00d,
   "/components/admin/DateTabs#DateTabs": DateTabs_6843aee8c86b2d515e155231a19da69f,
   "/components/admin/StripeLink#StripeLink": StripeLink_311c0b1ad9d8c3eed593eec2e2623abf,
+  "/components/admin/InvoiceLink#InvoiceLink": InvoiceLink_6b1eea31a9e73e2426f332d25890c86b,
   "@oversightstudio/mux-video/elements#MuxUploaderField": MuxUploaderField_c369a797e256de625eba826a6acb8608,
   "@oversightstudio/mux-video/elements#MuxVideoGifCell": MuxVideoGifCell_c369a797e256de625eba826a6acb8608,
   "/components/admin/UpcomingDashboard#UpcomingDashboard": UpcomingDashboard_5e9c83608ab1ccb36bf4652bf590522d,

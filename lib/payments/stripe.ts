@@ -6,7 +6,7 @@
  * cached in the process.
  */
 import Stripe from "stripe";
-import type { CheckoutInput, GatewayEvent, GatewaySession, PaymentGateway, SubscriptionInput, TaxLine } from "./types";
+import type { CheckoutInput, GatewayEvent, GatewaySession, InvoiceCheckoutInput, PaymentGateway, SubscriptionInput, TaxLine } from "./types";
 
 /** What the gateway uses of the SDK; a test hands in a stand-in with these members. */
 export type StripeClient = Pick<Stripe, "checkout" | "taxRates" | "products" | "webhooks">;
@@ -40,6 +40,7 @@ export function toGatewaySession(s: Stripe.Checkout.Session): GatewaySession {
     paymentStatus: paymentStatusOf(s.payment_status),
     status: statusOf(s.status),
     paymentIntentId: idOf(s.payment_intent),
+    ...(typeof s.amount_total === "number" ? { amountTotal: s.amount_total } : {}),
     subscriptionId: idOf(s.subscription),
     customerId: idOf(s.customer),
     customer: {
@@ -146,6 +147,26 @@ export function stripeGateway(secretKey: string, client: StripeClient = new Stri
         subscription_data: { metadata: { planId } },
         ...urls(input.origin),
       });
+      if (!session.url) throw new Error("Stripe returned a Checkout session without a URL");
+      return { id: session.id, url: session.url };
+    },
+
+    async createInvoiceCheckout(input: InvoiceCheckoutInput) {
+      const metadata = { invoiceId: String(input.invoiceId), invoiceNumber: input.invoiceNumber };
+      const back = `${input.origin}/invoice/${encodeURIComponent(input.token)}`;
+      const params: Stripe.Checkout.SessionCreateParams = {
+        mode: "payment",
+        // One line with the tax in it: the invoice page itemises the lines and the tax; a Product per invoice would only clutter the catalog.
+        line_items: [{ price_data: { currency: CURRENCY, unit_amount: input.amount, product_data: { name: input.name } }, quantity: 1 }],
+        expires_at: Math.floor(input.expiresAt.getTime() / 1000),
+        billing_address_collection: "auto",
+        metadata,
+        payment_intent_data: { metadata, description: input.name },
+        success_url: `${back}?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: back,
+      };
+      if (input.customerEmail) params.customer_email = input.customerEmail;
+      const session = await client.checkout.sessions.create(params);
       if (!session.url) throw new Error("Stripe returned a Checkout session without a URL");
       return { id: session.id, url: session.url };
     },

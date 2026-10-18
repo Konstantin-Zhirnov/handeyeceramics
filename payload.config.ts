@@ -22,6 +22,7 @@ import {
   videosCollection,
 } from "./collections";
 import { EmailTemplates, Holds, Orders, Registrations, Sessions, Subscriptions } from "./collections/orders";
+import { Invoices } from "./collections/invoices";
 import { Home, Settings } from "./globals";
 
 const filename = fileURLToPath(import.meta.url);
@@ -141,6 +142,7 @@ export default buildConfig({
     Enquiries,
     Sessions,
     Orders,
+    Invoices,
     Registrations,
     Holds,
     Subscriptions,

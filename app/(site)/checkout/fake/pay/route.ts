@@ -9,7 +9,8 @@ import { serverURL } from "@/lib/server-url";
  * expires it. Then the route does what Stripe would — posts the signed
  * `checkout.session.completed` / `checkout.session.expired` event to this
  * site's own webhook (unless the form says `skipWebhook`) — and sends the buyer
- * on to the success page or back to the cart. 404 on any other gateway.
+ * on to the success page or back to the cart (for an invoice: back to the
+ * invoice either way). 404 on any other gateway.
  */
 export const dynamic = "force-dynamic";
 
@@ -54,14 +55,16 @@ export async function POST(request: Request) {
   const session = text("action") === "abandon" ? fake.expire(id) : fake.complete(id, { name: text("name"), email: text("email"), phone: text("phone"), attendee: text("attendee") });
   const origin = serverURL();
   const body = JSON.stringify(eventFor(session));
+  // An invoice's session goes back to the invoice; an order's to the success page or the cart.
+  const back = fake.returnUrls(id) || { success: `${origin}/checkout/success?session_id=${encodeURIComponent(id)}`, cancel: `${origin}/cart` };
+  const next = session.status === "complete" ? back.success : back.cancel;
   // "skipWebhook": the test of the success page finishing an order on its own, as when Stripe's event is late.
-  if (data.get("skipWebhook")) return NextResponse.redirect(session.status === "complete" ? `${origin}/checkout/success?session_id=${encodeURIComponent(id)}` : `${origin}/cart`, 303);
+  if (data.get("skipWebhook")) return NextResponse.redirect(next, 303);
   try {
     await fetch(`${origin}/stripe/webhook`, { method: "POST", headers: { "content-type": "application/json", "stripe-signature": sign(body) }, body });
   } catch (err) {
     // The success page finishes the order on its own; the webhook was a courtesy.
     console.error("fake checkout: the webhook could not be delivered", err);
   }
-  const next = session.status === "complete" ? `${origin}/checkout/success?session_id=${encodeURIComponent(id)}` : `${origin}/cart`;
   return NextResponse.redirect(next, 303);
 }

@@ -20,6 +20,20 @@ export const Settings: GlobalConfig = {
       label: "Subscription portal",
       admin: { description: "Customer portal link from Stripe; empty — no link" },
     },
+    {
+      name: "invoices",
+      type: "group",
+      label: "Invoices",
+      fields: [
+        { name: "gstNumber", type: "text", label: "GST number", admin: { description: "Printed on every invoice; empty — not printed" } },
+        {
+          name: "paymentNote",
+          type: "textarea",
+          label: "How to pay by e-transfer",
+          admin: { description: "Printed on every invoice that is not paid, e.g. the address to send an e-transfer to" },
+        },
+      ],
+    },
     { name: "nav", type: "array", label: "Menu", fields: linkFields },
     {
       name: "footer",

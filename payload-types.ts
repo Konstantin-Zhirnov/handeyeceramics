@@ -78,6 +78,7 @@ export interface Config {
     enquiries: Enquiry;
     sessions: Session;
     orders: Order;
+    invoices: Invoice;
     registrations: Registration;
     holds: Hold;
     subscriptions: Subscription;
@@ -101,6 +102,7 @@ export interface Config {
     enquiries: EnquiriesSelect<false> | EnquiriesSelect<true>;
     sessions: SessionsSelect<false> | SessionsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    invoices: InvoicesSelect<false> | InvoicesSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     holds: HoldsSelect<false> | HoldsSelect<true>;
     subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
@@ -700,6 +702,94 @@ export interface Order {
   createdAt: string;
 }
 /**
+ * Invoices for groups, corporate events and families. Save, then copy the client link: it always shows the latest version, the client pays it by card, and you mark an e-transfer as a payment below.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices".
+ */
+export interface Invoice {
+  id: number;
+  number?: string | null;
+  /**
+   * Set from the payments below
+   */
+  status: 'open' | 'partially_paid' | 'paid' | 'void';
+  paidAt?: string | null;
+  /**
+   * The link then shows the invoice as void and it cannot be paid
+   */
+  voided?: boolean | null;
+  customer: {
+    name: string;
+    company?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  };
+  eventDate?: string | null;
+  /**
+   * Shown on the invoice and sets the tax; empty — British Columbia
+   */
+  studio?: (number | null) | Studio;
+  lines: {
+    /**
+     * e.g. Private wheel workshop, 12 guests
+     */
+    description: string;
+    quantity: number;
+    /**
+     * In dollars; negative for a discount
+     */
+    unitPrice: number;
+    taxGroup: 'service' | 'goods' | 'exempt';
+    id?: string | null;
+  }[];
+  /**
+   * Shown on the invoice, e.g. what is included or the deposit terms
+   */
+  note?: string | null;
+  /**
+   * Card payments are added here by themselves. Add an e-transfer or cash payment when it arrives.
+   */
+  payments?:
+    | {
+        at: string;
+        /**
+         * In dollars; negative for a refund
+         */
+        amount: number;
+        method: 'card' | 'e-transfer' | 'cash' | 'other';
+        note?: string | null;
+        ref?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  totalDisplay?: string | null;
+  token?: string | null;
+  claimedSession?: string | null;
+  /**
+   * In cents
+   */
+  subtotal?: number | null;
+  /**
+   * In cents
+   */
+  tax?: number | null;
+  /**
+   * In cents
+   */
+  total?: number | null;
+  /**
+   * In cents
+   */
+  paid?: number | null;
+  /**
+   * In cents
+   */
+  due?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Who took a seat on which date. Filter by class date to see the list of a class.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -867,6 +957,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'invoices';
+        value: number | Invoice;
       } | null)
     | ({
         relationTo: 'registrations';
@@ -1348,6 +1442,56 @@ export interface OrdersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices_select".
+ */
+export interface InvoicesSelect<T extends boolean = true> {
+  number?: T;
+  status?: T;
+  paidAt?: T;
+  voided?: T;
+  customer?:
+    | T
+    | {
+        name?: T;
+        company?: T;
+        email?: T;
+        phone?: T;
+      };
+  eventDate?: T;
+  studio?: T;
+  lines?:
+    | T
+    | {
+        description?: T;
+        quantity?: T;
+        unitPrice?: T;
+        taxGroup?: T;
+        id?: T;
+      };
+  note?: T;
+  payments?:
+    | T
+    | {
+        at?: T;
+        amount?: T;
+        method?: T;
+        note?: T;
+        ref?: T;
+        id?: T;
+      };
+  totalDisplay?: T;
+  token?: T;
+  claimedSession?: T;
+  subtotal?: T;
+  tax?: T;
+  total?: T;
+  paid?: T;
+  due?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "registrations_select".
  */
 export interface RegistrationsSelect<T extends boolean = true> {
@@ -1481,6 +1625,16 @@ export interface Setting {
    * Customer portal link from Stripe; empty — no link
    */
   stripePortalUrl?: string | null;
+  invoices?: {
+    /**
+     * Printed on every invoice; empty — not printed
+     */
+    gstNumber?: string | null;
+    /**
+     * Printed on every invoice that is not paid, e.g. the address to send an e-transfer to
+     */
+    paymentNote?: string | null;
+  };
   nav?:
     | {
         label: string;
@@ -1549,6 +1703,12 @@ export interface SettingsSelect<T extends boolean = true> {
   email?: T;
   instagram?: T;
   stripePortalUrl?: T;
+  invoices?:
+    | T
+    | {
+        gstNumber?: T;
+        paymentNote?: T;
+      };
   nav?:
     | T
     | {
