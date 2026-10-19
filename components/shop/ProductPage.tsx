@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { Product } from "@/payload-types";
 import { AddToCart } from "@/components/cart/AddToCart";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
+import { TrackOnMount } from "@/components/site/TrackEvents";
 import { site } from "@/lib/site";
 import { sessionChoices, splitCategories } from "./data";
 import { CallStudio, Price, currentPrice, optionChoices, productImages } from "./parts";
@@ -22,6 +23,17 @@ function jsonLd(doc: Product) {
     ...(typeof price === "number"
       ? { offers: { "@type": "Offer", price: price.toFixed(2), priceCurrency: "CAD", url: `${site.url}${doc.path}` } }
       : {}),
+  };
+}
+
+/** What the ad tags learn about the product shown: the same item id the purchase carries. */
+function viewContent(doc: Product) {
+  const price = currentPrice(doc);
+  return {
+    content_ids: [`product-${doc.id}`],
+    content_type: "product",
+    content_name: doc.name,
+    ...(typeof price === "number" ? { value: price, currency: "CAD" } : {}),
   };
 }
 
@@ -83,6 +95,7 @@ export async function ProductPage({ doc }: { doc: Product }) {
             ) : (
               <AddToCart productId={doc.id} price={currentPrice(doc) ?? null} options={optionChoices(doc.options)} sessions={sessions} />
             )}
+            <TrackOnMount meta={{ name: "ViewContent", data: viewContent(doc) }} google={{ name: "view_item", data: viewContent(doc) }} />
             <CallStudio />
           </div>
           {doc.description && (

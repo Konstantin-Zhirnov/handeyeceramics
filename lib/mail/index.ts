@@ -3,7 +3,8 @@
  * the first class, "pieces ready" and the next-course invitation, from the
  * templates the owner edits in the email-templates collection. Placeholders
  * {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}},
- * {{studio_address}}, {{door_code}}, {{site_url}} are replaced; an unknown
+ * {{studio_address}}, {{door_code}}, {{site_url}}, {{teachers_url}},
+ * {{teachers_password}} are replaced; an unknown
  * placeholder stays as it is. Letters go through `payload.sendEmail` — SMTP, or
  * the server log when SMTP is not configured — like the enquiry letters.
  *
@@ -16,6 +17,7 @@ import { formatPrice } from "../cms/text";
 import { getCMS } from "../cms/payload";
 import { relId } from "../cms/relations";
 import { SEATED_STATUSES } from "../booking/availability";
+import { TEACHERS_PATH } from "../teachers";
 import { EMAIL_TEMPLATE_KEYS, type TemplateKey } from "./keys";
 
 export { EMAIL_TEMPLATE_KEYS, type TemplateKey };
@@ -110,6 +112,15 @@ async function productName(payload: Payload, id: number | undefined): Promise<st
 
 const siteUrl = (payload: Payload) => (payload.config.serverURL || "").replace(/\/+$/, "");
 
+/** What stands in for the teachers' page password the owner has not set yet. */
+export const NO_TEACHERS_PASSWORD = "[ask the studio]";
+
+/** The teacher contacts page and this term's password (global `teachers`, read on the server). */
+async function teacherVars(payload: Payload): Promise<Vars> {
+  const page = await payload.findGlobal({ slug: "teachers", depth: 0, overrideAccess: true }).catch(() => null);
+  return { teachers_url: `${siteUrl(payload)}${TEACHERS_PATH}`, teachers_password: page?.password?.trim() || NO_TEACHERS_PASSWORD };
+}
+
 // ---- Order confirmation --------------------------------------------------------
 
 function itemLine(line: NonNullable<Order["lines"]>[number]): string {
@@ -130,6 +141,7 @@ async function orderVars(payload: Payload, order: Order): Promise<Vars> {
     dates: [...new Set(sessions.map((s) => s.label))].join("; "),
     ...(await placeVars(payload, studioId)),
     site_url: siteUrl(payload),
+    ...(await teacherVars(payload)),
   };
 }
 
@@ -218,6 +230,7 @@ class StudentVars {
           dates: session?.label ?? "",
           ...(await placeVars(this.payload, relId(session?.studio))),
           site_url: siteUrl(this.payload),
+          ...(await teacherVars(this.payload)),
         };
       })();
       this.sessions.set(sessionId, vars);

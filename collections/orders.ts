@@ -244,6 +244,13 @@ export const Orders: CollectionConfig = {
     { name: "attendee", type: "text", label: "Who is attending", access: fixedAfterCreate, admin: { readOnly: true } },
     { name: "pickupStudio", type: "relationship", relationTo: "studios", label: "Pickup studio", access: fixedAfterCreate, admin: { readOnly: true } },
     {
+      name: "newsletter",
+      type: "checkbox",
+      label: "Asked for class emails",
+      access: fixedAfterCreate,
+      admin: { readOnly: true, position: "sidebar", description: "Ticked in the cart; the buyer is added to the mailing list once the order is paid" },
+    },
+    {
       name: "lines",
       type: "array",
       label: "Lines",
@@ -303,6 +310,20 @@ export const Orders: CollectionConfig = {
     { name: "stripeSessionId", type: "text", unique: true, index: true, label: "Stripe Checkout session", access: serverSet, admin: { readOnly: true } },
     { name: "stripePaymentIntentId", type: "text", label: "Stripe payment", access: serverSet, admin: { readOnly: true } },
     { name: "stripeCustomerId", type: "text", label: "Stripe customer", access: serverSet, admin: { readOnly: true } },
+    {
+      // What the buyer's browser said at checkout, for the server copy of the purchase sent to Meta.
+      name: "tracking",
+      type: "group",
+      label: "Ad tracking",
+      access: serverSet,
+      admin: { hidden: true },
+      fields: [
+        { name: "fbp", type: "text" },
+        { name: "fbc", type: "text" },
+        { name: "clientIp", type: "text" },
+        { name: "userAgent", type: "text" },
+      ],
+    },
     {
       name: "events",
       type: "array",
@@ -432,7 +453,7 @@ export const EmailTemplates: CollectionConfig = {
     group: GROUP,
     defaultColumns: ["key", "subject", "enabled"],
     description:
-      "The emails the site sends. Placeholders: {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}",
+      "The emails the site sends. Placeholders: {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}, {{teachers_url}}, {{teachers_password}}",
   },
   fields: [
     {

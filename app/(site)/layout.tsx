@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Karla } from "next/font/google";
+import { Tracking } from "@/components/site/Tracking";
 import { getHome } from "@/lib/cms/site";
 import { SITE_URL } from "@/lib/cms/text";
 import "../globals.css";
@@ -46,6 +47,7 @@ export default function RootLayout({
     <html lang="en" className={`${bodoni.variable} ${karla.variable}`}>
       <body>
         {children}
+        <Tracking />
       </body>
     </html>
   );

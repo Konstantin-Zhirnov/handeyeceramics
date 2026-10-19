@@ -120,10 +120,12 @@ export interface Config {
   globals: {
     settings: Setting;
     home: Home;
+    teachers: Teacher;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
     home: HomeSelect<false> | HomeSelect<true>;
+    teachers: TeachersSelect<false> | TeachersSelect<true>;
   };
   locale: null;
   widgets: {
@@ -644,6 +646,10 @@ export interface Order {
   };
   attendee?: string | null;
   pickupStudio?: (number | null) | Studio;
+  /**
+   * Ticked in the cart; the buyer is added to the mailing list once the order is paid
+   */
+  newsletter?: boolean | null;
   lines?:
     | {
         kind: 'session' | 'product' | 'plan';
@@ -690,6 +696,12 @@ export interface Order {
   stripeSessionId?: string | null;
   stripePaymentIntentId?: string | null;
   stripeCustomerId?: string | null;
+  tracking?: {
+    fbp?: string | null;
+    fbc?: string | null;
+    clientIp?: string | null;
+    userAgent?: string | null;
+  };
   events?:
     | {
         at: string;
@@ -848,7 +860,7 @@ export interface Subscription {
   createdAt: string;
 }
 /**
- * The emails the site sends. Placeholders: {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}
+ * The emails the site sends. Placeholders: {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}, {{teachers_url}}, {{teachers_password}}
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "email-templates".
@@ -1404,6 +1416,7 @@ export interface OrdersSelect<T extends boolean = true> {
       };
   attendee?: T;
   pickupStudio?: T;
+  newsletter?: T;
   lines?:
     | T
     | {
@@ -1429,6 +1442,14 @@ export interface OrdersSelect<T extends boolean = true> {
   stripeSessionId?: T;
   stripePaymentIntentId?: T;
   stripeCustomerId?: T;
+  tracking?:
+    | T
+    | {
+        fbp?: T;
+        fbc?: T;
+        clientIp?: T;
+        userAgent?: T;
+      };
   events?:
     | T
     | {
@@ -1695,6 +1716,37 @@ export interface Home {
   createdAt?: string | null;
 }
 /**
+ * The page /teachers. Students open it with the password from their confirmation email. Change the password each term: whoever had the old one has to enter the new one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teachers".
+ */
+export interface Teacher {
+  id: number;
+  /**
+   * One password for all students of this term; letter case does not matter. Empty — the page is closed to everyone.
+   */
+  password?: string | null;
+  /**
+   * For example, when to call and when to text
+   */
+  intro?: string | null;
+  teachers?:
+    | {
+        name: string;
+        phone: string;
+        studio?: (number | null) | Studio;
+        /**
+         * What they teach, e.g. Mon & Wed wheel 6 PM
+         */
+        classes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings_select".
  */
@@ -1771,6 +1823,26 @@ export interface HomeSelect<T extends boolean = true> {
     | {
         title?: T;
         description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teachers_select".
+ */
+export interface TeachersSelect<T extends boolean = true> {
+  password?: T;
+  intro?: T;
+  teachers?:
+    | T
+    | {
+        name?: T;
+        phone?: T;
+        studio?: T;
+        classes?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;

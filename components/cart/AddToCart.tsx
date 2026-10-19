@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import { MAX_QUANTITY } from "@/lib/cart/pricing";
 import { formatPrice } from "@/lib/cms/text";
+import { googleEvent, metaEvent } from "@/lib/track/client";
 import { CART_PATH } from "./CartLink";
 import { useCart } from "./CartProvider";
 
@@ -52,6 +53,9 @@ export function AddToCart({ productId, price, options, sessions }: Props) {
       ...(typeof dollars === "number" ? { seenAmount: Math.round(dollars * 100) } : {}),
     });
     setAdded(true);
+    const item = { content_ids: [`product-${productId}`], content_type: "product", ...(typeof dollars === "number" ? { value: dollars * quantity, currency: "CAD" } : {}) };
+    metaEvent("AddToCart", { ...item, num_items: quantity });
+    googleEvent("add_to_cart", item);
   };
 
   return (

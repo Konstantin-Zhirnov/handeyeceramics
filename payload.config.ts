@@ -23,7 +23,7 @@ import {
 } from "./collections";
 import { EmailTemplates, Holds, Orders, Registrations, Sessions, Subscriptions } from "./collections/orders";
 import { Invoices } from "./collections/invoices";
-import { Home, Settings } from "./globals";
+import { Home, Settings, Teachers } from "./globals";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -148,7 +148,7 @@ export default buildConfig({
     Subscriptions,
     EmailTemplates,
   ],
-  globals: [Settings, Home],
+  globals: [Settings, Home, Teachers],
   plugins,
   typescript: { outputFile: path.resolve(dirname, "payload-types.ts") },
 });

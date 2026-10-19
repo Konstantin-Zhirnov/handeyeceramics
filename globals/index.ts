@@ -1,5 +1,5 @@
 import type { GlobalConfig } from "payload";
-import { photosField } from "../collections/fields/common";
+import { photosField, signedIn } from "../collections/fields/common";
 
 const linkFields = [
   { name: "label", type: "text" as const, required: true },
@@ -89,6 +89,42 @@ export const Home: GlobalConfig = {
       fields: [
         { name: "title", type: "text" },
         { name: "description", type: "textarea" },
+      ],
+    },
+  ],
+};
+
+/**
+ * The teacher contacts page (/teachers), closed by one password the owner
+ * changes each term. Only signed-in editors read this global; the page reads
+ * it on the server after checking the student's password.
+ */
+export const Teachers: GlobalConfig = {
+  slug: "teachers",
+  label: "Teacher contacts",
+  access: { read: signedIn, update: signedIn },
+  admin: {
+    description:
+      "The page /teachers. Students open it with the password from their confirmation email. Change the password each term: whoever had the old one has to enter the new one.",
+  },
+  fields: [
+    {
+      name: "password",
+      type: "text",
+      label: "Password",
+      admin: { description: "One password for all students of this term; letter case does not matter. Empty — the page is closed to everyone." },
+    },
+    { name: "intro", type: "textarea", label: "Text above the list", admin: { description: "For example, when to call and when to text" } },
+    {
+      name: "teachers",
+      type: "array",
+      label: "Teachers",
+      labels: { singular: "Teacher", plural: "Teachers" },
+      fields: [
+        { name: "name", type: "text", required: true, label: "Name" },
+        { name: "phone", type: "text", required: true, label: "Phone" },
+        { name: "studio", type: "relationship", relationTo: "studios", label: "Studio" },
+        { name: "classes", type: "text", label: "Classes", admin: { description: "What they teach, e.g. Mon & Wed wheel 6 PM" } },
       ],
     },
   ],

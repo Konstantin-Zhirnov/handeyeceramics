@@ -3,11 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClearCart } from "@/components/cart/ClearCart";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
+import { TrackOnMount } from "@/components/site/TrackEvents";
 import { addressParts } from "@/lib/cms/address";
 import { relId } from "@/lib/cms/relations";
 import { getCMS } from "@/lib/cms/resolve";
 import { SITE_SUFFIX, formatPrice } from "@/lib/cms/text";
 import { finalizeOrder, gateway } from "@/lib/payments";
+import { trackingConfig } from "@/lib/track/config";
+import { normalPhone, purchaseData } from "@/lib/track/purchase";
 import type { Order, Studio } from "@/payload-types";
 
 /**
@@ -56,6 +59,7 @@ export default async function Success({ searchParams }: { searchParams: Promise<
   return (
     <SiteShell>
       <ClearCart order={number} />
+      <PurchaseTag order={order} />
       <PageHeading eyebrow={`Order ${number}`} title="Thank you for your order">
         <p className="mt-4 max-w-[40rem] text-lg text-ink-soft">
           Your payment went through{order.customer?.email ? ` and a confirmation is on its way to ${order.customer.email}` : ""}.
@@ -126,6 +130,38 @@ export default async function Success({ searchParams }: { searchParams: Promise<
         </aside>
       </div>
     </SiteShell>
+  );
+}
+
+/**
+ * The purchase for the ad tags, once per order in this browser: the Meta
+ * pixel with the event id of the server copy, and the Google Ads conversion
+ * with the order's real total when a conversion label is configured.
+ */
+function PurchaseTag({ order }: { order: Order }) {
+  const { metaPixelId, googleAdsId, googlePurchaseLabel } = trackingConfig();
+  if (!metaPixelId && !googleAdsId) return null;
+  const p = purchaseData(order);
+  const phone = normalPhone(order.customer?.phone);
+  const userData = { ...(order.customer?.email ? { email: order.customer.email } : {}), ...(phone ? { phone_number: `+${phone}` } : {}) };
+  return (
+    <TrackOnMount
+      once={p.eventId}
+      meta={
+        metaPixelId
+          ? {
+              name: "Purchase",
+              eventId: p.eventId,
+              data: { value: p.value, currency: p.currency, content_type: "product", content_ids: p.contentIds, contents: p.contents, num_items: p.numItems, order_id: p.orderId },
+            }
+          : undefined
+      }
+      google={
+        googleAdsId && googlePurchaseLabel
+          ? { name: "conversion", data: { send_to: `${googleAdsId}/${googlePurchaseLabel}`, value: p.value, currency: p.currency, transaction_id: p.orderId }, userData }
+          : undefined
+      }
+    />
   );
 }
 

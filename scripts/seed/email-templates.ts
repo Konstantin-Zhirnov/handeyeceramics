@@ -3,7 +3,8 @@
  * email-templates collection. The owner edits them in the admin; the seed
  * only fills in what is missing or resets a template to this text.
  * Placeholders are replaced by lib/mail: {{name}}, {{order_number}}, {{items}},
- * {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}}.
+ * {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}},
+ * {{teachers_url}}, {{teachers_password}}.
  */
 import type { TemplateKey } from "../../lib/mail/keys";
 
@@ -24,6 +25,7 @@ export const EMAIL_TEMPLATES: EmailTemplateSeed[] = [
       "Dates: {{dates}}",
       "Studio: {{studio_name}}, {{studio_address}}",
       "Door code: {{door_code}}",
+      "Your teachers' phone numbers: {{teachers_url}} (password: {{teachers_password}})",
       "",
       "Pieces and clay are picked up at the same studio. If anything looks wrong, reply to this email and we will sort it out.",
       "",

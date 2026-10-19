@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/cms/text";
 import { type CartPricedLine, MAX_QUANTITY } from "@/lib/cart/pricing";
 import type { CartLineInput } from "@/lib/payments/types";
 import { useSiteData } from "@/components/site/SiteData";
+import { googleEvent, metaEvent } from "@/lib/track/client";
 import { type CartLine, useCart } from "./CartProvider";
 
 /** Where the check of the cart is asked for (this module) and where paying starts (the checkout routes). */
@@ -23,6 +24,7 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
   const { studios, phone, phoneHref } = useSiteData();
   const openStudios = useMemo(() => studios.filter((s) => s.status === "open"), [studios]);
   const [pickup, setPickup] = useState<number | undefined>();
+  const [newsletter, setNewsletter] = useState(false);
   const [result, setResult] = useState<ValidatedCart | null>(null);
   const [checking, setChecking] = useState(false);
   const [failed, setFailed] = useState("");
@@ -33,7 +35,8 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
   // The check carries the price each line last showed, so the server can flag the lines whose price moved.
   const body = JSON.stringify({ lines: cart.lines, pickupStudio: pickup });
   /** What the checkout gets: the lines without the browser's own bookkeeping. */
-  const checkoutBody = () => JSON.stringify({ lines: cart.lines.map(({ seenAmount: _seen, ...l }) => l), pickupStudio: pickup });
+  const lines = () => cart.lines.map(({ seenAmount: _seen, ...l }) => l);
+  const checkoutBody = () => JSON.stringify({ lines: lines(), pickupStudio: pickup, newsletter });
 
   // Every change of the lines or the studio is priced again by the server: the prices are the admin's, not the browser's.
   useEffect(() => {
@@ -68,6 +71,9 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
     setPaying(true);
     // Paying is the moment the visitor accepts the prices shown: from now on these are the ones to compare against.
     for (const l of result?.lines || []) if (!l.error) cart.seen(l, l.unitAmount);
+    const checkout = { value: (result?.total || 0) / 100, currency: "CAD", num_items: cart.count };
+    metaEvent("InitiateCheckout", checkout);
+    googleEvent("begin_checkout", checkout);
     try {
       const res = await fetch(CHECKOUT_PATH, { method: "POST", headers: { "Content-Type": "application/json" }, body: checkoutBody() });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; url?: string; message?: string; errors?: unknown };
@@ -180,8 +186,12 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
           }}
           className="flex flex-col gap-3"
         >
-          <input type="hidden" name="lines" value={checkoutBody()} />
+          <input type="hidden" name="lines" value={JSON.stringify(lines())} />
           <input type="hidden" name="pickupStudio" value={pickup ?? ""} />
+          <label data-newsletter className="flex items-start gap-3 text-caption text-ink-soft">
+            <input type="checkbox" name="newsletter" checked={newsletter} onChange={(e) => setNewsletter(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-terracotta" />
+            <span>Email me new class dates and studio news. Unsubscribe any time.</span>
+          </label>
           <button
             type="submit"
             data-pay

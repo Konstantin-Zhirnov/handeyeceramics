@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3210
+    },
+    {
+      "name": "handeye-tracking-check",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["cross-env", "META_PIXEL_ID=1234567890", "GOOGLE_ADS_ID=AW-1234567890", "GOOGLE_ADS_PURCHASE_LABEL=checklabel", "PAYMENT_GATEWAY=fake", "npm", "run", "dev"],
+      "port": 3210
     }
   ]
 }

@@ -5,6 +5,7 @@ import { getCMS } from "@/lib/cms/resolve";
 import { CHECKOUT_TTL_MS, createCheckoutForOrder, gateway, PAYMENT_UNAVAILABLE } from "@/lib/payments";
 import { addressOf, rateLimiter, SENDER_LIMIT } from "@/lib/rate-limit";
 import { serverURL } from "@/lib/server-url";
+import { trackingConfig } from "@/lib/track/config";
 import type { Order } from "@/payload-types";
 
 /**
@@ -26,7 +27,7 @@ const limiter = rateLimiter(SENDER_LIMIT);
 
 const fail = (status: number, message: string, more: Record<string, unknown> = {}) => NextResponse.json({ ok: false, message, ...more }, { status });
 
-type Body = { lines: unknown[]; pickupStudio?: number; form: boolean };
+type Body = { lines: unknown[]; pickupStudio?: number; newsletter: boolean; form: boolean };
 
 /** The cart from a JSON body or from the hidden fields of the no-script form; null when neither is readable. */
 async function readBody(request: Request): Promise<Body | null> {
@@ -34,23 +35,50 @@ async function readBody(request: Request): Promise<Body | null> {
   try {
     let lines: unknown;
     let pickup: unknown;
+    let newsletter = false;
     let form = false;
     if (type.includes("application/json")) {
       const body = (await request.json()) as Record<string, unknown> | null;
       lines = body?.lines;
       pickup = body?.pickupStudio;
+      newsletter = body?.newsletter === true;
     } else {
       const data = await request.formData();
       lines = JSON.parse(String(data.get("lines") || "[]"));
       pickup = Number(data.get("pickupStudio")) || undefined;
+      newsletter = data.get("newsletter") === "on";
       form = true;
     }
     if (!Array.isArray(lines)) return null;
     const pickupStudio = typeof pickup === "number" && Number.isInteger(pickup) && pickup > 0 ? pickup : undefined;
-    return { lines, pickupStudio, form };
+    return { lines, pickupStudio, newsletter, form };
   } catch {
     return null;
   }
+}
+
+/** The Meta browser cookies and the buyer's address and browser, kept on the order only while the Conversions API is on. */
+function trackingContext(request: Request, address: string | undefined) {
+  if (!trackingConfig().metaCapiToken) return undefined;
+  const cookies = new Map(
+    (request.headers.get("cookie") || "").split(";").map((c) => {
+      const at = c.indexOf("=");
+      const value = c.slice(at + 1).trim();
+      let decoded = value;
+      try {
+        decoded = decodeURIComponent(value);
+      } catch {
+        /* a malformed cookie is taken as it is */
+      }
+      return [c.slice(0, at).trim(), decoded] as const;
+    }),
+  );
+  return {
+    fbp: cookies.get("_fbp") || undefined,
+    fbc: cookies.get("_fbc") || undefined,
+    clientIp: address,
+    userAgent: request.headers.get("user-agent")?.slice(0, 500) || undefined,
+  };
 }
 
 async function unavailable() {
@@ -100,6 +128,7 @@ export async function POST(request: Request) {
     data: {
       status: "pending",
       pickupStudio: cart.studio.id,
+      newsletter: body.newsletter,
       currency: "cad",
       lines: cart.lines.map((l) => ({
         kind: l.kind,
@@ -117,6 +146,7 @@ export async function POST(request: Request) {
       tax: cart.tax,
       total: cart.total,
       events: [{ at: new Date().toISOString(), type: "created", note: address ? `from ${address}` : undefined }],
+      tracking: trackingContext(request, address),
     },
   })) as Order;
 

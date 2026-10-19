@@ -15,6 +15,7 @@ import { confirmSeats, releaseHolds } from "../booking/holds";
 import { getCMS } from "../cms/payload";
 import { relId } from "../cms/relations";
 import { sendOrderConfirmation } from "../mail";
+import { addBuyerToList } from "../newsletter";
 import { affected, literal, table } from "./db";
 import { gateway } from "./gateway";
 import { finalizeInvoicePayment, recordInvoiceRefund } from "./invoices";
@@ -124,7 +125,8 @@ async function payOrder(p: Payload, order: Order, session: GatewaySession): Prom
   })) as Order;
   for (const [name, after] of [
     ["sendOrderConfirmation", () => sendOrderConfirmation(order.id)],
-    ["trackPurchase", () => trackPurchase(order.id)],
+    ["trackPurchase", () => trackPurchase(order.id, p)],
+    ["addBuyerToList", () => addBuyerToList(order.id, p)],
   ] as const) {
     try {
       await after();
