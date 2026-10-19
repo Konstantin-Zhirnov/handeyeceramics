@@ -44,7 +44,8 @@ export const Invoices: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Sales",
-    defaultColumns: ["number", "customer.name", "totalDisplay", "status", "createdAt"],
+    // Total and status next to the number: on a phone the first columns are the ones on screen.
+    defaultColumns: ["number", "totalDisplay", "status", "customer.name", "createdAt"],
     listSearchableFields: ["number", "customer.name", "customer.company", "customer.email"],
     description:
       "Invoices for groups, corporate events and families. Save, then copy the client link: it always shows the latest version, the client pays it by card, and you mark an e-transfer as a payment below.",
