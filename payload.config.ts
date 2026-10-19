@@ -122,9 +122,21 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
-    meta: { titleSuffix: " — Hand Eye Ceramics admin" },
+    meta: {
+      titleSuffix: " — Hand Eye Ceramics admin",
+      description: "Hand Eye Ceramics admin",
+      icons: [
+        { rel: "icon", type: "image/svg+xml", url: "/favicon.svg" },
+        { rel: "apple-touch-icon", sizes: "180x180", url: "/assets/apple-touch-icon.png" },
+      ],
+      // The dynamic image says "Payload"; the admin is not shared on social, so none.
+      defaultOGImageType: "off",
+      openGraph: { siteName: "Hand Eye Ceramics" },
+    },
     // The owner checks seats from the phone (R01.1): the coming week first on the dashboard, every upcoming date one tap away.
     components: {
+      // The site's mark and wordmark instead of Payload's: the owner signs in to "Hand Eye Ceramics", not to a vendor.
+      graphics: { Logo: "/components/admin/Brand#BrandLogo", Icon: "/components/admin/Brand#BrandIcon" },
       beforeDashboard: ["/components/admin/UpcomingDashboard#UpcomingDashboard"],
       beforeNavLinks: ["/components/admin/UpcomingNavLink#UpcomingNavLink"],
       views: { upcoming: { Component: "/components/admin/UpcomingView#UpcomingView", path: "/upcoming", exact: true, meta: { title: "Upcoming classes" } } },

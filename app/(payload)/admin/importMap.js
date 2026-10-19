@@ -27,6 +27,8 @@ import { StripeLink as StripeLink_311c0b1ad9d8c3eed593eec2e2623abf } from '../..
 import { InvoiceLink as InvoiceLink_6b1eea31a9e73e2426f332d25890c86b } from '../../../components/admin/InvoiceLink'
 import { MuxUploaderField as MuxUploaderField_c369a797e256de625eba826a6acb8608 } from '@oversightstudio/mux-video/elements'
 import { MuxVideoGifCell as MuxVideoGifCell_c369a797e256de625eba826a6acb8608 } from '@oversightstudio/mux-video/elements'
+import { BrandIcon as BrandIcon_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
+import { BrandLogo as BrandLogo_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
 import { UpcomingDashboard as UpcomingDashboard_5e9c83608ab1ccb36bf4652bf590522d } from '../../../components/admin/UpcomingDashboard'
 import { UpcomingNavLink as UpcomingNavLink_fbd5d4a787eab00533cfebce445ffc04 } from '../../../components/admin/UpcomingNavLink'
 import { UpcomingView as UpcomingView_df178c8060df967c069764b43a2cbf93 } from '../../../components/admin/UpcomingView'
@@ -64,6 +66,8 @@ export const importMap = {
   "/components/admin/InvoiceLink#InvoiceLink": InvoiceLink_6b1eea31a9e73e2426f332d25890c86b,
   "@oversightstudio/mux-video/elements#MuxUploaderField": MuxUploaderField_c369a797e256de625eba826a6acb8608,
   "@oversightstudio/mux-video/elements#MuxVideoGifCell": MuxVideoGifCell_c369a797e256de625eba826a6acb8608,
+  "/components/admin/Brand#BrandIcon": BrandIcon_81fda60f3e3709e861f40982a767707d,
+  "/components/admin/Brand#BrandLogo": BrandLogo_81fda60f3e3709e861f40982a767707d,
   "/components/admin/UpcomingDashboard#UpcomingDashboard": UpcomingDashboard_5e9c83608ab1ccb36bf4652bf590522d,
   "/components/admin/UpcomingNavLink#UpcomingNavLink": UpcomingNavLink_fbd5d4a787eab00533cfebce445ffc04,
   "/components/admin/UpcomingView#UpcomingView": UpcomingView_df178c8060df967c069764b43a2cbf93,

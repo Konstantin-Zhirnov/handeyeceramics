@@ -1,6 +1,158 @@
 /* Admin style overrides go here. */
 
 /*
+ * The admin in the public site's clothes (app/globals.css): the warm clay neutrals in
+ * place of Payload's greys, Karla for text and Bodoni Moda for page titles, the site's
+ * softer corners and its pill buttons. Payload reads every colour from --color-base-*
+ * through --theme-elevation-*, and its dark theme walks the same scale backwards, so
+ * one warm ramp gives a cream light theme and an espresso dark one.
+ *
+ * Payload's own rules sit in @layer payload-default; these are unlayered and win.
+ */
+:root {
+  --color-base-0: #f8f3ec;
+  --color-base-50: #f1e9de;
+  --color-base-100: #ece2d4; /* clay-100 */
+  --color-base-150: #dccdb9; /* clay-200: borders */
+  --color-base-200: #cfbea8;
+  --color-base-250: #c2ad95;
+  --color-base-300: #b39a80; /* clay-400 */
+  --color-base-350: #a38a71;
+  --color-base-400: #937a63;
+  --color-base-450: #846c56;
+  --color-base-500: #78604c;
+  --color-base-550: #6b5647; /* ink-soft */
+  --color-base-600: #5f4b3d;
+  --color-base-650: #534033;
+  --color-base-700: #47362a;
+  --color-base-750: #3c2d23;
+  --color-base-800: #2a1d15; /* ink: the light theme's text */
+  --color-base-850: #241912;
+  --color-base-900: #1c1410; /* the dark theme's page */
+  --color-base-950: #140e0b;
+  --color-base-1000: #0c0806;
+
+  --font-body: var(--font-karla), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
+
+  /* The site's inset / card / panel corners, a step smaller for a denser screen. */
+  --style-radius-s: 10px;
+  --style-radius-m: 14px;
+  --style-radius-l: 20px;
+
+  --he-terracotta: #7a4e33;
+  --he-cream: #f5efe6;
+  --he-sky: #abd9f5;
+  --he-sky-deep: #27679a;
+  --he-button-hover: var(--color-base-800);
+  --accessibility-outline: 2px solid var(--he-sky-deep);
+}
+
+html[data-theme="light"] {
+  --theme-input-bg: #fffcf7;
+}
+
+html[data-theme="dark"] {
+  --he-button-hover: #946546;
+  --accessibility-outline: 2px solid var(--he-sky);
+}
+
+::selection {
+  background: var(--he-sky);
+  color: var(--color-base-800);
+}
+
+body {
+  font-synthesis-weight: none;
+}
+
+/* Page titles in the site's Didone; smaller headings stay in Karla, where Bodoni's hairlines would break up. */
+h1 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* The site's filled pill: terracotta, cream text, ink on hover. */
+.btn--style-primary {
+  --bg-color: var(--he-terracotta);
+  --color: var(--he-cream);
+  --hover-bg: var(--he-button-hover);
+  --hover-color: var(--he-cream);
+}
+
+.btn {
+  border-radius: 999px;
+  --btn-font-weight: 600;
+}
+
+/* A button with a menu is two halves of one pill. */
+.btn--withPopup .btn {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.btn--withPopup .popup-button {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-start-end-radius: 999px;
+  border-end-end-radius: 999px;
+}
+
+/* The brand: the login page's mark and wordmark, the header's home mark (components/admin/Brand.tsx). */
+.he-brand-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--base) * 0.8);
+  color: var(--theme-text);
+}
+
+.he-brand-logo__mark {
+  display: block;
+  width: 104px;
+  height: 96px;
+}
+
+.he-brand-logo__name {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  span {
+    opacity: 0.6;
+  }
+}
+
+.he-brand-logo__mark path,
+.he-brand-icon path {
+  fill: currentColor;
+}
+
+/* A stray light speck in the source artwork; it shows as a dot once the mark takes one colour. */
+.he-brand-logo__mark path[data-color="4"],
+.he-brand-icon path[data-color="4"] {
+  display: none;
+}
+
+.he-brand-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--theme-text);
+}
+
+/* Payload sizes the home link for its 18px glyph; the round mark needs a little more to read. */
+.step-nav__home {
+  width: 26px;
+  height: 26px;
+}
+
+/*
  * The owner edits from a phone (R01.1); two fixes for screens below 768px.
  *
  * The breadcrumbs of a document cannot shrink, so a long title pushes the account
@@ -12,6 +164,20 @@
  * 2 x 16px plus a 24px line, -56px for one line), so each extra line adds 24px to it.
  */
 @media (max-width: 768px) {
+  .step-nav__home {
+    width: 22px;
+    height: 22px;
+  }
+
+  .he-brand-logo__mark {
+    width: 87px;
+    height: 80px;
+  }
+
+  .he-brand-logo__name {
+    font-size: 19px;
+  }
+
   .app-header__step-nav-wrapper {
     min-width: 0;
     overflow: hidden;
