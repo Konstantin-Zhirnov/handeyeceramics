@@ -89,7 +89,7 @@ describe("the seed's class dates", () => {
     expect(new Set(docs.map((d) => d.seatsUnconfirmed))).toEqual(new Set([false]));
     expect(new Set(docs.map((d) => d.studio))).toEqual(new Set([await studioId(CHINATOWN_STUDIO)]));
     const nov = docs.find((d) => d.label === "Thurs 4pm-6:30pm Nov 5-Dec 10 (Mapi)")!;
-    expect(nov.startsAt).toBe("2026-11-06T00:00:00.000Z"); // 4pm PST on Nov 5
+    expect(nov.startsAt).toBe("2026-11-05T23:00:00.000Z"); // 4pm on Nov 5: BC stays on UTC-7 (tzdata 2026b)
     expect(nov.weekday).toBe("thursday");
     expect(nov.time).toBe("4pm-6:30pm");
   });

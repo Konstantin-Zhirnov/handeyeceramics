@@ -6,7 +6,7 @@
  */
 import type { Where } from "payload";
 import { relId } from "../../lib/cms/relations";
-import { STUDIO_TIME_ZONE, addDays, localDay, startOfDay } from "../../lib/time";
+import { STUDIO_TIME_ZONE, addDays, formatInZone, localDay, startOfDay } from "../../lib/time";
 
 /** The key of the group of courses that started before today and still run. */
 export const RUNNING = "running";
@@ -91,12 +91,12 @@ export function groupByDay<T extends { startsAt?: string | null }>(
 
 /** The wall-clock time of an instant at the studios: "1:00 PM". */
 export function timeOf(at: string | Date, timeZone: string = STUDIO_TIME_ZONE): string {
-  return new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(new Date(at));
+  return formatInZone(new Date(at), { hour: "numeric", minute: "2-digit" }, "en-US", timeZone);
 }
 
 /** The calendar day of an instant at the studios: "Nov 28". */
 export function shortDay(at: string | Date, timeZone: string = STUDIO_TIME_ZONE): string {
-  return new Intl.DateTimeFormat("en-US", { timeZone, month: "short", day: "numeric" }).format(new Date(at));
+  return formatInZone(new Date(at), { month: "short", day: "numeric" }, "en-US", timeZone);
 }
 
 /** "3 left", or "Sold out" when no seat is left. */

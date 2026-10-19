@@ -10,6 +10,7 @@ import {
   dayTitle,
   groupByDay,
   leftText,
+  shortDay,
   studentRows,
   studioParam,
   timeOf,
@@ -34,9 +35,9 @@ describe("upcomingWindow", () => {
     expect(upcomingWindow(NOW, 7, TZ).to).toEqual(new Date("2026-10-25T07:00:00.000Z"));
   });
 
-  it("across the fall-back change the end is the local midnight in standard time", () => {
-    // Nov 1, 2026 the clocks fall back: midnight of Nov 2 is 08:00 UTC.
-    expect(upcomingWindow(new Date("2026-10-30T19:00:00.000Z"), 3, TZ).to).toEqual(new Date("2026-11-02T08:00:00.000Z"));
+  it("across Nov 1, 2026 the clocks do not fall back: midnight of Nov 2 is 07:00 UTC", () => {
+    // tzdata 2026b: British Columbia stays on UTC-7; lib/time applies it on older runtimes too.
+    expect(upcomingWindow(new Date("2026-10-30T19:00:00.000Z"), 3, TZ).to).toEqual(new Date("2026-11-02T07:00:00.000Z"));
   });
 });
 
@@ -119,6 +120,11 @@ describe("labels", () => {
 
   it("the time is the studio's wall clock", () => {
     expect(timeOf("2026-10-19T02:00:00.000Z", TZ)).toBe("7:00 PM");
+  });
+
+  it("a 7 pm class after Nov 1, 2026 is 02:00 UTC and reads 7:00 PM on its own day", () => {
+    expect(timeOf("2026-11-14T02:00:00.000Z", TZ)).toBe("7:00 PM");
+    expect(shortDay("2026-11-14T02:00:00.000Z", TZ)).toBe("Nov 13");
   });
 
   it("no seat left reads as sold out", () => {

@@ -7,7 +7,7 @@ import { getCMS } from "@/lib/cms/resolve";
 import { SITE_NAME, SITE_SUFFIX, formatPrice } from "@/lib/cms/text";
 import { INVOICE_DEFAULT_PROVINCE, INVOICE_STATUS_LABELS, invoiceTotals } from "@/lib/invoices/totals";
 import { finalizeInvoicePayment, gateway, invoiceByToken, studioProvince } from "@/lib/payments";
-import { STUDIO_TIME_ZONE } from "@/lib/time";
+import { formatInZone } from "@/lib/time";
 import type { Invoice, Studio } from "@/payload-types";
 
 /**
@@ -29,11 +29,7 @@ export const metadata: Metadata = {
 const dollars = (cents: number | null | undefined) => formatPrice((cents || 0) / 100);
 const day = (iso: string | null | undefined, withTime = false) =>
   iso
-    ? new Intl.DateTimeFormat("en-CA", {
-        timeZone: STUDIO_TIME_ZONE,
-        dateStyle: "long",
-        ...(withTime ? { timeStyle: "short" as const } : {}),
-      }).format(new Date(iso))
+    ? formatInZone(new Date(iso), { dateStyle: "long", ...(withTime ? { timeStyle: "short" as const } : {}) }, "en-CA")
     : "";
 
 const METHOD: Record<string, string> = { card: "Card", "e-transfer": "E-transfer", cash: "Cash", other: "Payment" };
