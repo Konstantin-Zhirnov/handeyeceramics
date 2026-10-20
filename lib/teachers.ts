@@ -1,8 +1,8 @@
 /**
- * The teacher contacts page is closed by one shared password that the owner
- * changes each term (global `teachers`). A student who typed it gets a cookie
- * holding a keyed hash of the password itself: a new password makes every old
- * cookie worthless at once, without a list of who had access.
+ * The teacher contacts page is closed by one shared password the owner keeps
+ * and changes only if it leaks (global `teachers`). A student who typed it gets
+ * a cookie holding a keyed hash of the password itself: a new password makes
+ * every old cookie worthless at once, without a list of who had access.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Payload } from "payload";
@@ -13,7 +13,7 @@ import { relId } from "./cms/relations";
 export const TEACHERS_PATH = "/teachers";
 export const TEACHERS_UNLOCK_PATH = "/teachers/unlock";
 export const TEACHERS_COOKIE = "he_teachers";
-/** About a term: the cookie outlives a semester only if the password does too. */
+/** About five months: a student signs in again after that, or sooner if the password changed. */
 export const TEACHERS_COOKIE_MAX_AGE = 60 * 60 * 24 * 150;
 
 /** The key of the hash: the CMS secret, or a fixed local one on a development machine without it. */
@@ -45,7 +45,7 @@ export function tokenOpens(token: string | null | undefined, actual: string | nu
 }
 
 export type TeacherEntry = { name: string; phone: string; classes?: string };
-export type TeachersPage = { password: string; intro: string; groups: { studio: string; teachers: TeacherEntry[] }[] };
+export type TeachersPage = { password: string; intro: string; outro: string; groups: { studio: string; teachers: TeacherEntry[] }[] };
 
 /**
  * The global as the page needs it, read past the access rules (only editors
@@ -63,5 +63,5 @@ export async function readTeachersPage(payload?: Payload): Promise<TeachersPage>
     const studio = studios.find((s) => s.id === relId(t.studio))?.name || "";
     groups.set(studio, [...(groups.get(studio) || []), { name: t.name, phone: t.phone, ...(t.classes ? { classes: t.classes } : {}) }]);
   }
-  return { password: page.password?.trim() || "", intro: page.intro || "", groups: [...groups].map(([studio, teachers]) => ({ studio, teachers })) };
+  return { password: page.password?.trim() || "", intro: page.intro || "", outro: page.outro || "", groups: [...groups].map(([studio, teachers]) => ({ studio, teachers })) };
 }

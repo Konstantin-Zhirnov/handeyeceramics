@@ -1721,7 +1721,7 @@ export interface Home {
   createdAt?: string | null;
 }
 /**
- * The page /teachers. Students open it with the password from their confirmation email. Change the password each term: whoever had the old one has to enter the new one.
+ * The page /teachers. Students open it with the password from their confirmation email. One password for all students; change it only if it leaks — whoever had the old one has to enter the new one.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "teachers".
@@ -1729,11 +1729,11 @@ export interface Home {
 export interface Teacher {
   id: number;
   /**
-   * One password for all students of this term; letter case does not matter. Empty — the page is closed to everyone.
+   * One password for all students, kept as long as you like; letter case does not matter. Empty — the page is closed to everyone.
    */
   password?: string | null;
   /**
-   * For example, when to call and when to text
+   * For example, whom to call when the teacher does not answer
    */
   intro?: string | null;
   teachers?:
@@ -1742,12 +1742,16 @@ export interface Teacher {
         phone: string;
         studio?: (number | null) | Studio;
         /**
-         * What they teach, e.g. Mon & Wed wheel 6 PM
+         * What they teach, e.g. Mon & Wed wheel 6 PM; mark assistants here
          */
         classes?: string | null;
         id?: string | null;
       }[]
     | null;
+  /**
+   * For example, the studio cell numbers and the head office
+   */
+  outro?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1849,6 +1853,7 @@ export interface TeachersSelect<T extends boolean = true> {
         classes?: T;
         id?: T;
       };
+  outro?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

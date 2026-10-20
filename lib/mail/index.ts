@@ -115,7 +115,7 @@ const siteUrl = (payload: Payload) => (payload.config.serverURL || "").replace(/
 /** What stands in for the teachers' page password the owner has not set yet. */
 export const NO_TEACHERS_PASSWORD = "[ask the studio]";
 
-/** The teacher contacts page and this term's password (global `teachers`, read on the server). */
+/** The teacher contacts page and its shared password (global `teachers`, read on the server). */
 async function teacherVars(payload: Payload): Promise<Vars> {
   const page = await payload.findGlobal({ slug: "teachers", depth: 0, overrideAccess: true }).catch(() => null);
   return { teachers_url: `${siteUrl(payload)}${TEACHERS_PATH}`, teachers_password: page?.password?.trim() || NO_TEACHERS_PASSWORD };

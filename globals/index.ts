@@ -95,8 +95,9 @@ export const Home: GlobalConfig = {
 };
 
 /**
- * The teacher contacts page (/teachers), closed by one password the owner
- * changes each term. Only signed-in editors read this global; the page reads
+ * The teacher contacts page (/teachers), closed by one password shared by all
+ * students; the owner keeps it, and changes it only if it leaks. Only signed-in
+ * editors read this global; the page reads
  * it on the server after checking the student's password.
  */
 export const Teachers: GlobalConfig = {
@@ -105,16 +106,16 @@ export const Teachers: GlobalConfig = {
   access: { read: signedIn, update: signedIn },
   admin: {
     description:
-      "The page /teachers. Students open it with the password from their confirmation email. Change the password each term: whoever had the old one has to enter the new one.",
+      "The page /teachers. Students open it with the password from their confirmation email. One password for all students; change it only if it leaks — whoever had the old one has to enter the new one.",
   },
   fields: [
     {
       name: "password",
       type: "text",
       label: "Password",
-      admin: { description: "One password for all students of this term; letter case does not matter. Empty — the page is closed to everyone." },
+      admin: { description: "One password for all students, kept as long as you like; letter case does not matter. Empty — the page is closed to everyone." },
     },
-    { name: "intro", type: "textarea", label: "Text above the list", admin: { description: "For example, when to call and when to text" } },
+    { name: "intro", type: "textarea", label: "Text above the list", admin: { description: "For example, whom to call when the teacher does not answer" } },
     {
       name: "teachers",
       type: "array",
@@ -124,8 +125,9 @@ export const Teachers: GlobalConfig = {
         { name: "name", type: "text", required: true, label: "Name" },
         { name: "phone", type: "text", required: true, label: "Phone" },
         { name: "studio", type: "relationship", relationTo: "studios", label: "Studio" },
-        { name: "classes", type: "text", label: "Classes", admin: { description: "What they teach, e.g. Mon & Wed wheel 6 PM" } },
+        { name: "classes", type: "text", label: "Classes", admin: { description: "What they teach, e.g. Mon & Wed wheel 6 PM; mark assistants here" } },
       ],
     },
+    { name: "outro", type: "textarea", label: "Text below the list", admin: { description: "For example, the studio cell numbers and the head office" } },
   ],
 };

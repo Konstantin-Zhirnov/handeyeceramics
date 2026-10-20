@@ -6,7 +6,7 @@ import { SITE_SUFFIX } from "@/lib/cms/text";
 import { readTeachersPage, TEACHERS_COOKIE, TEACHERS_UNLOCK_PATH, tokenOpens } from "@/lib/teachers";
 
 /**
- * Teacher contacts for students (global `teachers`): behind the term's shared
+ * Teacher contacts for students (global `teachers`): behind one shared
  * password. Without the cookie of the current password the page shows only
  * the password form; `?wrong=1` is the form after a password that did not match,
  * `?wait=1` after too many tries. Never indexed.
@@ -17,7 +17,7 @@ const TITLE = "Teacher contacts";
 
 export const metadata: Metadata = {
   title: `${TITLE}${SITE_SUFFIX}`,
-  description: "Phone numbers of your teachers, for students of the current term.",
+  description: "Phone numbers of your teachers, for students of Hand Eye Ceramics.",
   robots: { index: false, follow: false },
 };
 
@@ -51,7 +51,7 @@ export default async function TeachersPage({ searchParams }: { searchParams: Pro
             />
             {(wrong || wait) && (
               <p data-teachers-error role="alert" className="text-terracotta">
-                {wait ? "Too many tries. Please wait a few minutes and try again." : "That password does not match this term's. Check your confirmation email."}
+                {wait ? "Too many tries. Please wait a few minutes and try again." : "That password does not match. Check your confirmation email."}
               </p>
             )}
             <button type="submit" className="mt-2 flex h-12 items-center justify-center self-start rounded-full bg-terracotta px-7 text-copy font-semibold text-clay-50 transition-colors hover:bg-ink">
@@ -88,6 +88,7 @@ export default async function TeachersPage({ searchParams }: { searchParams: Pro
           </section>
         ))}
         {!page.groups.length && <p className="text-ink-soft">No teachers listed yet.</p>}
+        {page.outro && <p data-teachers-outro className="max-w-[40rem] whitespace-pre-line text-lg text-ink-soft">{page.outro}</p>}
       </div>
     </SiteShell>
   );
