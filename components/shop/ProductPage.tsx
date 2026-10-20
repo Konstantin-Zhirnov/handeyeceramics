@@ -4,8 +4,8 @@ import { AddToCart } from "@/components/cart/AddToCart";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
 import { TrackOnMount } from "@/components/site/TrackEvents";
 import { site } from "@/lib/site";
-import { sessionChoices, splitCategories } from "./data";
-import { CallStudio, Price, currentPrice, optionChoices, productImages } from "./parts";
+import { recommendedFor, sessionChoices, splitCategories } from "./data";
+import { CallStudio, Price, ProductGrid, currentPrice, optionChoices, productImages } from "./parts";
 
 const absolute = (url: string) => (url.startsWith("/") ? `${site.url}${url}` : url);
 
@@ -37,10 +37,10 @@ function viewContent(doc: Product) {
   };
 }
 
-/** Product page: photos, price, the dates of a class or the variants, Add to cart, description. */
+/** Product page: photos, price, the dates of a class or the variants, Add to cart, description, then "You might also like". */
 export async function ProductPage({ doc }: { doc: Product }) {
   const [first, ...rest] = productImages(doc);
-  const { choices: sessions, scheduled } = await sessionChoices(doc);
+  const [{ choices: sessions, scheduled }, recommended] = await Promise.all([sessionChoices(doc), recommendedFor(doc)]);
   // A class whose dates are all over or hidden is not for sale until a date is added in the admin.
   const noDates = scheduled && !sessions.length;
   return (
@@ -103,6 +103,14 @@ export async function ProductPage({ doc }: { doc: Product }) {
           )}
         </div>
       </div>
+      {recommended.length > 0 && (
+        <section data-recommended aria-labelledby="recommended-heading" className="mx-auto mt-16 max-w-[62rem] px-5 sm:px-8">
+          <h2 id="recommended-heading" className="display mb-6 text-heading-sm text-ink">
+            You might also like
+          </h2>
+          <ProductGrid products={recommended} four />
+        </section>
+      )}
     </SiteShell>
   );
 }

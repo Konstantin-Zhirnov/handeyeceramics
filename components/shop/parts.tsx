@@ -75,11 +75,14 @@ export const EmptyShelf = () => (
   </p>
 );
 
-/** `lead` — the first grid of a page: its first row is on the first screen of a phone and loads at once. */
-export function ProductGrid({ products, lead = false }: { products: Product[]; lead?: boolean }) {
+/**
+ * `lead` — the first grid of a page: its first row is on the first screen of a phone and loads at once.
+ * `four` — four to a row from a tablet up, for a row of at most four (the recommendations under a product).
+ */
+export function ProductGrid({ products, lead = false, four = false }: { products: Product[]; lead?: boolean; four?: boolean }) {
   if (!products.length) return <EmptyShelf />;
   return (
-    <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3">
+    <ul className={`grid grid-cols-2 gap-x-4 gap-y-8 ${four ? "md:grid-cols-4" : "sm:grid-cols-3"}`}>
       {products.map((p, i) => {
         const img = productImages(p)[0];
         return (
@@ -92,7 +95,7 @@ export function ProductGrid({ products, lead = false }: { products: Product[]; l
                   alt={img.alt}
                   width={480}
                   height={480}
-                  sizes="(max-width: 640px) 50vw, 20rem"
+                  sizes={four ? "(max-width: 768px) 50vw, 15rem" : "(max-width: 640px) 50vw, 20rem"}
                   loading={lead && i < 2 ? "eager" : undefined}
                   fetchPriority={lead && i === 0 ? "high" : undefined}
                   className="aspect-square w-full rounded-inset bg-clay-100 object-cover transition-transform group-hover:-translate-y-0.5"

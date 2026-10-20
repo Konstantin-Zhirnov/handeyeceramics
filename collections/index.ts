@@ -276,6 +276,20 @@ export const Products: CollectionConfig = {
       admin: { description: "Categories, separated by commas. The product is shown on the shop pages that list one of them" },
     },
     {
+      // The rule without a pick: components/shop/recommend.ts.
+      name: "recommended",
+      type: "relationship",
+      relationTo: "products",
+      hasMany: true,
+      maxRows: 4,
+      label: "You might also like",
+      filterOptions: ({ id }) => (id ? { id: { not_equals: id } } : true),
+      admin: {
+        description:
+          "Up to 4 products shown under this one, in this order — e.g. the next level after this course. Empty: other classes in the same city, the other studio's first",
+      },
+    },
+    {
       name: "taxGroup",
       type: "select",
       required: true,

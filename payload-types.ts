@@ -402,6 +402,10 @@ export interface Product {
    */
   category?: string | null;
   /**
+   * Up to 4 products shown under this one, in this order — e.g. the next level after this course. Empty: other classes in the same city, the other studio's first
+   */
+  recommended?: (number | Product)[] | null;
+  /**
    * Goods — clay, tools, pieces: GST and the province's PST. Service — classes, drop-ins, rentals: GST only. Exempt — no tax
    */
   taxGroup: 'goods' | 'service' | 'exempt';
@@ -1321,6 +1325,7 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   category?: T;
+  recommended?: T;
   taxGroup?: T;
   seo?:
     | T

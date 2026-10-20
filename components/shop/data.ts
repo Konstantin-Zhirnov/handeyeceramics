@@ -1,11 +1,14 @@
 import "server-only";
 import { cache } from "react";
-import type { Page, Plan, Product, Session } from "@/payload-types";
+import type { Page, Plan, Product, Session, Studio } from "@/payload-types";
 import type { SessionChoice } from "@/components/cart/AddToCart";
 import { isSellable } from "@/lib/booking/availability";
 import { scheduledProducts, sessionPrice } from "@/lib/cart/validate";
+import { addressParts } from "@/lib/cms/address";
+import { relId } from "@/lib/cms/relations";
 import { getCMS } from "@/lib/cms/resolve";
 import { phoneHref } from "@/lib/cms/site";
+import { recommend } from "./recommend";
 
 /**
  * The dates of a class as its page lists them (R01.3, R02): the visitor's view
@@ -30,6 +33,33 @@ export async function sessionChoices(product: Product, now = new Date()): Promis
     .filter((s) => !(s.endsAt && new Date(s.endsAt).getTime() < now.getTime()))
     .map((s) => ({ id: s.id, label: s.label, price: sessionPrice(s, product), sellable: isSellable(s, now), left: s.left ?? 0 }));
   return { choices, scheduled };
+}
+
+/**
+ * "You might also like" under a product (components/shop/recommend.ts): the
+ * owner's pick, else other classes in the same city. Everything is read as
+ * the visitor: hidden products, hidden dates and unpublished studios never count.
+ */
+export async function recommendedFor(product: Product, now = new Date()): Promise<Product[]> {
+  const payload = await getCMS();
+  const [products, studios, sessions] = await Promise.all([
+    allProducts(),
+    payload.find({ collection: "studios", overrideAccess: false, depth: 0, limit: 100, pagination: false }),
+    payload.find({ collection: "sessions", overrideAccess: false, depth: 0, limit: 0, pagination: false }),
+  ]);
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const ids = recommend({
+    product: product.id,
+    picked: (product.recommended || []).map((r) => relId(r)).filter((id): id is number => !!id),
+    dates: (sessions.docs as Session[]).flatMap((s) => {
+      const p = relId(s.product);
+      const studio = relId(s.studio);
+      return p && studio ? [{ product: p, studio, startsAt: s.startsAt ?? null, sellable: isSellable(s, now) }] : [];
+    }),
+    studios: (studios.docs as Studio[]).map((s) => ({ id: s.id, city: addressParts(s.address).locality })),
+    visible: new Set(byId.keys()),
+  });
+  return ids.map((id) => byId.get(id)!);
 }
 
 /** "Clay, Open Studio & Private Lessons" → ["Clay", "Open Studio & Private Lessons"]. */
