@@ -149,9 +149,12 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
               href="/#top"
               aria-hidden
               tabIndex={-1}
-              className={`wordmark absolute left-1/2 -translate-x-1/2 text-[0.8rem] transition-colors duration-500 sm:text-[1rem] lg:text-[1.05rem] xl:text-[1.4rem] ${ink}`}
+              className={`wordmark absolute left-1/2 -translate-x-1/2 text-center text-[0.8rem] transition-colors duration-500 max-[359px]:left-[calc(50%-0.75rem)] sm:text-[1rem] lg:text-[1.05rem] xl:text-[1.4rem] ${ink}`}
             >
-              Hand Eye <span className="opacity-60">/</span> Ceramics
+              Hand Eye <span className="hidden opacity-60 sm:inline">/</span>
+              {/* Phones: two lines, so the wordmark stays clear of the cart button;
+                  the narrowest ones (320px) also nudge it left of centre. */}
+              <br className="sm:hidden" /> Ceramics
             </a>
 
             <div className="flex items-center gap-2">
