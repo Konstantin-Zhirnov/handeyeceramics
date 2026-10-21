@@ -26,6 +26,14 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(SITE_URL),
     ...(seo.title ? { title: seo.title } : {}),
     ...(seo.description ? { description: seo.description } : {}),
+    // The same mark the admin uses (payload.config.ts admin.meta.icons).
+    icons: {
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/favicon.ico", sizes: "32x32 16x16" },
+      ],
+      apple: { url: "/assets/apple-touch-icon.png", sizes: "180x180" },
+    },
   };
 }
 
