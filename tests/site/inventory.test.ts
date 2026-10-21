@@ -8,6 +8,7 @@ import path from "node:path";
 import { load } from "cheerio";
 import { beforeAll, describe, expect, inject, it } from "vitest";
 import { homeMoves } from "../../scripts/seed/home-moves";
+import { textFix, textFixLines } from "../../scripts/seed/text-fixes";
 import { isWixLitter } from "../../scripts/seed/wix-litter";
 import { expected404, expectedRedirects } from "./expected";
 
@@ -98,9 +99,15 @@ describe.each(records.map((r) => [r.path, r] as const))("%s", (p, rec) => {
   it.runIf(isPage && !prototypeTemplates.has(p))("contains the text of the old page", () => {
     const body = squash(load(pages.get(p)!.html)("body").text());
     const gone = dropped(rec);
+    // A run-on line set as a heading and a list (text-fixes.ts) is on the page as those lines.
+    const lines = (b: Block) => {
+      const fix = textFix(rec.path, b.text!);
+      return fix ? textFixLines(fix) : [b.text!];
+    };
     const missing = rec.blocks
       .filter((b, i) => b.text !== undefined && !chrome(b) && !gone.has(i))
-      .map((b) => squash(b.text!))
+      .flatMap(lines)
+      .map(squash)
       .filter((t) => !body.includes(t));
     expect(missing).toEqual([]);
   });

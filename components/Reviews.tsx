@@ -12,7 +12,7 @@ export function Reviews({ text, review }: { text: SectionText; review?: SectionT
   if (!review?.body) return null;
 
   return (
-    <section className="shell pb-16 md:pb-24">
+    <section className="shell py-16 md:py-24">
       <Reveal as="figure" className="mx-auto max-w-[62ch] text-center">
         {text.eyebrow && <span className="eyebrow text-clay-600">{text.eyebrow}</span>}
         <p className="mt-5 text-[1.1rem] tracking-[0.25em] text-terracotta">★★★★★</p>

@@ -16,6 +16,7 @@ import config from "../../payload.config";
 import { classTabs, gallery, locations, reviews, site, stageChapters, steps } from "../../lib/site";
 import { pickMedia, sourceName } from "./media-key";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
+import { textFix, textFixNodes } from "./text-fixes";
 import { continuesLine, isWixLitter } from "./wix-litter";
 import { homeMoves } from "./home-moves";
 import { writesFixes } from "./fixes";
@@ -304,13 +305,21 @@ async function toBlocks(r: Rec, h1Index: number) {
         nodes.push(href ? L.linkParagraph(b.text!, href) : L.paragraph(b.text!));
         break;
       }
-      default:
+      default: {
         flushList();
+        // A run-on line of the old page set as a heading and a list (text-fixes.ts); the next line starts afresh.
+        const fix = b.type === "paragraph" ? textFix(r.path, b.text!) : undefined;
+        if (fix) {
+          nodes.push(...textFixNodes(fix));
+          lastPara = null;
+          break;
+        }
         if (joinsLine) {
           nodes.pop();
           lastPara = `${lastPara} ${b.text!.trim()}`;
         } else lastPara = b.type === "paragraph" ? b.text!.trim() : null;
         nodes.push(L.paragraph(b.type === "paragraph" ? lastPara! : b.text!));
+      }
     }
   }
   flushImages();

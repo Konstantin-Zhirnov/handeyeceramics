@@ -9,7 +9,7 @@ export function Gallery({ text, photos }: { text: SectionText; photos: Photo[] }
   const { instagram } = useSiteData();
   const handle = instagram.replace(/\/+$/, "").split("/").pop();
   return (
-    <section id="gallery" className="py-16 md:py-24">
+    <section id="gallery" className="pt-16 md:pt-24">
       <div className="shell">
         <Reveal className="flex flex-wrap items-end justify-between gap-4">
           <div>
