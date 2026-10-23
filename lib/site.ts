@@ -194,12 +194,12 @@ export const locations: Location[] = [
       url: "https://www.google.com/maps/search/Hand+Eye+Design+Ceramics+739+Gore+Ave+Vancouver",
     },
     note: "Main studio. Most 6-week courses, all drop-in wheel classes and date nights are held here.",
-    metaTitle: "Pottery Classes in Chinatown, Vancouver | Hand Eye Ceramics",
+    metaTitle: "Pottery Classes in Vancouver, Chinatown | Hand Eye Ceramics",
     metaDescription:
-      "Wheel throwing and hand building classes at 739 Gore Ave in Vancouver's Chinatown. Six-week courses, drop-ins and date nights, 7 days a week. No experience needed.",
-    h1: "Pottery classes in Chinatown, Vancouver",
+      "Pottery classes in Vancouver at 739 Gore Ave: wheel throwing and hand building, six-week courses, drop-ins and date nights. No experience needed.",
+    h1: "Pottery classes in Vancouver, Chinatown",
     intro:
-      "Our main studio, on the second floor of 739 Gore Ave in Strathcona. Brick walls, big windows and most of our schedule — if a class isn't marked otherwise, it runs here.",
+      "Pottery classes in Vancouver run seven days a week at our second-floor studio at 739 Gore Ave, on the edge of Chinatown and Strathcona. Our pottery and ceramics classes teach wheel throwing and hand building, and you don't need any experience to start. Brick walls, big windows and most of our schedule: if a class isn't marked otherwise, it runs here.",
     access:
       "Use the door code from your student info email and ring the bell to the right of the third door.",
     schedule: [
@@ -219,7 +219,7 @@ export const locations: Location[] = [
   {
     slug: "vancouver-mount-pleasant",
     short: "Mt Pleasant",
-    name: "Mt Pleasant",
+    name: "Mount Pleasant",
     region: "Vancouver, BC",
     tag: "Sister studio",
     status: "open",
@@ -235,12 +235,12 @@ export const locations: Location[] = [
       url: "https://www.google.com/maps/search/Pleasant+Pottery+322+E+5th+Ave+Vancouver",
     },
     note: "Pleasant Pottery, our sister studio — 24/7 practice space for students who already have a few classes behind them.",
-    metaTitle: "Pottery Studio Space in Mt Pleasant, Vancouver | Hand Eye Ceramics",
+    metaTitle: "Ceramics Studio in Mount Pleasant | Hand Eye Ceramics",
     metaDescription:
-      "Pleasant Pottery at 322 E 5th Ave — 24/7 members' studio space in Mt Pleasant, Vancouver, for potters who have already taken a few classes.",
-    h1: "Studio space in Mt Pleasant, Vancouver",
+      "Pleasant Pottery is our ceramics studio in Mount Pleasant, Vancouver: 24/7 members' access at 322 E 5th Ave for potters who have taken a few classes.",
+    h1: "Ceramics studio in Mount Pleasant, Vancouver",
     intro:
-      "Pleasant Pottery is our sister studio on East 5th. It isn't where the beginner courses run — it's where you go once you have a few classes behind you and want somewhere to practise on your own schedule.",
+      "Pleasant Pottery is our ceramics studio in Mount Pleasant, on East 5th. It isn't where the beginner courses run: it's where you go once you have a few classes behind you and want somewhere to practise on your own schedule.",
     schedule: [
       { label: "Member access", times: "24/7, no time limits" },
       { label: "Membership", times: "From $145 a month" },
