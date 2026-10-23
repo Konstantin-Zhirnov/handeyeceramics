@@ -53,6 +53,23 @@ const FIXES: Record<string, Record<string, TextFix>> = {
   },
 };
 
+/**
+ * Sentences the crawl cut a secret out of — the e-transfer address and its password on the wheel
+ * rental page — reworded so the page does not show "[REDACTED]" (decision of 2026-10-23): the site
+ * takes the rental by card, and e-transfer details are given on request, not printed.
+ */
+const REWRITES: Record<string, Record<string, string>> = {
+  "/wheel-rental": {
+    "The minimum rental period is three months, so $375 + GST ($393.75 after tax). You can pay via e-transfer to [REDACTED] (password: [REDACTED]) or through our website.":
+      "The minimum rental period is three months, so $375 + GST ($393.75 after tax). You can pay through our website (the Subscribe button above) or by e-transfer — ask us for the details.",
+    "Write the total down and then you can pay by sending payments to my email: [REDACTED] (password: [REDACTED]).":
+      "Write the total down and then pay by e-transfer — ask us for the details.",
+  },
+};
+
+/** The paragraph as the page prints it: reworded where a secret was cut out, otherwise as it was. */
+export const rewrite = (path: string, text: string): string => REWRITES[path]?.[squash(text)] ?? text;
+
 /** The paths that have fixes, for a test to check them against the inventory. */
 export const FIXED_PATHS = Object.keys(FIXES);
 

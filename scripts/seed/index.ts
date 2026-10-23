@@ -16,7 +16,7 @@ import config from "../../payload.config";
 import { classTabs, gallery, locations, reviews, site, stageChapters, steps } from "../../lib/site";
 import { pickMedia, sourceName } from "./media-key";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
-import { textFix, textFixNodes } from "./text-fixes";
+import { rewrite, textFix, textFixNodes } from "./text-fixes";
 import { continuesLine, isWixLitter } from "./wix-litter";
 import { homeMoves } from "./home-moves";
 import { writesFixes } from "./fixes";
@@ -100,6 +100,13 @@ const GIFT_CARD_WORKAROUNDS = new Set([
   "/product-page/private-instruction-date-night-for-two",
   "/product-page/private-pottery-class-for-2",
 ]);
+/**
+ * Wix Stores subscription products: on the old site they carried "Subscribe Now", which the crawl
+ * saw as text, so the seed would sell them as one-off products. The same memberships and the wheel
+ * rental are plans on the new site (see textPlans), so these stay hidden; their addresses are
+ * redirected to the plan pages in the redirects collection (decision of 2026-10-23).
+ */
+const SUBSCRIPTION_PRODUCTS = new Set(["/product-page/studio-membership-subscription", "/product-page/wheel-rental-subscription"]);
 /** A dead link found by the crawl, and where it now points. */
 const LINK_FIXES: Record<string, string> = { "/product-page/private-lessons": "/open-studio-private-lessons" };
 const FORM_TYPES: Record<string, "contact" | "commission"> = { "/contact-us": "contact", "/commissions-form": "commission" };
@@ -344,7 +351,10 @@ async function toBlocks(r: Rec, h1Index: number) {
           nodes.pop();
           lastPara = `${lastPara} ${b.text!.trim()}`;
         } else lastPara = b.type === "paragraph" ? b.text!.trim() : null;
-        nodes.push(L.paragraph(b.type === "paragraph" ? lastPara! : b.text!));
+        // A sentence the crawl cut a secret out of is reworded (text-fixes.ts), never printed with "[REDACTED]".
+        const para: string = b.type === "paragraph" ? rewrite(r.path, lastPara!) : b.text!;
+        if (b.type === "paragraph" && para !== lastPara) fixed(r.path, "secret cut out by the crawl", `the sentence was reworded: “${para}”`);
+        nodes.push(L.paragraph(para));
       }
     }
   }
@@ -530,7 +540,7 @@ async function seedProducts() {
       category: (r.categories?.length ? r.categories.join(", ") : r.category) || undefined,
       taxGroup: taxGroupOf(r.path),
       seo,
-      visible: !GIFT_CARD_WORKAROUNDS.has(r.path),
+      visible: !GIFT_CARD_WORKAROUNDS.has(r.path) && !SUBSCRIPTION_PRODUCTS.has(r.path),
     });
   }
 }
