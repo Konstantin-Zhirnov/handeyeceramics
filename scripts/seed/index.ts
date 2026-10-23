@@ -95,6 +95,7 @@ const GIFT_CARD = {
  */
 const GIFT_CARD_WORKAROUNDS = new Set([
   "/product-page/date-night-drop-in-class-if-paying-via-gift-card",
+  "/product-page/date-night-for-two",
   "/product-page/gift-card-payment-for-1-in-group-of-six",
   "/product-page/private-instruction-date-night-for-two",
   "/product-page/private-pottery-class-for-2",
