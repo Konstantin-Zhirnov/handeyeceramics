@@ -1,5 +1,46 @@
 # Lighthouse, mobile
 
+## Staging, measured by PageSpeed Insights (2026-10-04)
+
+**The target — Performance 80 or more on the studio, content page, shop and product templates — is met on staging.**
+
+Measured on https://handeyeceramics.vercel.app with https://pagespeed.web.dev, mobile, one run per template
+(commit `e3a9716`, Postgres and Blob storage on Vercel). These are lab figures from Google's servers; the local
+figures below were taken on a machine Lighthouse itself flagged as too slow, and are kept for the record.
+
+| Template | Path | Performance | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|
+| home | `/` | **92** | 1.2 s | 3.0 s | 30 ms | 0 |
+| studio | `/nanaimo-pottery-classes` | **93** | 1.1 s | 3.1 s | 100 ms | 0 |
+| studio-prototype | `/classes/vancouver-chinatown` | **91** | 1.0 s | 3.5 s | 20 ms | 0 |
+| page | `/about-us` | **98** | 0.9 s | 2.3 s | 10 ms | 0 |
+| shop | `/shop` | **95** | 1.0 s | 2.9 s | 20 ms | 0 |
+| product | `/product-page/6-week-wheel-throwing-pottery-classes-in-vancouver` | **95** | 1.0 s | 2.9 s | 70 ms | 0 |
+
+One run each, not a median. LCP of 2.9–3.5 s is above Google's 2.5 s "good" line on every template except the
+content page. The SEO score in these reports is 61–69 because the staging site is deliberately `noindex`.
+
+## Staging, re-measured by PageSpeed Insights (2026-10-22)
+
+Same method as above — https://pagespeed.web.dev, mobile, one run per template — on staging as deployed on 2026-10-22
+(after the Chinatown and Mount Pleasant studio texts were rewritten, seed commit `798179d`; Lighthouse 13.5.0,
+Moto G Power emulation, slow 4G). Within one-run noise the figures match the 2026-10-04 table: the target of 80 or
+more is still met on every template.
+
+| Template | Path | Performance | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|
+| home | `/` | **93** | 1.0 s | 3.1 s | 10 ms | 0 |
+| studio | `/nanaimo-pottery-classes` | **94** | 0.9 s | 3.1 s | 10 ms | 0 |
+| studio-prototype | `/classes/vancouver-chinatown` | **88** | 1.2 s | 3.5 s | 0 ms | 0 |
+| page | `/about-us` | **94** | 0.9 s | 2.9 s | 10 ms | 0 |
+| shop | `/shop` | **93** | 0.9 s | 3.2 s | 10 ms | 0 |
+| product | `/product-page/6-week-wheel-throwing-pottery-classes-in-vancouver` | **92** | 1.0 s | 3.1 s | 30 ms | 0 |
+
+LCP is now 2.9–3.5 s on every template, the content page included; the Chinatown studio page is the only one
+under 90. The PageSpeed API without a key answered 429 on 2026-10-22, so the runs were taken in the web UI.
+
+## Local measurement (2026-10-01)
+
 Measured 2026-10-01 on a production build (`npm run build`, then `next start`), local machine,
 SQLite database seeded with all images (`npm run seed`). Lighthouse from `npx lighthouse`,
 default mobile preset (simulated slow 4G, 4x CPU slowdown), headless Chrome, Performance only.
@@ -17,7 +58,7 @@ node scripts/lighthouse.mjs http://localhost:3408 3 home=/ studio=/nanaimo-potte
 (In Git Bash on Windows prefix the last command with `MSYS_NO_PATHCONV=1`, or the paths get rewritten.
 `LH_CPU=1` in front of it replaces the preset's 4x CPU slowdown — see the second table.)
 
-## The figure that counts: default preset
+### Local, default preset (the target was not met here)
 
 **The target — Performance 80 or more on the studio, content page, shop and product templates — is not met.**
 
@@ -39,7 +80,7 @@ Lighthouse printed this warning on every run: "The tested device appears to have
 Lighthouse expects. This can negatively affect your performance score." It links to its guide on
 calibrating the CPU slowdown: https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md#cpu-throttling
 
-## For comparison only: the same build without the extra CPU slowdown
+### Local, for comparison only: the same build without the extra CPU slowdown
 
 Same machine, same build, same command with `LH_CPU=1` (network still simulated slow 4G). This is **not** the
 measurement the target was set for; it is the other bound, for a machine Lighthouse itself calls too slow for
