@@ -4,6 +4,7 @@
  * on the line's amount (not per unit). No CMS here — validate.ts reads the
  * catalog and hands each line its item.
  */
+import { type GiftOffer, giftAmountAllowed } from "../giftcards/code";
 import { ratesFor } from "../payments/tax";
 import type { CartLineInput, PricedLine, TaxGroup } from "../payments/types";
 
@@ -28,6 +29,8 @@ export type CatalogItem = {
   left?: number;
   /** A date that is open, not over, with a seat left. */
   sellable?: boolean;
+  /** A gift card product: the buyer names the amount (`line.amount`), within this offer; no tax. */
+  gift?: GiftOffer;
 };
 
 /** The error of a line, if any; undefined when it may be bought as asked. */
@@ -37,6 +40,7 @@ function errorOf(line: CartLineInput, item: CatalogItem | undefined): string | u
     return `Quantity must be between 1 and ${MAX_QUANTITY}`;
   }
   if (item.kind === "product" && item.scheduled) return "Choose a date";
+  if (item.gift && !giftAmountAllowed(line.amount ?? Number.NaN, item.gift)) return "Choose an amount";
   if (item.optionTitles.length && !(line.option || "").trim()) {
     return `Choose ${item.optionTitles.join(" and ")}`;
   }
@@ -57,9 +61,11 @@ export type CartPricedLine = PricedLine & { priceChanged?: boolean };
 /** One line of the cart with its current price, its tax by the pickup province, and its error. */
 export function priceLine(line: CartLineSeen, item: CatalogItem | undefined, province: string): CartPricedLine {
   const error = errorOf(line, item);
-  const priceChanged = !error && !!item && typeof line.seenAmount === "number" && line.seenAmount !== item.unitAmount;
+  // A gift card is worth what the buyer loads on it; the catalog's price is not consulted.
+  const unitAmount = item?.gift ? (line.amount ?? 0) : (item?.unitAmount ?? 0);
+  const priceChanged = !error && !!item && !item.gift && typeof line.seenAmount === "number" && line.seenAmount !== item.unitAmount;
   const taxLines = item ? ratesFor(province, item.taxGroup) : [];
-  const amount = item ? item.unitAmount * line.quantity : 0;
+  const amount = item ? unitAmount * line.quantity : 0;
   // Each rate is rounded to the cent on its own and the cents are added — the way Stripe applies each tax_rate.
   const taxAmount = taxLines.reduce((sum, t) => sum + Math.round((amount * t.percentage) / 100), 0);
   return {
@@ -67,8 +73,9 @@ export function priceLine(line: CartLineSeen, item: CatalogItem | undefined, pro
     id: line.id,
     quantity: line.quantity,
     ...(line.option ? { option: line.option } : {}),
+    ...(item?.gift && typeof line.amount === "number" ? { amount: line.amount } : {}),
     label: item?.label || "",
-    unitAmount: item?.unitAmount ?? 0,
+    unitAmount,
     taxGroup: item?.taxGroup || "exempt",
     taxLines,
     taxAmount: error ? 0 : taxAmount,

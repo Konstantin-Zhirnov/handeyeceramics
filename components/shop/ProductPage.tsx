@@ -1,17 +1,28 @@
 import Image from "next/image";
 import type { Product } from "@/payload-types";
 import { AddToCart } from "@/components/cart/AddToCart";
+import { formatPrice } from "@/lib/cms/text";
 import { PageHeading, SiteShell } from "@/components/site/SiteShell";
 import { TrackOnMount } from "@/components/site/TrackEvents";
+import { giftAmountChoices } from "@/lib/giftcards/code";
 import { site } from "@/lib/site";
 import { recommendedFor, sessionChoices, splitCategories } from "./data";
 import { CallStudio, Price, ProductGrid, currentPrice, optionChoices, productImages } from "./parts";
 
 const absolute = (url: string) => (url.startsWith("/") ? `${site.url}${url}` : url);
 
+/** The amounts a gift card product offers, in dollars, for the buying controls; undefined for any other product. */
+function giftOffer(doc: Product) {
+  if (!doc.giftCard) return undefined;
+  const choices = giftAmountChoices(doc.giftAmounts).map((c) => c / 100);
+  const otherMin = typeof doc.giftOtherMin === "number" ? doc.giftOtherMin : undefined;
+  if (!choices.length && otherMin === undefined) return undefined;
+  return { choices, ...(otherMin !== undefined ? { otherMin, otherMax: typeof doc.giftOtherMax === "number" ? doc.giftOtherMax : undefined } : {}) };
+}
+
 /** schema.org Product: what the page says, nothing more. */
 function jsonLd(doc: Product) {
-  const price = currentPrice(doc);
+  const price = doc.giftCard ? (giftAmountChoices(doc.giftAmounts)[0] ?? 0) / 100 || null : currentPrice(doc);
   const images = productImages(doc).map((m) => absolute(m.url!));
   return {
     "@context": "https://schema.org",
@@ -43,6 +54,7 @@ export async function ProductPage({ doc }: { doc: Product }) {
   const [{ choices: sessions, scheduled }, recommended] = await Promise.all([sessionChoices(doc), recommendedFor(doc)]);
   // A class whose dates are all over or hidden is not for sale until a date is added in the admin.
   const noDates = scheduled && !sessions.length;
+  const gift = giftOffer(doc);
   return (
     <SiteShell>
       <script
@@ -51,7 +63,7 @@ export async function ProductPage({ doc }: { doc: Product }) {
       />
       <PageHeading eyebrow={splitCategories(doc.category)[0]} title={doc.name}>
         <p className="mt-4 text-xl text-ink">
-          <Price product={doc} />
+          {gift ? <span data-price>{gift.choices.length ? `From ${formatPrice(Math.min(...gift.choices))}` : "Any amount"}</span> : <Price product={doc} />}
         </p>
       </PageHeading>
       <div className="mx-auto mt-8 grid max-w-[62rem] gap-10 px-5 sm:px-8 md:grid-cols-2">
@@ -93,7 +105,7 @@ export async function ProductPage({ doc }: { doc: Product }) {
                 No dates scheduled — call the studio to ask about the next one.
               </p>
             ) : (
-              <AddToCart productId={doc.id} price={currentPrice(doc) ?? null} options={optionChoices(doc.options)} sessions={sessions} />
+              <AddToCart productId={doc.id} price={gift ? null : currentPrice(doc) ?? null} options={gift ? [] : optionChoices(doc.options)} sessions={gift ? [] : sessions} gift={gift} />
             )}
             <TrackOnMount meta={{ name: "ViewContent", data: viewContent(doc) }} google={{ name: "view_item", data: viewContent(doc) }} />
             <CallStudio />

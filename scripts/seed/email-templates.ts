@@ -1,10 +1,10 @@
 /**
- * The four emails the site sends, as the seed writes them into the
+ * The emails the site sends, as the seed writes them into the
  * email-templates collection. The owner edits them in the admin; the seed
  * only fills in what is missing or resets a template to this text.
  * Placeholders are replaced by lib/mail: {{name}}, {{order_number}}, {{items}},
  * {{class}}, {{dates}}, {{studio_name}}, {{studio_address}}, {{door_code}}, {{site_url}},
- * {{teachers_url}}, {{teachers_password}}.
+ * {{teachers_url}}, {{teachers_password}}; in the gift card email {{gift_codes}} and {{gift_total}}.
  */
 import type { TemplateKey } from "../../lib/mail/keys";
 
@@ -76,6 +76,24 @@ export const EMAIL_TEMPLATES: EmailTemplateSeed[] = [
       "Book your next course here: {{site_url}}",
       "",
       "Hand Eye Ceramics",
+    ].join("\n"),
+  },
+  {
+    key: "gift-card",
+    subject: "Your Hand Eye Ceramics gift card",
+    body: [
+      "Hi {{name}},",
+      "",
+      "Thank you for your order {{order_number}}. Here is your gift card:",
+      "",
+      "{{gift_codes}}",
+      "",
+      "To use it, enter the code in the cart at {{site_url}} before paying. It can be spent on classes, drop-ins, clay and tools, in one go or over several orders, and it does not expire.",
+      "",
+      "Giving it to someone? Forward this email, or copy the code into your own card.",
+      "",
+      "Hand Eye Ceramics",
+      "{{site_url}}",
     ].join("\n"),
   },
 ];

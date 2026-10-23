@@ -4,8 +4,8 @@
  * templates the owner edits in the email-templates collection. Placeholders
  * {{name}}, {{order_number}}, {{items}}, {{class}}, {{dates}}, {{studio_name}},
  * {{studio_address}}, {{door_code}}, {{site_url}}, {{teachers_url}},
- * {{teachers_password}} are replaced; an unknown
- * placeholder stays as it is. Letters go through `payload.sendEmail` — SMTP, or
+ * {{teachers_password}}, and in the gift card email {{gift_codes}}, are
+ * replaced; an unknown placeholder stays as it is. Letters go through `payload.sendEmail` — SMTP, or
  * the server log when SMTP is not configured — like the enquiry letters.
  *
  * The door code is read from `studios.doorCode` on the server with
@@ -143,6 +143,24 @@ async function orderVars(payload: Payload, order: Order): Promise<Vars> {
     site_url: siteUrl(payload),
     ...(await teacherVars(payload)),
   };
+}
+
+/**
+ * The codes of the gift cards an order bought, to the buyer, one letter for
+ * all of them: "HE-XXXX-XXXX-XXXX — CA$100.00" per line in {{gift_codes}}.
+ * Sent and awaited: the caller (issueGiftCards) runs after the payment.
+ */
+export async function sendGiftCards(order: Order, cards: { code: string; amount: number }[], payload?: Payload): Promise<boolean> {
+  const p = payload || (await getCMS());
+  const to = order.customer?.email;
+  if (!to || !cards.length) return false;
+  return deliver(p, "gift-card", to, {
+    name: order.customer?.name?.trim() || "there",
+    order_number: order.number || "",
+    gift_codes: cards.map((c) => `${c.code} — ${formatPrice(c.amount / 100)}`).join("\n"),
+    gift_total: formatPrice(cards.reduce((sum, c) => sum + c.amount, 0) / 100),
+    site_url: siteUrl(p),
+  });
 }
 
 /**

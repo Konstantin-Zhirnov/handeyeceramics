@@ -10,6 +10,8 @@ import type { Product, Session, Studio } from "../../payload-types";
 import { isSellable } from "../booking/availability";
 import { getCMS } from "../cms/payload";
 import { relId } from "../cms/relations";
+import { giftAmountChoices, giftApplied, giftCents, normalizeGiftCode } from "../giftcards/code";
+import { findGiftCard } from "../giftcards";
 import { studioProvince } from "../payments/checkout";
 import type { CartLineInput } from "../payments/types";
 import { type CartLineSeen, type CartPricedLine, type CatalogItem, cents, priceLine, totals } from "./pricing";
@@ -25,7 +27,13 @@ export type ValidatedCart = {
   total: number;
   /** The pickup studio the prices were taxed for; null when no studio is published. */
   studio: CartStudio | null;
+  /** The gift card the buyer typed, when one was: what it pays of the total, or why it cannot. */
+  giftCard?: GiftCardUse;
+  /** What is left to pay the gateway after the gift card: `total` minus what the card pays. */
+  due: number;
 };
+
+export type GiftCardUse = { code: string; applied: number; balance: number } | { code: string; applied: 0; balance: 0; error: string };
 
 /** The most lines a cart may carry. */
 const MAX_LINES = 50;
@@ -33,12 +41,13 @@ const MAX_LINES = 50;
 /** A line as it came from the client, or null when it is not a cart line at all. */
 export function parseLine(input: unknown): CartLineSeen | null {
   if (!input || typeof input !== "object") return null;
-  const { kind, id, quantity, option, seenAmount } = input as Record<string, unknown>;
+  const { kind, id, quantity, option, seenAmount, amount } = input as Record<string, unknown>;
   if (kind !== "session" && kind !== "product") return null;
   if (typeof id !== "number" || !Number.isInteger(id) || id < 1) return null;
   const qty = typeof quantity === "number" ? quantity : Number.NaN;
   const line: CartLineSeen = { kind, id, quantity: qty };
   if (typeof option === "string" && option.trim()) line.option = option.trim().slice(0, 200);
+  if (typeof amount === "number" && Number.isInteger(amount) && amount > 0) line.amount = amount;
   if (typeof seenAmount === "number" && Number.isFinite(seenAmount)) line.seenAmount = seenAmount;
   return line;
 }
@@ -50,6 +59,22 @@ async function products(p: Payload, ids: number[]): Promise<Map<number, CatalogI
   const res = await p.find({ collection: "products", where: { id: { in: ids } }, depth: 0, limit: 0, pagination: false, overrideAccess: false });
   const scheduled = await scheduledProducts(p, res.docs.map((d) => d.id));
   for (const d of res.docs as Product[]) {
+    if (d.giftCard) {
+      // A gift card has no price of its own: the buyer loads it with one of the amounts the admin offers.
+      const choices = giftAmountChoices(d.giftAmounts);
+      const otherMin = typeof d.giftOtherMin === "number" ? giftCents(d.giftOtherMin) : undefined;
+      if (!choices.length && otherMin === undefined) continue;
+      out.set(d.id, {
+        kind: "product",
+        id: d.id,
+        label: d.name,
+        unitAmount: 0,
+        taxGroup: "exempt",
+        optionTitles: [],
+        gift: { choices, ...(otherMin !== undefined ? { otherMin, otherMax: typeof d.giftOtherMax === "number" ? giftCents(d.giftOtherMax) : undefined } : {}) },
+      });
+      continue;
+    }
     const price = typeof d.salePrice === "number" ? d.salePrice : d.price;
     if (typeof price !== "number") continue; // no price in the admin: not for sale online
     out.set(d.id, {
@@ -129,11 +154,29 @@ async function pickupStudio(p: Payload, wanted: number | undefined, fromLines: n
   return studio ? { id: studio.id, name: studio.name, province: studioProvince(studio) } : null;
 }
 
+/**
+ * The gift card the buyer typed, against the total: how much it pays. A code
+ * that is not one, unknown, void or empty gives an error and pays nothing; a
+ * cart that holds a gift card product cannot be paid with a gift card (a card
+ * would buy itself).
+ */
+async function giftCardUse(p: Payload, typed: string, total: number, buysGiftCard: boolean): Promise<GiftCardUse> {
+  const code = normalizeGiftCode(typed);
+  if (!code) return { code: typed.trim().slice(0, 40), applied: 0, balance: 0, error: "That doesn't look like a gift card code" };
+  if (buysGiftCard) return { code, applied: 0, balance: 0, error: "A gift card can't be used to buy a gift card" };
+  const card = await findGiftCard(code, p);
+  if (!card || card.status !== "active") return { code, applied: 0, balance: 0, error: "We don't know this gift card" };
+  const balance = giftCents(card.balance);
+  if (balance <= 0) return { code, applied: 0, balance: 0, error: "This gift card has been used up" };
+  return { code, applied: giftApplied(total, balance), balance };
+}
+
 export async function validateCart(
   input: unknown[],
   pickupStudioId?: number,
   payload?: Payload,
   now = new Date(),
+  giftCode?: string,
 ): Promise<ValidatedCart> {
   const p = payload || (await getCMS());
   const errors: string[] = [];
@@ -152,5 +195,8 @@ export async function validateCart(
   if (!studio) errors.push("No studio is open for pickup");
 
   const priced = lines.map((l) => priceLine(l, (l.kind === "product" ? productItems : sessionItems).get(l.id), studio?.province || ""));
-  return { lines: priced, errors, ...totals(priced), studio };
+  const sums = totals(priced);
+  const typed = (giftCode || "").trim();
+  const giftCard = typed ? await giftCardUse(p, typed, sums.total, priced.some((l) => l.kind === "product" && !l.error && productItems.get(l.id)?.gift !== undefined)) : undefined;
+  return { lines: priced, errors, ...sums, studio, ...(giftCard ? { giftCard } : {}), due: sums.total - (giftCard?.applied ?? 0) };
 }

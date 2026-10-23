@@ -31,8 +31,8 @@ const WEEKDAY_PREFIX: Record<string, Weekday> = {
 const MONTH_PREFIX = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
 const WEEKDAY_RE = /\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b\.?/i;
-/** "Nov 5", "Oct13", "July 8", "Sept 24" — a month name followed by a day. */
-const DATE_RE = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*(\d{1,2})\b/gi;
+/** "Nov 5", "Oct13", "July 8", "Sept 24", "October 23rd, 2026" — a month name followed by a day, an ordinal and a year allowed. */
+const DATE_RE = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*(\d{1,2})(?:st|nd|rd|th)?\b(?:,?\s*(\d{4})\b)?/gi;
 /** "4pm-6:30pm", "1pm-330", "3:30-5:15", "6PM–845PM", "10AM–1245PM". */
 const TIME_RE = /\b(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\s*[-–]\s*(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?\b/gi;
 
@@ -74,16 +74,17 @@ export function parseSessionLabel(label: string, floor: Date): ParsedLabel {
   const dates = [...label.matchAll(DATE_RE)].map((m) => ({
     month: MONTH_PREFIX.indexOf(m[1].slice(0, 3).toLowerCase()),
     day: Number(m[2]),
+    year: m[3] ? Number(m[3]) : undefined,
   }));
   if (!dates.length) return {};
 
   const time = timeOf(label);
   const start = dates[0];
   const end = dates[1] || start;
-  // The nearest year with the start on or after the floor (compared by calendar day).
-  let year = floor.getUTCFullYear();
-  if (Date.UTC(year, start.month, start.day) < Date.UTC(year, floor.getUTCMonth(), floor.getUTCDate())) year++;
-  const endYear = end.month < start.month ? year + 1 : year;
+  // The label's own year when it names one; else the nearest year with the start on or after the floor (compared by calendar day).
+  let year = start.year ?? floor.getUTCFullYear();
+  if (start.year === undefined && Date.UTC(year, start.month, start.day) < Date.UTC(year, floor.getUTCMonth(), floor.getUTCDate())) year++;
+  const endYear = end.year ?? (end.month < start.month ? year + 1 : year);
 
   const startsAt = studioTime(year, start.month, start.day, time?.start || { hour: 0, minute: 0 });
   const endsAt = studioTime(endYear, end.month, end.day, time?.end || { hour: 23, minute: 59 });

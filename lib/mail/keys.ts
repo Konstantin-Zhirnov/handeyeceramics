@@ -3,7 +3,7 @@
  * collection, the seed and the TemplateKey type all derive from this list.
  * No Payload import here, so the admin bundle can read it too.
  */
-export const EMAIL_TEMPLATE_KEYS = ["order-confirmation", "class-reminder", "pieces-ready", "next-course"] as const;
+export const EMAIL_TEMPLATE_KEYS = ["order-confirmation", "class-reminder", "pieces-ready", "next-course", "gift-card"] as const;
 
 export type TemplateKey = (typeof EMAIL_TEMPLATE_KEYS)[number];
 
@@ -13,4 +13,5 @@ export const EMAIL_TEMPLATE_LABELS: Record<TemplateKey, string> = {
   "class-reminder": "Class reminder (two days before)",
   "pieces-ready": "Pieces are ready",
   "next-course": "Next course invitation",
+  "gift-card": "Gift card codes",
 };

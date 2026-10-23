@@ -110,15 +110,23 @@ export function stripeGateway(secretKey: string, client: StripeClient = new Stri
 
     async createCheckout(input: CheckoutInput) {
       const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-      for (const line of input.lines) {
-        const product = await gateway.ensureProduct(line.productRef);
-        const tax_rates: string[] = [];
-        for (const t of line.taxLines) tax_rates.push(await gateway.ensureTaxRate(t));
+      if (input.giftCard) {
+        // What the gift card left to pay, tax included: the order holds the lines and the tax (see types.ts).
         line_items.push({
-          price_data: { currency: CURRENCY, unit_amount: line.unitAmount, product },
-          quantity: line.quantity,
-          tax_rates,
+          price_data: { currency: CURRENCY, unit_amount: input.giftCard.due, product_data: { name: `Order ${input.orderNumber} — balance after gift card ${input.giftCard.code}` } },
+          quantity: 1,
         });
+      } else {
+        for (const line of input.lines) {
+          const product = await gateway.ensureProduct(line.productRef);
+          const tax_rates: string[] = [];
+          for (const t of line.taxLines) tax_rates.push(await gateway.ensureTaxRate(t));
+          line_items.push({
+            price_data: { currency: CURRENCY, unit_amount: line.unitAmount, product },
+            quantity: line.quantity,
+            tax_rates,
+          });
+        }
       }
       const params: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",
@@ -126,7 +134,7 @@ export function stripeGateway(secretKey: string, client: StripeClient = new Stri
         expires_at: Math.floor(input.expiresAt.getTime() / 1000),
         billing_address_collection: "auto",
         phone_number_collection: { enabled: true },
-        metadata: { orderId: String(input.orderId), orderNumber: input.orderNumber },
+        metadata: { orderId: String(input.orderId), orderNumber: input.orderNumber, ...(input.giftCard ? { giftCard: input.giftCard.code } : {}) },
         ...urls(input.origin),
       };
       if (input.collectAttendee) params.custom_fields = [ATTENDEE_FIELD];

@@ -22,6 +22,7 @@ import {
   videosCollection,
 } from "./collections";
 import { EmailTemplates, Holds, Orders, Registrations, Sessions, Subscriptions } from "./collections/orders";
+import { GiftCards } from "./collections/giftcards";
 import { Invoices } from "./collections/invoices";
 import { Home, Settings, Teachers } from "./globals";
 
@@ -155,6 +156,7 @@ export default buildConfig({
     Sessions,
     Orders,
     Invoices,
+    GiftCards,
     Registrations,
     Holds,
     Subscriptions,

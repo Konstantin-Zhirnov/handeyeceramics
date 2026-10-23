@@ -14,6 +14,7 @@ import type { Order, Subscription } from "../../payload-types";
 import { confirmSeats, releaseHolds } from "../booking/holds";
 import { getCMS } from "../cms/payload";
 import { relId } from "../cms/relations";
+import { issueGiftCards, restoreGiftBalance } from "../giftcards";
 import { sendOrderConfirmation } from "../mail";
 import { addBuyerToList } from "../newsletter";
 import { affected, literal, table } from "./db";
@@ -89,6 +90,7 @@ async function expireOrder(p: Payload, order: Order): Promise<Order> {
     overrideAccess: true,
   })) as Order;
   await releaseHolds(String(order.id), p);
+  await restoreGiftBalance(order, p);
   return updated;
 }
 
@@ -125,6 +127,7 @@ async function payOrder(p: Payload, order: Order, session: GatewaySession): Prom
   })) as Order;
   for (const [name, after] of [
     ["sendOrderConfirmation", () => sendOrderConfirmation(order.id)],
+    ["issueGiftCards", () => issueGiftCards(order.id, p)],
     ["trackPurchase", () => trackPurchase(order.id, p)],
     ["addBuyerToList", () => addBuyerToList(order.id, p)],
   ] as const) {
@@ -152,14 +155,31 @@ export async function finalizeOrder(stripeSessionId: string, payload?: Payload):
   if (!found) return null;
   if (found.status === "finalizing") return settled(p, found.id);
   if (found.status !== "pending") return found;
-  const gw = gateway();
-  if (!gw) return found;
-  const session = await gw.retrieveSession(stripeSessionId);
+  const session = found.gateway === "giftcard" ? giftCardSession(found) : await gateway()?.retrieveSession(stripeSessionId);
   if (!session) return found;
   const paid = session.paymentStatus === "paid" || session.paymentStatus === "no_payment_required";
   if (!paid && session.status !== "expired") return found;
   const done = await claimed(p, found.id, (order) => (paid ? payOrder(p, order, session) : expireOrder(p, order)));
   return done ?? settled(p, found.id);
+}
+
+/**
+ * An order a gift card paid in full never went to the gateway: the checkout
+ * route wrote the buyer's details on it and gave it a session id of its own
+ * ("gc_…"); here that stands for a paid session, so the success page and the
+ * rest of the finishing are the same as for a card payment.
+ */
+function giftCardSession(order: Order): GatewaySession {
+  return {
+    id: order.stripeSessionId || `gc_${order.id}`,
+    mode: "payment",
+    paymentStatus: "no_payment_required",
+    status: "complete",
+    amountTotal: 0,
+    customer: { name: order.customer?.name ?? undefined, email: order.customer?.email ?? undefined, phone: order.customer?.phone ?? undefined },
+    customFields: {},
+    metadata: { orderId: String(order.id), orderNumber: order.number || "", giftCard: order.giftCard?.code || "" },
+  };
 }
 
 // ---- Subscriptions -------------------------------------------------------------

@@ -25,6 +25,11 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
   const openStudios = useMemo(() => studios.filter((s) => s.status === "open"), [studios]);
   const [pickup, setPickup] = useState<number | undefined>();
   const [newsletter, setNewsletter] = useState(false);
+  // The gift card: what is typed, and what was last sent to the server (the Apply button, or Enter, sends it).
+  const [giftTyped, setGiftTyped] = useState("");
+  const [giftCode, setGiftCode] = useState("");
+  // The buyer's details, asked for only when a gift card covers the whole order and there is no gateway page to ask.
+  const [customer, setCustomer] = useState({ name: "", email: "", phone: "", attendee: "" });
   const [result, setResult] = useState<ValidatedCart | null>(null);
   const [checking, setChecking] = useState(false);
   const [failed, setFailed] = useState("");
@@ -33,10 +38,10 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
   const request = useRef(0);
 
   // The check carries the price each line last showed, so the server can flag the lines whose price moved.
-  const body = JSON.stringify({ lines: cart.lines, pickupStudio: pickup });
+  const body = JSON.stringify({ lines: cart.lines, pickupStudio: pickup, ...(giftCode ? { giftCode } : {}) });
   /** What the checkout gets: the lines without the browser's own bookkeeping. */
   const lines = () => cart.lines.map(({ seenAmount: _seen, ...l }) => l);
-  const checkoutBody = () => JSON.stringify({ lines: lines(), pickupStudio: pickup, newsletter });
+  const checkoutBody = () => JSON.stringify({ lines: lines(), pickupStudio: pickup, newsletter, ...(giftCode ? { giftCode } : {}), customer });
 
   // Every change of the lines or the studio is priced again by the server: the prices are the admin's, not the browser's.
   useEffect(() => {
@@ -113,7 +118,12 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
   }
 
   const priced = new Map((result?.lines || []).map((l) => [key(l), l]));
-  const blocked = !result || result.errors.length > 0 || result.lines.some((l) => l.error) || checking;
+  const gift = result?.giftCard;
+  const applied = gift && !("error" in gift) ? gift.applied : 0;
+  const covered = applied > 0 && result?.due === 0;
+  const seats = cart.lines.some((l) => l.kind === "session");
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(customer.email.trim());
+  const blocked = !result || result.errors.length > 0 || result.lines.some((l) => l.error) || checking || (!!gift && "error" in gift) || (covered && (!customer.name.trim() || !emailOk));
 
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_22rem]">
@@ -159,7 +169,57 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
             <dt>Total</dt>
             <dd data-total>{result ? dollars(result.total) : "—"}</dd>
           </div>
+          {applied > 0 && (
+            <>
+              <div className="flex justify-between">
+                <dt>Gift card {gift!.code}</dt>
+                <dd data-gift-applied>−{dollars(applied)}</dd>
+              </div>
+              <div className="flex justify-between text-lg font-semibold">
+                <dt>To pay</dt>
+                <dd data-due>{dollars(result!.due)}</dd>
+              </div>
+            </>
+          )}
         </dl>
+
+        <form
+          data-gift-card
+          onSubmit={(e) => {
+            e.preventDefault();
+            setGiftCode(giftTyped.trim());
+          }}
+          className="flex flex-col gap-2"
+        >
+          <label htmlFor="gift-code" className="eyebrow text-clay-600">
+            Gift card
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="gift-code"
+              name="giftCode"
+              value={giftTyped}
+              onChange={(e) => setGiftTyped(e.target.value)}
+              placeholder="HE-XXXX-XXXX-XXXX"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full min-w-0 rounded-inset border border-clay-200 bg-clay-50 px-4 py-3 text-ink"
+            />
+            <button type="submit" data-gift-apply className="h-12 shrink-0 rounded-full border border-ink/20 px-5 text-copy font-semibold text-ink hover:bg-clay-100">
+              Apply
+            </button>
+          </div>
+          {gift && "error" in gift && (
+            <p role="alert" data-gift-error className="text-copy text-terracotta">
+              {gift.error}
+            </p>
+          )}
+          {applied > 0 && (
+            <p data-gift-ok className="text-caption text-ink-soft">
+              {dollars(applied)} of this card goes on this order{gift!.balance > applied ? `; ${dollars(gift!.balance - applied)} stays on it` : ""}.
+            </p>
+          )}
+        </form>
 
         {failed && (
           <p role="alert" className="text-copy text-terracotta">
@@ -188,6 +248,30 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
         >
           <input type="hidden" name="lines" value={JSON.stringify(lines())} />
           <input type="hidden" name="pickupStudio" value={pickup ?? ""} />
+          <input type="hidden" name="giftCode" value={giftCode} />
+          {covered && (
+            <div data-gift-customer className="flex flex-col gap-3 rounded-inset border border-clay-200 bg-clay-50 px-4 py-4">
+              <p className="text-copy text-ink">Your gift card covers this order. Who is it for?</p>
+              <label className="flex flex-col gap-1 text-caption text-ink-soft">
+                Name *
+                <input name="name" required value={customer.name} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} className="rounded-inset border border-clay-200 bg-white px-4 py-3 text-copy text-ink" />
+              </label>
+              <label className="flex flex-col gap-1 text-caption text-ink-soft">
+                Email *
+                <input name="email" type="email" required value={customer.email} onChange={(e) => setCustomer({ ...customer, email: e.target.value })} className="rounded-inset border border-clay-200 bg-white px-4 py-3 text-copy text-ink" />
+              </label>
+              <label className="flex flex-col gap-1 text-caption text-ink-soft">
+                Phone
+                <input name="phone" type="tel" value={customer.phone} onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} className="rounded-inset border border-clay-200 bg-white px-4 py-3 text-copy text-ink" />
+              </label>
+              {seats && (
+                <label className="flex flex-col gap-1 text-caption text-ink-soft">
+                  Who is attending
+                  <input name="attendee" value={customer.attendee} onChange={(e) => setCustomer({ ...customer, attendee: e.target.value })} className="rounded-inset border border-clay-200 bg-white px-4 py-3 text-copy text-ink" />
+                </label>
+              )}
+            </div>
+          )}
           <label data-newsletter className="flex items-start gap-3 text-caption text-ink-soft">
             <input type="checkbox" name="newsletter" checked={newsletter} onChange={(e) => setNewsletter(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-terracotta" />
             <span>Email me new class dates and studio news. Unsubscribe any time.</span>
@@ -198,7 +282,7 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
             disabled={blocked || paying}
             className="flex h-12 items-center justify-center rounded-full bg-terracotta px-7 text-copy font-semibold text-clay-50 transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {paying ? "Taking you to payment…" : checking ? "Checking prices…" : "Pay"}
+            {paying ? (covered ? "Finishing your order…" : "Taking you to payment…") : checking ? "Checking prices…" : covered ? "Use gift card" : "Pay"}
           </button>
           {phoneHref && (
             <a href={phoneHref} className="flex h-12 items-center justify-center rounded-full bg-sky-brand px-7 text-copy font-semibold text-sky-ink">

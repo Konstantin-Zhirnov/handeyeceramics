@@ -11,6 +11,8 @@ import { useCart } from "./CartProvider";
 /** A date of a class as the product page lists it: what to show, and whether a seat can be bought. */
 export type SessionChoice = { id: number; label: string; price: number | null; sellable: boolean; left: number };
 export type OptionChoice = { title: string; choices: string[] };
+/** A gift card's offer, in dollars: the fixed amounts, and the range of another amount when the admin allows one. */
+export type GiftOfferView = { choices: number[]; otherMin?: number; otherMax?: number };
 
 type Props = {
   /** The product; a line of kind "product" unless a date is chosen. */
@@ -20,13 +22,17 @@ type Props = {
   options: OptionChoice[];
   /** The dates of a class: when there are any, one must be picked and the line is a seat on it. */
   sessions: SessionChoice[];
+  /** A gift card: the buyer loads it with one of these amounts; the line carries the amount instead of a price. */
+  gift?: GiftOfferView;
 };
+
+const OTHER = "other";
 
 const field = "w-full min-w-0 rounded-inset border border-clay-200 bg-clay-50 px-4 py-3 text-ink";
 const stepper = "flex h-11 w-11 items-center justify-center rounded-full border border-ink/20 text-lg text-ink hover:bg-clay-100 disabled:opacity-40";
 
 /** The buying controls of a product page (R03, R03.2, R02): the variants, the dates, the quantity, Add to cart. */
-export function AddToCart({ productId, price, options, sessions }: Props) {
+export function AddToCart({ productId, price, options, sessions, gift }: Props) {
   const cart = useCart();
   const base = useId();
   const [session, setSession] = useState("");
@@ -34,8 +40,21 @@ export function AddToCart({ productId, price, options, sessions }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const [added, setAdded] = useState(false);
+  const [giftChoice, setGiftChoice] = useState(gift?.choices.length ? String(gift.choices[0]) : gift ? OTHER : "");
+  const [giftOther, setGiftOther] = useState("");
 
   const chosen = sessions.find((s) => String(s.id) === session);
+
+  /** The amount loaded on a gift card, in dollars; null when none is chosen or the other amount is out of range. */
+  const giftDollars = (): number | null => {
+    if (!gift) return null;
+    if (giftChoice !== OTHER) return Number(giftChoice) || null;
+    const n = Number(giftOther.replace(/[^\d.]/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return null;
+    if (typeof gift.otherMin === "number" && n < gift.otherMin) return null;
+    if (typeof gift.otherMax === "number" && n > gift.otherMax) return null;
+    return Math.round(n * 100) / 100;
+  };
 
   const submit = () => {
     setError("");
@@ -43,13 +62,19 @@ export function AddToCart({ productId, price, options, sessions }: Props) {
     if (sessions.length && !chosen) return setError("Choose a date");
     if (options.some((_, i) => !picked[i])) return setError(`Choose ${options.map((o) => o.title).join(" and ")}`);
     if (chosen && quantity > chosen.left) return setError(`Only ${chosen.left} seat${chosen.left === 1 ? "" : "s"} left on this date`);
-    const dollars = chosen ? chosen.price ?? price : price;
-    const option = options.length ? options.map((o, i) => `${o.title}: ${picked[i]}`).join("; ") : undefined;
+    const loaded = giftDollars();
+    if (gift && loaded === null) {
+      const range = typeof gift.otherMin === "number" ? ` between ${formatPrice(gift.otherMin)} and ${typeof gift.otherMax === "number" ? formatPrice(gift.otherMax) : "any amount"}` : "";
+      return setError(`Choose an amount${range}`);
+    }
+    const dollars = gift ? loaded : chosen ? chosen.price ?? price : price;
+    const option = gift ? `Amount: ${formatPrice(loaded!)}` : options.length ? options.map((o, i) => `${o.title}: ${picked[i]}`).join("; ") : undefined;
     cart.add({
       kind: chosen ? "session" : "product",
       id: chosen ? chosen.id : productId,
       quantity,
       ...(option ? { option } : {}),
+      ...(gift ? { amount: Math.round(loaded! * 100) } : {}),
       ...(typeof dollars === "number" ? { seenAmount: Math.round(dollars * 100) } : {}),
     });
     setAdded(true);
@@ -60,6 +85,41 @@ export function AddToCart({ productId, price, options, sessions }: Props) {
 
   return (
     <div data-add-to-cart className="flex flex-col gap-5">
+      {gift && (
+        <fieldset data-gift-amounts className="flex min-w-0 flex-col gap-2">
+          <legend className="eyebrow text-clay-600">Amount *</legend>
+          <div className="flex flex-wrap gap-2" role="radiogroup">
+            {gift.choices.map((c) => (
+              <label key={c} className={`flex h-11 cursor-pointer items-center rounded-full border px-5 text-copy font-semibold ${giftChoice === String(c) ? "border-ink bg-ink text-clay-50" : "border-ink/20 text-ink hover:bg-clay-100"}`}>
+                <input type="radio" name={`${base}-amount`} value={c} checked={giftChoice === String(c)} onChange={() => setGiftChoice(String(c))} className="sr-only" />
+                {formatPrice(c)}
+              </label>
+            ))}
+            {typeof gift.otherMin === "number" && (
+              <label className={`flex h-11 cursor-pointer items-center rounded-full border px-5 text-copy font-semibold ${giftChoice === OTHER ? "border-ink bg-ink text-clay-50" : "border-ink/20 text-ink hover:bg-clay-100"}`}>
+                <input type="radio" name={`${base}-amount`} value={OTHER} checked={giftChoice === OTHER} onChange={() => setGiftChoice(OTHER)} className="sr-only" />
+                Other amount
+              </label>
+            )}
+          </div>
+          {giftChoice === OTHER && typeof gift.otherMin === "number" && (
+            <label className="mt-1 flex min-w-0 flex-col gap-1 text-caption text-ink-soft">
+              <span>
+                Any amount from {formatPrice(gift.otherMin)}
+                {typeof gift.otherMax === "number" ? ` to ${formatPrice(gift.otherMax)}` : ""}
+              </span>
+              <input
+                data-gift-other
+                inputMode="decimal"
+                value={giftOther}
+                onChange={(e) => setGiftOther(e.target.value)}
+                placeholder="CA$"
+                className={field}
+              />
+            </label>
+          )}
+        </fieldset>
+      )}
       {sessions.length > 0 && (
         <div data-product-sessions className="flex min-w-0 flex-col gap-2">
           <label htmlFor={`${base}-date`} className="eyebrow text-clay-600">

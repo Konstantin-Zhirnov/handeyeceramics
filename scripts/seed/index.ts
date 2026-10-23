@@ -74,6 +74,20 @@ const STUDIO_PATHS: Record<string, string> = {
 const VANCOUVER_CLASSES = "/adult-beginner-pottery-classes-in-vancouver";
 /** Wix system page ("You don't have permissions…"): nothing to carry over. */
 const SYSTEM_PAGES: Record<string, string> = { "/home": "/", "/paywall": "/" };
+/**
+ * The Wix gift card widget's page: on the new site a gift card product at the
+ * same address (a product wins over a page in resolvePath), with the amounts
+ * the widget offered. Its picture is the page's one image.
+ */
+const GIFT_CARD_PATH = "/gift-card";
+const GIFT_CARD = {
+  name: "Pottery Gift Card",
+  amounts: ["100", "200", "370"],
+  otherMin: 25,
+  otherMax: 1000,
+  description:
+    "A gift card for pottery classes, date nights, drop-ins, memberships, clay and tools at Hand Eye Ceramics — any studio.\n\nThe code is emailed to you as soon as the order is paid; forward it or write it into a card of your own. It is used at checkout on this site, in one go or over several orders, and never expires.",
+};
 /** A dead link found by the crawl, and where it now points. */
 const LINK_FIXES: Record<string, string> = { "/product-page/private-lessons": "/open-studio-private-lessons" };
 const FORM_TYPES: Record<string, "contact" | "commission"> = { "/contact-us": "contact", "/commissions-form": "commission" };
@@ -356,6 +370,13 @@ function noteH1(r: Rec, h1: { index: number; text: string }) {
     );
 }
 
+/**
+ * The old "Classes" page listed the Wix Bookings services ("Book Now",
+ * "Explore Plans", two of them "Ended"): a widget, not text. On the new site
+ * the page shows the classes of every studio with their Book buttons instead.
+ */
+const WORKSHOPS_PATH = "/our-workshops";
+
 // ---- Seed steps ---------------------------------------------------------------
 async function seedPage(r: Rec) {
   const h1 = pickH1(r);
@@ -365,7 +386,7 @@ async function seedPage(r: Rec) {
     path: r.path,
     h1: h1.text,
     seo: seoFor(r),
-    blocks: await toBlocks(r, h1.index),
+    blocks: r.path === WORKSHOPS_PATH ? [{ blockType: "classList" }] : await toBlocks(r, h1.index),
     published: true,
   });
 }
@@ -502,10 +523,38 @@ async function seedProducts() {
   }
 }
 
-const isDateOption = (o: ProductOption) => o.title.trim().toLowerCase() === "date";
+/** The gift card as a product; a page the old seed made at the same address is unpublished, never deleted. */
+async function seedGiftCard() {
+  const r = (inv.pages as Rec[]).find((p) => p.path === GIFT_CARD_PATH);
+  const picture = r?.images?.[0];
+  const image = picture ? await media(picture.local, `${GIFT_CARD.name} — Hand Eye Ceramics`) : undefined;
+  await upsert("products", { path: { equals: GIFT_CARD_PATH } }, {
+    name: GIFT_CARD.name,
+    path: GIFT_CARD_PATH,
+    price: null,
+    images: image ? [image] : [],
+    description: GIFT_CARD.description,
+    category: "Gift Card",
+    taxGroup: "exempt",
+    giftCard: true,
+    giftAmounts: GIFT_CARD.amounts.join("\n"),
+    giftOtherMin: GIFT_CARD.otherMin,
+    giftOtherMax: GIFT_CARD.otherMax,
+    seo: { title: r?.title || `${GIFT_CARD.name}${SITE_SUFFIX}`, description: excerpt(GIFT_CARD.description) },
+    visible: true,
+  });
+  const page = (await payload.find({ collection: "pages", where: { path: { equals: GIFT_CARD_PATH } }, limit: 1, depth: 0 })).docs[0];
+  if (page && page.published) await payload.update({ collection: "pages", id: page.id, data: { published: false }, depth: 0 });
+}
 
 /** The labels of the old site carry no year: the nearest year on or after the month before the crawl (September 2026). */
 const LABEL_FLOOR = new Date("2026-08-01T00:00:00Z");
+
+/** The "Date" drop-down — or one under another title whose choices are dates, like the Nanaimo date night's "October 23rd, 2026 7pm-9pm @3168 Uplands Dr". */
+const isDateOption = (o: ProductOption) =>
+  o.title.trim().toLowerCase() === "date" ||
+  (o.choices.length > 0 && o.choices.filter((c) => parseSessionLabel(c, LABEL_FLOOR).startsAt).length * 2 >= o.choices.length);
+
 
 /**
  * One session per choice of a product's "Date" drop-down, keyed by product and
@@ -832,11 +881,12 @@ async function main() {
   const studio = await seedStudios();
   let n = 0;
   for (const r of inv.pages as Rec[]) {
-    if (SYSTEM_PAGES[r.path]) continue;
+    if (SYSTEM_PAGES[r.path] || r.path === GIFT_CARD_PATH) continue;
     await seedPage(r); // the Nanaimo page is also kept as page content for its studio
     n++;
   }
   await seedProducts();
+  await seedGiftCard();
   const sessions = await seedSessions(studio);
   await seedPlans();
   await seedClasses(studio);

@@ -58,9 +58,10 @@ const gateway: FakeGateway = {
       mode: "payment",
       paymentStatus: "unpaid",
       status: "open",
+      amountTotal: input.giftCard ? input.giftCard.due : input.lines.reduce((sum, l) => sum + l.unitAmount * l.quantity, 0),
       customer: { email: input.customerEmail },
       customFields: {},
-      metadata: { orderId: String(input.orderId), orderNumber: input.orderNumber },
+      metadata: { orderId: String(input.orderId), orderNumber: input.orderNumber, ...(input.giftCard ? { giftCard: input.giftCard.code } : {}) },
     });
     return { id, url: `${input.origin}/checkout/fake?cs=${id}` };
   },

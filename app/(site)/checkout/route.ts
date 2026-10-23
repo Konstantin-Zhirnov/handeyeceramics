@@ -1,8 +1,10 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { holdSeats, releaseHolds } from "@/lib/booking/holds";
 import { validateCart } from "@/lib/cart/validate";
 import { getCMS } from "@/lib/cms/resolve";
-import { CHECKOUT_TTL_MS, createCheckoutForOrder, gateway, PAYMENT_UNAVAILABLE } from "@/lib/payments";
+import { reserveGiftBalance, restoreGiftBalance } from "@/lib/giftcards";
+import { CHECKOUT_TTL_MS, createCheckoutForOrder, finalizeOrder, gateway, PAYMENT_UNAVAILABLE } from "@/lib/payments";
 import { addressOf, rateLimiter, SENDER_LIMIT } from "@/lib/rate-limit";
 import { serverURL } from "@/lib/server-url";
 import { trackingConfig } from "@/lib/track/config";
@@ -12,8 +14,12 @@ import type { Order } from "@/payload-types";
  * Paying starts here (R04, R04.2, R04.3, R17i): the cart is priced from the
  * CMS once more, a pending order is written with those prices, its seats are
  * held for as long as the Checkout session lives, and the buyer is sent to the
- * gateway. JSON `{ lines: [{kind, id, quantity, option?}], pickupStudio? }`
+ * gateway. JSON `{ lines: [{kind, id, quantity, option?, amount?}], pickupStudio?, giftCode?, customer? }`
  * (or the same as form fields, `lines` as JSON) →
+ * A gift card (`giftCode`) pays its balance first; when it covers the whole
+ * order there is no gateway to go to — the buyer's `customer` {name, email,
+ * phone, attendee} comes from the cart instead, the order is finished at once
+ * and `url` is the success page.
  *   200 `{ ok: true, url, order }`     — go and pay (a form post is sent there with 303);
  *   409 `{ ok: false, message, errors, short? }` — the cart must change first;
  *   429 `{ ok: false, message }`       — too many attempts from one sender;
@@ -27,7 +33,10 @@ const limiter = rateLimiter(SENDER_LIMIT);
 
 const fail = (status: number, message: string, more: Record<string, unknown> = {}) => NextResponse.json({ ok: false, message, ...more }, { status });
 
-type Body = { lines: unknown[]; pickupStudio?: number; newsletter: boolean; form: boolean };
+type Customer = { name?: string; email?: string; phone?: string; attendee?: string };
+type Body = { lines: unknown[]; pickupStudio?: number; newsletter: boolean; form: boolean; giftCode?: string; customer: Customer };
+
+const text = (v: unknown, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
 
 /** The cart from a JSON body or from the hidden fields of the no-script form; null when neither is readable. */
 async function readBody(request: Request): Promise<Body | null> {
@@ -37,21 +46,28 @@ async function readBody(request: Request): Promise<Body | null> {
     let pickup: unknown;
     let newsletter = false;
     let form = false;
+    let giftCode: string | undefined;
+    let customer: Customer = {};
     if (type.includes("application/json")) {
       const body = (await request.json()) as Record<string, unknown> | null;
       lines = body?.lines;
       pickup = body?.pickupStudio;
       newsletter = body?.newsletter === true;
+      giftCode = text(body?.giftCode, 40);
+      const c = (body?.customer || {}) as Record<string, unknown>;
+      customer = { name: text(c.name), email: text(c.email), phone: text(c.phone, 40), attendee: text(c.attendee) };
     } else {
       const data = await request.formData();
       lines = JSON.parse(String(data.get("lines") || "[]"));
       pickup = Number(data.get("pickupStudio")) || undefined;
       newsletter = data.get("newsletter") === "on";
+      giftCode = text(data.get("giftCode"), 40);
+      customer = { name: text(data.get("name")), email: text(data.get("email")), phone: text(data.get("phone"), 40), attendee: text(data.get("attendee")) };
       form = true;
     }
     if (!Array.isArray(lines)) return null;
     const pickupStudio = typeof pickup === "number" && Number.isInteger(pickup) && pickup > 0 ? pickup : undefined;
-    return { lines, pickupStudio, newsletter, form };
+    return { lines, pickupStudio, newsletter, form, giftCode, customer };
   } catch {
     return null;
   }
@@ -91,9 +107,10 @@ async function unavailable() {
   return fail(503, phone ? `${PAYMENT_UNAVAILABLE} — call the studio at ${phone}.` : `${PAYMENT_UNAVAILABLE}.`);
 }
 
-/** The order is not going to be paid: it is closed, and whatever it held goes back on sale. */
+/** The order is not going to be paid: it is closed, and whatever it held — seats, a gift card's balance — goes back. */
 async function abandon(payload: Awaited<ReturnType<typeof getCMS>>, order: Order, note: string) {
   await releaseHolds(String(order.id), payload);
+  await restoreGiftBalance(order, payload);
   await payload.update({
     collection: "orders",
     id: order.id,
@@ -112,12 +129,19 @@ export async function POST(request: Request) {
   const body = await readBody(request);
   if (!body) return fail(400, "The cart could not be read. Please try again.");
 
-  const cart = await validateCart(body.lines, body.pickupStudio);
+  const cart = await validateCart(body.lines, body.pickupStudio, undefined, new Date(), body.giftCode);
   const lineErrors = cart.lines.filter((l) => l.error).map((l) => `${l.label || `Line ${l.id}`}: ${l.error}`);
-  if (cart.errors.length || lineErrors.length || !cart.studio) {
-    return fail(409, "Some items in your cart need your attention before you can pay.", { errors: [...cart.errors, ...lineErrors], lines: cart.lines });
+  const giftError = cart.giftCard && "error" in cart.giftCard ? [`Gift card: ${cart.giftCard.error}`] : [];
+  if (cart.errors.length || lineErrors.length || giftError.length || !cart.studio) {
+    return fail(409, "Some items in your cart need your attention before you can pay.", { errors: [...cart.errors, ...lineErrors, ...giftError], lines: cart.lines });
   }
-  if (!gateway()) return unavailable();
+  const applied = cart.giftCard?.applied ?? 0;
+  const covered = applied > 0 && cart.due === 0;
+  // Nothing for the gateway: the buyer's details, which Checkout would have asked for, must come from the cart.
+  if (covered && (!body.customer.name || !body.customer.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.customer.email))) {
+    return fail(409, "Your gift card covers this order — tell us your name and email so we can send the confirmation.", { errors: ["Name and email are needed"], needCustomer: true });
+  }
+  if (!covered && !gateway()) return unavailable();
 
   const payload = await getCMS();
   // The order's number ("HE-000123") is set by a hook of the collection and comes back on the created document.
@@ -130,6 +154,15 @@ export async function POST(request: Request) {
       pickupStudio: cart.studio.id,
       newsletter: body.newsletter,
       currency: "cad",
+      ...(applied > 0 ? { discount: applied, giftCard: { code: cart.giftCard!.code, amount: applied } } : {}),
+      ...(covered
+        ? {
+            gateway: "giftcard",
+            stripeSessionId: `gc_${randomBytes(12).toString("hex")}`,
+            customer: { name: body.customer.name, email: body.customer.email, phone: body.customer.phone },
+            attendee: body.customer.attendee,
+          }
+        : {}),
       lines: cart.lines.map((l) => ({
         kind: l.kind,
         session: l.kind === "session" ? l.id : undefined,
@@ -157,6 +190,22 @@ export async function POST(request: Request) {
     const label = (sessionId: number) => cart.lines.find((l) => l.kind === "session" && l.id === sessionId)?.label || `Date ${sessionId}`;
     const errors = held.short.map(({ sessionId, left }) => `${label(sessionId)}: ${left === 0 ? "Sold out" : `Only ${left} seats left`}`);
     return fail(409, "Some seats were taken while you were deciding.", { errors, short: held.short });
+  }
+  if (applied > 0 && !(await reserveGiftBalance(cart.giftCard!.code, applied, order.id, payload))) {
+    await abandon(payload, order, "gift card balance changed");
+    return fail(409, "The gift card's balance changed while you were deciding — check the cart and try again.", { errors: ["Gift card: the balance changed"] });
+  }
+
+  if (covered) {
+    // Paid in full by the card: finished here, the same way the success page finishes a paid session.
+    const done = await finalizeOrder(order.stripeSessionId!, payload);
+    if (done?.status !== "paid") {
+      await abandon(payload, order, "gift card order could not be finished").catch((e) => console.error("checkout: could not close the order", e));
+      return fail(500, "We could not finish your order. Nothing was taken from your gift card.");
+    }
+    const url = `${serverURL()}/checkout/success?session_id=${encodeURIComponent(order.stripeSessionId!)}`;
+    if (body.form) return NextResponse.redirect(url, 303);
+    return NextResponse.json({ ok: true, url, order: order.number || String(order.id) }, { headers: { "Cache-Control": "no-store" } });
   }
 
   try {

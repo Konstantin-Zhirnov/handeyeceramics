@@ -297,6 +297,19 @@ export const Orders: CollectionConfig = {
         centsField("tax", "Tax"),
         centsField("total", "Total"),
         centsField("refundedAmount", "Refunded", true),
+        centsField("discount", "Paid by gift card"),
+      ],
+    },
+    {
+      // The gift card used at checkout: its balance was taken when the order was created and given back if the order expired.
+      name: "giftCard",
+      type: "group",
+      label: "Gift card used",
+      access: fixedAfterCreate,
+      admin: { readOnly: true },
+      fields: [
+        { name: "code", type: "text", label: "Code" },
+        { name: "amount", type: "number", label: "Amount", admin: { description: "In cents" } },
       ],
     },
     { name: "currency", type: "text", defaultValue: "cad", label: "Currency", access: fixedAfterCreate, admin: { readOnly: true } },
@@ -305,7 +318,7 @@ export const Orders: CollectionConfig = {
       type: "text",
       label: "Payment gateway",
       access: fixedAfterCreate,
-      admin: { position: "sidebar", readOnly: true },
+      admin: { position: "sidebar", readOnly: true, description: "stripe, fake, or giftcard when a gift card covered the whole order" },
     },
     { name: "stripeSessionId", type: "text", unique: true, index: true, label: "Stripe Checkout session", access: serverSet, admin: { readOnly: true } },
     { name: "stripePaymentIntentId", type: "text", label: "Stripe payment", access: serverSet, admin: { readOnly: true } },

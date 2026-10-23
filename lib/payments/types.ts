@@ -6,7 +6,8 @@
 export type TaxGroup = "goods" | "service" | "exempt";
 export type TaxLine = { code: "GST" | "PST"; province: string; percentage: number };
 
-export type CartLineInput = { kind: "session" | "product"; id: number; quantity: number; option?: string };
+/** `amount` — cents, only for a gift card product: the sum the buyer loads on the card. */
+export type CartLineInput = { kind: "session" | "product"; id: number; quantity: number; option?: string; amount?: number };
 export type PricedLine = CartLineInput & {
   label: string;
   unitAmount: number /* cents */;
@@ -31,6 +32,12 @@ export type CheckoutInput = {
   customerEmail?: string;
   collectAttendee: boolean;
   expiresAt: Date;
+  /**
+   * A gift card paid part of the order: the gateway charges `due` as one line,
+   * tax included (the order keeps the breakdown), because a Stripe coupon
+   * would take the discount off the taxable amount and under-collect the tax.
+   */
+  giftCard?: { code: string; amount: number; due: number };
   lines: {
     name: string;
     productRef: ProductRef;

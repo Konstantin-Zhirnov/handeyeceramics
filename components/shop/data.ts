@@ -20,9 +20,11 @@ export async function sessionChoices(product: Product, now = new Date()): Promis
   // A class has dates of some status, even when none is open to buy: then it is not sold as a plain product.
   const scheduled = (await scheduledProducts(payload, [product.id])).has(product.id);
   if (!scheduled) return { choices: [], scheduled };
+  // Only the dates not yet over are asked for: a class imported with years of past dates (hundreds of
+  // them) would otherwise fill the 500 first by date with the past and show none of the coming ones.
   const res = await payload.find({
     collection: "sessions",
-    where: { product: { equals: product.id } },
+    where: { and: [{ product: { equals: product.id } }, { or: [{ endsAt: { greater_than_equal: now.toISOString() } }, { endsAt: { exists: false } }] }] },
     overrideAccess: false,
     sort: "startsAt",
     depth: 0,

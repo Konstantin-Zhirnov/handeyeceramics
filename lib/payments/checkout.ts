@@ -64,6 +64,12 @@ export async function createCheckoutForOrder(order: Order, origin: string, paylo
     }),
   };
   if (!input.lines.length) throw new Error(`Order ${order.number || order.id} has nothing to pay for`);
+  const giftAmount = order.giftCard?.amount ?? 0;
+  if (order.giftCard?.code && giftAmount > 0) {
+    const due = (order.total ?? 0) - giftAmount;
+    if (due <= 0) throw new Error(`Order ${order.number || order.id} is covered by its gift card; nothing for the gateway`);
+    input.giftCard = { code: order.giftCard.code, amount: giftAmount, due };
+  }
 
   const session = await gw.createCheckout(input);
   await p.update({

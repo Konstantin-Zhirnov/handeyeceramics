@@ -79,6 +79,7 @@ export interface Config {
     sessions: Session;
     orders: Order;
     invoices: Invoice;
+    giftcards: Giftcard;
     registrations: Registration;
     holds: Hold;
     subscriptions: Subscription;
@@ -103,6 +104,7 @@ export interface Config {
     sessions: SessionsSelect<false> | SessionsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     invoices: InvoicesSelect<false> | InvoicesSelect<true>;
+    giftcards: GiftcardsSelect<false> | GiftcardsSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     holds: HoldsSelect<false> | HoldsSelect<true>;
     subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
@@ -409,6 +411,22 @@ export interface Product {
    * Goods — clay, tools, pieces: GST and the province's PST. Service — classes, drop-ins, rentals: GST only. Exempt — no tax
    */
   taxGroup: 'goods' | 'service' | 'exempt';
+  /**
+   * The buyer picks an amount from the list below instead of the price; the code is emailed once the order is paid. No tax
+   */
+  giftCard?: boolean | null;
+  /**
+   * In dollars, one per line, e.g. 100, 200, 370
+   */
+  giftAmounts?: string | null;
+  /**
+   * In dollars. Empty — only the amounts above can be chosen
+   */
+  giftOtherMin?: number | null;
+  /**
+   * In dollars; empty — no upper limit
+   */
+  giftOtherMax?: number | null;
   seo?: {
     title?: string | null;
     description?: string | null;
@@ -695,7 +713,21 @@ export interface Order {
    * In cents
    */
   refundedAmount?: number | null;
+  /**
+   * In cents
+   */
+  discount?: number | null;
+  giftCard?: {
+    code?: string | null;
+    /**
+     * In cents
+     */
+    amount?: number | null;
+  };
   currency?: string | null;
+  /**
+   * stripe, fake, or giftcard when a gift card covered the whole order
+   */
   gateway?: string | null;
   stripeSessionId?: string | null;
   stripePaymentIntentId?: string | null;
@@ -806,6 +838,50 @@ export interface Invoice {
   createdAt: string;
 }
 /**
+ * Every gift card bought on the site appears here with its code and balance. Add a card by hand to carry a Wix balance over; set a card to Void to stop it being used.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "giftcards".
+ */
+export interface Giftcard {
+  id: number;
+  /**
+   * Leave empty to have one generated. Cannot be changed afterwards
+   */
+  code: string;
+  /**
+   * In dollars, what the card was loaded with
+   */
+  amount: number;
+  /**
+   * In dollars, what is left. The site takes from it at checkout; correct it here only to fix a mistake
+   */
+  balance: number;
+  status: 'active' | 'void';
+  /**
+   * Where the code was sent
+   */
+  buyerEmail?: string | null;
+  order?: (number | null) | Order;
+  /**
+   * e.g. the Wix card it replaces, or who it was given to
+   */
+  note?: string | null;
+  uses?:
+    | {
+        at: string;
+        usedIn?: (number | null) | Order;
+        /**
+         * In dollars
+         */
+        amount: number;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Who took a seat on which date. Filter by class date to see the list of a class.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -871,7 +947,7 @@ export interface Subscription {
  */
 export interface EmailTemplate {
   id: number;
-  key: 'order-confirmation' | 'class-reminder' | 'pieces-ready' | 'next-course';
+  key: 'order-confirmation' | 'class-reminder' | 'pieces-ready' | 'next-course' | 'gift-card';
   subject: string;
   body: string;
   enabled?: boolean | null;
@@ -977,6 +1053,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'invoices';
         value: number | Invoice;
+      } | null)
+    | ({
+        relationTo: 'giftcards';
+        value: number | Giftcard;
       } | null)
     | ({
         relationTo: 'registrations';
@@ -1327,6 +1407,10 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   recommended?: T;
   taxGroup?: T;
+  giftCard?: T;
+  giftAmounts?: T;
+  giftOtherMin?: T;
+  giftOtherMax?: T;
   seo?:
     | T
     | {
@@ -1442,6 +1526,13 @@ export interface OrdersSelect<T extends boolean = true> {
   tax?: T;
   total?: T;
   refundedAmount?: T;
+  discount?: T;
+  giftCard?:
+    | T
+    | {
+        code?: T;
+        amount?: T;
+      };
   currency?: T;
   gateway?: T;
   stripeSessionId?: T;
@@ -1513,6 +1604,29 @@ export interface InvoicesSelect<T extends boolean = true> {
   total?: T;
   paid?: T;
   due?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "giftcards_select".
+ */
+export interface GiftcardsSelect<T extends boolean = true> {
+  code?: T;
+  amount?: T;
+  balance?: T;
+  status?: T;
+  buyerEmail?: T;
+  order?: T;
+  note?: T;
+  uses?:
+    | T
+    | {
+        at?: T;
+        usedIn?: T;
+        amount?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
