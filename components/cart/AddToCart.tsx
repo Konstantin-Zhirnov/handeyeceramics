@@ -125,7 +125,7 @@ export function AddToCart({ productId, price, options, sessions, gift }: Props) 
           <label htmlFor={`${base}-date`} className="eyebrow text-clay-600">
             <span data-option-title>Date</span> *
           </label>
-          <select id={`${base}-date`} value={session} onChange={(e) => setSession(e.target.value)} className={field}>
+          <select id={`${base}-date`} value={session} onChange={(e) => setSession(e.target.value)} className={`${field} pr-11`}>
             <option value="">Select</option>
             {sessions.map((s) => (
               <option key={s.id} value={s.id} disabled={!s.sellable} data-sold-out={s.sellable ? undefined : ""}>
@@ -146,7 +146,7 @@ export function AddToCart({ productId, price, options, sessions, gift }: Props) 
             id={`${base}-option-${i}`}
             value={picked[i]}
             onChange={(e) => setPicked((p) => p.map((v, j) => (j === i ? e.target.value : v)))}
-            className={field}
+            className={`${field} pr-11`}
           >
             <option value="">Select</option>
             {o.choices.map((c) => (

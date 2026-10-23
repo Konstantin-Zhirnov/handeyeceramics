@@ -629,6 +629,12 @@ const MEMBERSHIPS_PATH = "/membership-rentals";
 const RENTAL_PATH = "/wheel-rental";
 /** "$175+gst per month", "$150 monthly", "$125/month": a period stated with the amount. */
 const MONTHLY = /\$\s?\d+(?:\.\d+)?(?:\s*\+\s*gst)?\s*(?:per month|monthly|\/\s*month)/i;
+/**
+ * "All memberships are a 2 month minimum commitment and renew automatically each month": the old
+ * page says it under the options, so every membership option is monthly, also where its own text
+ * gives the amount alone ("$230+Gst", "$145+gst") — decision of 2026-10-23.
+ */
+const ALL_MONTHLY = /^All memberships\b.*\brenew automatically each month/i;
 const amounts = (text: string) => [...new Set([...text.matchAll(/\$\s?(\d+(?:\.\d+)?)/g)].map((m) => Number(m[1])))];
 
 /** A paragraph the crawl cut a secret out of stays text of its page; it is not copied into a plan. */
@@ -640,8 +646,9 @@ let planCache: { plans: PlanData[]; spots: Map<string, PlanSpot> } | undefined;
  * Membership options and the wheel rental are plain paragraphs on the old
  * site. Each becomes a plan with its paragraphs, word for word, as the
  * description. Nothing is guessed: the price is the option's one amount (two
- * different amounts — no price), the period is set only where the text states
- * it next to the amount, the group is a heading of the old page.
+ * different amounts — no price), the period is set where the text states it
+ * next to the amount or where the page says every membership renews monthly
+ * (ALL_MONTHLY), the group is a heading of the old page.
  */
 function textPlans() {
   if (planCache) return planCache;
@@ -653,6 +660,7 @@ function textPlans() {
   const members = blocksOf(MEMBERSHIPS_PATH);
   const memberGroup = textOf(members.find((b) => b.type === "heading" && /^Studio Memberships$/i.test(textOf(b))) || { type: "" });
   const memberSpot: PlanSpot = { group: memberGroup, indices: new Set() };
+  const allMonthly = members.some((b) => b.type === "paragraph" && ALL_MONTHLY.test(textOf(b)));
   let cur: { name: string; lines: string[]; at: number[] } | null = null;
   const close = () => {
     const c = cur as { name: string; lines: string[]; at: number[] } | null;
@@ -662,7 +670,7 @@ function textPlans() {
       plans.push({
         name: c.name,
         price: found.length === 1 ? found[0] : null,
-        period: MONTHLY.test(text) ? "per month" : "",
+        period: allMonthly || MONTHLY.test(text) ? "per month" : "",
         description: c.lines.join("\n"),
         group: memberGroup,
       });

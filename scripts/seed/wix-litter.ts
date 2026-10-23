@@ -14,6 +14,8 @@ export function isWixLitter(b: LitterBlock): boolean {
   // Wix's invisible scroll anchors ("Anchor 1") and slideshow counters ("1 / 3").
   if (/^Anchor \d+$/.test(t)) return true;
   if (/^\d+ \/ \d+$/.test(t)) return true;
+  // A stray letter left in a text box ("A" before "Arriving at…" on the student resources page).
+  if (b.type === "paragraph" && /^[A-Za-z]$/.test(t)) return true;
   return false;
 }
 

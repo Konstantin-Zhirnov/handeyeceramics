@@ -226,7 +226,7 @@ function Control({
   };
   if (field.kind === "select") {
     return (
-      <select {...shared} onChange={(e) => onChange(e.target.value)}>
+      <select {...shared} className={`${shared.className} pr-11`} onChange={(e) => onChange(e.target.value)}>
         <option value="">{SELECT_PLACEHOLDER}</option>
         {field.options!.map((option) => (
           <option key={option} value={option}>

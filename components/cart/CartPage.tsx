@@ -144,7 +144,7 @@ export function CartPage({ shopPath = "/shop" }: { shopPath?: string }) {
               data-pickup
               value={pickup ?? ""}
               onChange={(e) => setPickup(Number(e.target.value) || undefined)}
-              className="w-full min-w-0 rounded-inset border border-clay-200 bg-clay-50 px-4 py-3 text-ink"
+              className="w-full min-w-0 rounded-inset border border-clay-200 bg-clay-50 py-3 pl-4 pr-11 text-ink"
             >
               {openStudios.map((s) => (
                 <option key={s.id} value={s.id}>

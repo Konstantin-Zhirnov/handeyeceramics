@@ -57,7 +57,7 @@ export async function CallStudio() {
 export function SubscribeButton({ plan }: { plan: Pick<Plan, "id" | "stripePriceId"> }) {
   if (!plan.stripePriceId?.trim()) return null;
   return (
-    <form method="post" action={SUBSCRIBE_PATH} data-subscribe className="mt-5">
+    <form method="post" action={SUBSCRIBE_PATH} data-subscribe className="mt-auto pt-5">
       <input type="hidden" name="plan" value={plan.id} />
       <button
         type="submit"

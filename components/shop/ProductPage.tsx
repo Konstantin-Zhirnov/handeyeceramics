@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { Product } from "@/payload-types";
 import { AddToCart } from "@/components/cart/AddToCart";
 import { formatPrice } from "@/lib/cms/text";
@@ -6,6 +5,7 @@ import { PageHeading, SiteShell } from "@/components/site/SiteShell";
 import { TrackOnMount } from "@/components/site/TrackEvents";
 import { giftAmountChoices } from "@/lib/giftcards/code";
 import { site } from "@/lib/site";
+import { ProductGallery } from "./ProductGallery";
 import { recommendedFor, sessionChoices, splitCategories } from "./data";
 import { CallStudio, Price, ProductGrid, currentPrice, optionChoices, productImages } from "./parts";
 
@@ -50,7 +50,7 @@ function viewContent(doc: Product) {
 
 /** Product page: photos, price, the dates of a class or the variants, Add to cart, description, then "You might also like". */
 export async function ProductPage({ doc }: { doc: Product }) {
-  const [first, ...rest] = productImages(doc);
+  const photos = productImages(doc);
   const [{ choices: sessions, scheduled }, recommended] = await Promise.all([sessionChoices(doc), recommendedFor(doc)]);
   // A class whose dates are all over or hidden is not for sale until a date is added in the admin.
   const noDates = scheduled && !sessions.length;
@@ -67,36 +67,8 @@ export async function ProductPage({ doc }: { doc: Product }) {
         </p>
       </PageHeading>
       <div className="mx-auto mt-8 grid max-w-[62rem] gap-10 px-5 sm:px-8 md:grid-cols-2">
-        <div className="min-w-0">
-          {first ? (
-            <Image
-              src={first.url!}
-              alt={first.alt}
-              width={first.width || 1200}
-              height={first.height || 1200}
-              sizes="(max-width: 768px) 100vw, 30rem"
-              priority
-              className="h-auto w-full rounded-card bg-clay-100"
-            />
-          ) : (
-            <div aria-hidden className="aspect-square w-full rounded-card bg-clay-100" />
-          )}
-          {rest.length > 0 && (
-            <ul className="mt-3 grid grid-cols-3 gap-3">
-              {rest.map((m) => (
-                <li key={m.id}>
-                  <Image
-                    src={m.url!}
-                    alt={m.alt}
-                    width={320}
-                    height={320}
-                    sizes="(max-width: 768px) 33vw, 10rem"
-                    className="aspect-square w-full rounded-inset bg-clay-100 object-cover"
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="min-w-0 md:sticky md:top-32 md:self-start">
+          <ProductGallery photos={photos.map((m) => ({ id: m.id, url: m.url!, alt: m.alt, width: m.width, height: m.height }))} />
         </div>
         <div className="flex min-w-0 flex-col gap-8">
           <div data-buy className="flex flex-col gap-5">

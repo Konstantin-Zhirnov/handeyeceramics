@@ -239,16 +239,15 @@ describe("plans", () => {
 
   it("names a period only where the old text names one", async () => {
     const { $ } = await get(MEMBERSHIPS);
-    // "$175+gst per month", "$150 monthly", "$80 per month", "$125/month".
-    for (const name of ["Option 2", "Option 3", "Option 7 Clay Craver (Nanaimo)", "Option 8 Semi Clay Craver (Nanaimo)"]) {
+    // "$175+gst per month", "$150 monthly", "$80 per month", "$125/month" — and for the options that give
+    // the amount alone ("$230+Gst (location …)", "$145+gst", …) the page's "All memberships … renew
+    // automatically each month".
+    const options = ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Option 6 (Nanaimo)", "Option 7 Clay Craver (Nanaimo)", "Option 8 Semi Clay Craver (Nanaimo)"];
+    for (const name of options) {
       expect(period($, name), name).toEqual(["per month"]);
-    }
-    expect(period((await get(RENTAL)).$, "Pottery Wheel Rental Program")).toEqual(["per month"]);
-    // "$230+Gst (location …)", "$145+gst", "$230+gst Location …", "$230+gst 30% off clay …": no period in the text.
-    for (const name of ["Option 1", "Option 4", "Option 5", "Option 6 (Nanaimo)"]) {
-      expect(period($, name), name).toEqual([]);
       expect(price($, name), name).toMatch(/^CA\$\d+\.00$/);
     }
+    expect(period((await get(RENTAL)).$, "Pottery Wheel Rental Program")).toEqual(["per month"]);
   });
 
   it("puts memberships and the rental on their own pages, inside the old copy", async () => {
