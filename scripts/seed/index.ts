@@ -88,6 +88,17 @@ const GIFT_CARD = {
   description:
     "A gift card for pottery classes, date nights, drop-ins, memberships, clay and tools at Hand Eye Ceramics — any studio.\n\nThe code is emailed to you as soon as the order is paid; forward it or write it into a card of your own. It is used at checkout on this site, in one go or over several orders, and never expires.",
 };
+/**
+ * Products Wix needed only because its gift card could not pay for an ordinary class:
+ * a copy of the class "if paying via gift card". On the new site a gift card code pays
+ * for any product at checkout, so these stay in the catalogue hidden (old orders keep them).
+ */
+const GIFT_CARD_WORKAROUNDS = new Set([
+  "/product-page/date-night-drop-in-class-if-paying-via-gift-card",
+  "/product-page/gift-card-payment-for-1-in-group-of-six",
+  "/product-page/private-instruction-date-night-for-two",
+  "/product-page/private-pottery-class-for-2",
+]);
 /** A dead link found by the crawl, and where it now points. */
 const LINK_FIXES: Record<string, string> = { "/product-page/private-lessons": "/open-studio-private-lessons" };
 const FORM_TYPES: Record<string, "contact" | "commission"> = { "/contact-us": "contact", "/commissions-form": "commission" };
@@ -518,7 +529,7 @@ async function seedProducts() {
       category: (r.categories?.length ? r.categories.join(", ") : r.category) || undefined,
       taxGroup: taxGroupOf(r.path),
       seo,
-      visible: true,
+      visible: !GIFT_CARD_WORKAROUNDS.has(r.path),
     });
   }
 }
