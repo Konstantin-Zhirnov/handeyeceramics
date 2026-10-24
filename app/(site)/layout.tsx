@@ -51,8 +51,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // data-scroll-behavior: Next 16 turns the smooth scrolling of globals.css off only when asked to;
+  // left on, its scroll to the new page on a link animates and stops at the footer on a phone.
   return (
-    <html lang="en" className={`${bodoni.variable} ${karla.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${bodoni.variable} ${karla.variable}`}>
       <body>
         {children}
         <Tracking />
