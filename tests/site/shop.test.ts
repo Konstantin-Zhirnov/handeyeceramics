@@ -110,15 +110,26 @@ describe("product page", () => {
 const productLinks = ($: CheerioAPI) =>
   [...new Set($("main [data-product] a").toArray().map((a) => $(a).attr("href")!.replace("/product-page/", "")))].sort();
 
+/**
+ * Products of the old storefronts the seed keeps hidden (scripts/seed/index.ts): the five Wix
+ * workarounds for paying by gift card, filed under Tools, and the two Wix Stores subscriptions,
+ * sold as plans on the new site.
+ */
+const GIFT_CARD_WORKAROUNDS = [
+  "date-night-drop-in-class-if-paying-via-gift-card",
+  "date-night-for-two",
+  "gift-card-payment-for-1-in-group-of-six",
+  "private-instruction-date-night-for-two",
+  "private-pottery-class-for-2",
+];
+const SUBSCRIPTION_PRODUCTS = ["studio-membership-subscription", "wheel-rental-subscription"];
+
 describe("storefronts", () => {
-  // Written by hand from the tiles of the old pages.
+  // Written by hand from the tiles of the old pages, less the hidden products.
   const shelves: Record<string, string[]> = {
-    "/pieces-for-sale": [
-      "coming-back-to-under-glaze-1-off-pottery-workshop-pots",
-      "hanging-plant-pot",
-      "studio-membership-subscription",
-    ],
-    "/memberships-rentals-shop": ["studio-membership-subscription", "wheel-rental-subscription"],
+    "/pieces-for-sale": ["coming-back-to-under-glaze-1-off-pottery-workshop-pots", "hanging-plant-pot"],
+    // The old page held only the two subscriptions.
+    "/memberships-rentals-shop": [],
     "/shop": [
       "6-week-wheel-throwing-pottery-classes-in-vancouver",
       "demystifying-slip-casting-and-marbling-clay",
@@ -136,10 +147,10 @@ describe("storefronts", () => {
   });
 
   it("prints each product's name and price on its tile", async () => {
-    const { $ } = await get("/memberships-rentals-shop");
-    const tile = $('[data-product]:has(a[href="/product-page/wheel-rental-subscription"])');
-    expect(tile.text()).toContain("Wheel Rental Subscription");
-    expect(tile.find("[data-price-current]").text().trim()).toBe("CA$132.00");
+    const { $ } = await get("/pieces-for-sale");
+    const tile = $('[data-product]:has(a[href="/product-page/hanging-plant-pot"])');
+    expect(tile.text()).toContain("Hanging Plant Pot");
+    expect(tile.find("[data-price-current]").text().trim()).toBe("CA$95.00");
     const { $: shop } = await get("/shop");
     const sale = shop('[data-product]:has(a[href="/product-page/hand-building-beginner-to-intermediate"])');
     expect(sale.find("[data-price-regular]").text().trim()).toBe("CA$371.00");
@@ -147,16 +158,28 @@ describe("storefronts", () => {
   });
 
   it("has as many products as the old storefront had tiles", async () => {
-    // Counted by hand on the old pages (13 aprons and tools, 16 clays, 1 drop-in).
-    for (const [path, count] of [["/apron-tools", 13], ["/clay", 16], ["/friday-night-drop-in", 1]] as const) {
+    // Counted by hand on the old pages (13 aprons and tools, 16 clays, 1 drop-in); five of the tools are the hidden gift card workarounds.
+    for (const [path, count] of [["/apron-tools", 13 - GIFT_CARD_WORKAROUNDS.length], ["/clay", 16], ["/friday-night-drop-in", 1]] as const) {
       const { $ } = await get(path);
       expect(productLinks($), path).toHaveLength(count);
     }
   });
 
+  it("keeps the gift card workarounds and the subscription products off their pages and storefronts", async () => {
+    const hidden = [...GIFT_CARD_WORKAROUNDS, ...SUBSCRIPTION_PRODUCTS];
+    for (const slug of hidden) {
+      // A rule in the admin may send the address on (301); the product page itself is never served.
+      const res = await fetch(`${base()}/product-page/${slug}`, { redirect: "manual" });
+      expect([301, 404], slug).toContain(res.status);
+    }
+    for (const path of ["/apron-tools", "/pieces-for-sale", "/memberships-rentals-shop"]) {
+      expect(productLinks((await get(path)).$).filter((p) => hidden.includes(p)), path).toEqual([]);
+    }
+  });
+
   it("says so when a storefront is empty", async () => {
-    // The two storefronts the old site showed empty.
-    for (const path of ["/youth-pottery-classes-shop", "/art-gallery"]) {
+    // The two storefronts the old site showed empty, and the subscriptions storefront, all of whose products are hidden.
+    for (const path of ["/youth-pottery-classes-shop", "/art-gallery", "/memberships-rentals-shop"]) {
       const { status, $ } = await get(path);
       expect(status, path).toBe(200);
       expect($("main [data-product]"), path).toHaveLength(0);
@@ -174,8 +197,9 @@ describe("storefronts", () => {
     const { $ } = await get("/shop");
     const nav = $('nav[aria-label="Shop sections"]');
     const hrefs = nav.find("a").toArray().map((a) => $(a).attr("href"));
-    expect(hrefs).toEqual(expect.arrayContaining(["/shop", "/clay", "/apron-tools", "/pieces-for-sale", "/memberships-rentals-shop"]));
+    expect(hrefs).toEqual(expect.arrayContaining(["/shop", "/clay", "/apron-tools", "/pieces-for-sale"]));
     expect(hrefs).not.toContain("/youth-pottery-classes-shop");
+    expect(hrefs).not.toContain("/memberships-rentals-shop");
     expect(nav.find('a[aria-current="page"]').attr("href")).toBe("/shop");
   });
 
@@ -196,10 +220,7 @@ describe("storefronts", () => {
     await setVisible(false);
     try {
       expect((await get(path)).status).toBe(404);
-      expect(productLinks((await get("/pieces-for-sale")).$)).toEqual([
-        "coming-back-to-under-glaze-1-off-pottery-workshop-pots",
-        "studio-membership-subscription",
-      ]);
+      expect(productLinks((await get("/pieces-for-sale")).$)).toEqual(["coming-back-to-under-glaze-1-off-pottery-workshop-pots"]);
     } finally {
       await setVisible(true);
     }
@@ -272,10 +293,10 @@ describe("plans", () => {
     expect(price(r, "Pottery Wheel Rental Program")).toBe("CA$125.00");
     expect(text(r).split("Our pottery wheel rental program costs")).toHaveLength(2);
 
-    // The storefront keeps what the old one showed: two products, no plans.
+    // The old storefront's two subscription products are hidden; the plans are not copied onto it either.
     const { $: shop } = await get("/memberships-rentals-shop");
     expect(shop("main [data-plan]")).toHaveLength(0);
-    expect(productLinks(shop)).toHaveLength(2);
+    expect(productLinks(shop)).toEqual([]);
   });
 
   it("shows the plans of the admin that belong to no page group, and a price changed there on every page that lists it", async () => {
