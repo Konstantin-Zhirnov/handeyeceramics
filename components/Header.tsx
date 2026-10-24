@@ -219,7 +219,7 @@ export function Header({ currentLocation }: { currentLocation?: string } = {}) {
           aria-modal="true"
           aria-label="Menu"
           onClick={(e) => e.stopPropagation()}
-          className={`grain relative max-h-[100svh] overflow-x-hidden overflow-y-auto overscroll-contain rounded-b-stage bg-clay-50 px-5 pt-5 pb-9 transition-transform duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-target:translate-y-0 ${
+          className={`grain relative h-dvh overflow-x-hidden overflow-y-auto overscroll-contain bg-clay-50 md:h-auto md:max-h-[100svh] md:rounded-b-stage px-5 pt-5 pb-9 transition-transform duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-target:translate-y-0 ${
             open ? "translate-y-0" : "-translate-y-full"
           }`}
         >

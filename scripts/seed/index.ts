@@ -17,7 +17,7 @@ import { classTabs, gallery, locations, reviews, site, stageChapters, steps } fr
 import { pickMedia, sourceName } from "./media-key";
 import { SITE_SUFFIX, excerpt, formatPrice } from "../../lib/cms/text";
 import { rewrite, textFix, textFixNodes } from "./text-fixes";
-import { continuesLine, isWixLitter } from "./wix-litter";
+import { continuesLine, isWixLitter, isWixTileButton } from "./wix-litter";
 import { homeMoves } from "./home-moves";
 import { writesFixes } from "./fixes";
 import * as L from "./lexical";
@@ -122,7 +122,14 @@ function isChrome(b: Block): boolean {
   if (b.type === "list-item" && ["Top of Page", "Home", "Service list"].includes(t)) return true;
   return false;
 }
-const isProductTile = (b: Block) => b.type === "list-item" && (b.text || "").startsWith("Quick View");
+const isProductTile = (b: Block) => (b.type === "list-item" && (b.text || "").startsWith("Quick View")) || isWixTileButton(b);
+/** The words of the tile that starts at `i`: a list item's own, or those of the tile's link to the product. */
+function tileText(blocks: Block[], i: number): string {
+  const b = blocks[i];
+  if (b.type === "list-item") return b.text || "";
+  const link = blocks.slice(i, i + 4).find((x) => isWixTileButton(x) && x.href);
+  return link?.text || b.text || "";
+}
 /** What a Wix storefront prints when its category has no products. */
 const isEmptyStore = (b: Block) => b.type === "heading" && /^We don.t have any products to show here right now\.?$/.test((b.text || "").trim());
 /** The price and option widget of a Wix product page — not part of the description. */
@@ -292,10 +299,12 @@ async function toBlocks(r: Rec, h1Index: number) {
     }
     if (isEmptyStore(b)) emptyStore = true;
     if (i === h1Index || moved.has(i) || isChrome(b)) continue;
+    // Wix printed its empty-store notice above a grid that does hold a product; the product list shows it.
+    if (isEmptyStore(b) && r.blocks.some(isProductTile)) continue;
     // A tile's picture and the name printed under it belong to the product list.
     if (isProductTile(b)) images = [];
     if (b.type === "paragraph" && tile.includes((b.text || "").trim())) continue;
-    tile = isProductTile(b) ? b.text || "" : b.type === "image" ? tile : "";
+    tile = isProductTile(b) ? tileText(r.blocks, i) : b.type === "image" ? tile : "";
     if (b.type !== "image") flushImages();
     const joinsLine = b.type === "paragraph" && lastPara !== null && continuesLine(lastPara, b.text || "");
     if (b.type !== "paragraph") lastPara = null;
@@ -366,8 +375,13 @@ async function toBlocks(r: Rec, h1Index: number) {
   return out;
 }
 
-const contentText = (r: Rec) =>
-  r.blocks.filter((b) => b.text && !isChrome(b) && !isProductTile(b)).map((b) => b.text).join(" ");
+const contentText = (r: Rec) => {
+  const tiles = r.blocks.some(isProductTile);
+  return r.blocks
+    .filter((b) => b.text && !isChrome(b) && !isProductTile(b) && !(tiles && isEmptyStore(b)))
+    .map((b) => b.text)
+    .join(" ");
+};
 
 function seoFor(r: Rec) {
   let description = r.description;

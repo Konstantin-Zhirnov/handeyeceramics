@@ -9,10 +9,10 @@ import { load } from "cheerio";
 import { beforeAll, describe, expect, inject, it } from "vitest";
 import { homeMoves } from "../../scripts/seed/home-moves";
 import { rewrite, textFix, textFixLines } from "../../scripts/seed/text-fixes";
-import { isWixLitter } from "../../scripts/seed/wix-litter";
+import { isWixLitter, isWixTileButton } from "../../scripts/seed/wix-litter";
 import { expected404, expectedRedirects } from "./expected";
 
-type Block = { type: string; text?: string; level?: number };
+type Block = { type: string; text?: string; level?: number; href?: string };
 type Rec = {
   path: string;
   status: number;
@@ -32,7 +32,17 @@ const records: Rec[] = [...inv.pages, ...inv.products, ...inv.pricing, ...inv.ot
 // The home page carries the H1 and the text of the old one, like every other page — except the
 // "We have 3 locations" paragraphs, which the studios' cards, pages and timetables replace (home-moves.ts).
 const prototypeTemplates = new Set<string>();
-const dropped = (rec: Rec) => (rec.path === "/" ? homeMoves(rec.blocks).dropped : new Set<number>());
+const dropped = (rec: Rec) => {
+  if (rec.path === "/") return homeMoves(rec.blocks).dropped;
+  // Wix's empty-store notice above a grid that does hold a product (a tile read as buttons): the product list replaces both.
+  const gone = new Set<number>();
+  if (rec.blocks.some(isWixTileButton)) {
+    rec.blocks.forEach((b, i) => {
+      if (b.type === "heading" && /^We don.t have any products to show here right now\.?$/.test((b.text || "").trim())) gone.add(i);
+    });
+  }
+  return gone;
+};
 // Story 8: this title repeats the title of a content page, so the product's
 // category is added to it (content/seo-fixes.md).
 const retitled: Record<string, string> = {
@@ -47,6 +57,7 @@ const chrome = (b: Block) => {
   if (!t) return true;
   if (b.type === "text" && ["*", "Excluding Sales Tax", "Quantity *", "Price", "Regular Price", "Sale Price"].includes(t)) return true;
   if (b.type === "button" && t === "Add to Cart") return true;
+  if (isWixTileButton(b)) return true;
   if (b.type === "list-item" && (["Top of Page", "Home", "Service list"].includes(t) || t.startsWith("Quick View"))) return true;
   // A card of the Wix pricing widget, glued by the crawl into one line ("Tuesday Evening CA$ 267.75 … Buy Now …").
   // The plan is a document of the plans collection and is printed from there, part by part.

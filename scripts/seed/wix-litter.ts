@@ -3,7 +3,18 @@
  * their text. The one rule, shared by the seed (it skips these blocks) and by
  * tests/site/inventory.test.ts (it does not expect them on the new pages).
  */
-export type LitterBlock = { type: string; text?: string; alt?: string };
+export type LitterBlock = { type: string; text?: string; alt?: string; href?: string };
+
+/**
+ * A Wix product tile the crawl read as buttons, not as one list item: a "Quick View" button, the
+ * name, then a button to the product page with the name and the price ("… Price CA$100.00 Sale
+ * Price CA$50.00 Excluding Sales Tax"). The product list of the page shows that product instead.
+ */
+export function isWixTileButton(b: LitterBlock): boolean {
+  if (b.type !== "button") return false;
+  const t = (b.text || "").trim();
+  return t === "Quick View" || ((b.href || "").startsWith("/product-page/") && /\bPrice CA\$\s?\d/.test(t));
+}
 
 /** Social network icons: a picture whose alt is only the network's name. */
 const SOCIAL = /^(instagram|facebook|tiktok|youtube|twitter|x|pinterest|linkedin)$/i;

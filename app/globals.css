@@ -536,7 +536,8 @@ svg {
     align-items: center;
     gap: 0.6em;
     min-height: 2.75rem;
-    padding-block: 0;
+    /* Room under the last line for the rule, however many lines the link wraps to. */
+    padding-block: 0.55rem 0.8rem;
     font-size: var(--text-ui);
     font-weight: 600;
     line-height: 1.2;
@@ -547,7 +548,7 @@ svg {
   .rich .cta a::before {
     content: "";
     position: absolute;
-    inset: auto 0 0.55rem;
+    inset: auto 0 0.5rem;
     height: 1.5px;
     background: currentColor;
     transform-origin: left;
